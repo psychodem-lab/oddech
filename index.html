@@ -25,9 +25,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
+            /* ZMIANA: Aby na dole była przestrzeń na scrollowanie */
+            justify-content: flex-start; 
             min-height: 100vh;
-            overflow: hidden;
+            /* ZMIANA: Usuwamy "hidden", aby przeglądarka mogła dodać scrollbar w razie potrzeby */
+            overflow-y: auto; 
             text-align: center;
         }
 

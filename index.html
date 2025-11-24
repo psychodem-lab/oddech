@@ -3,481 +3,621 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Trening oddechowy — presety i tryb wibracji</title>
+<title>Trening Oddechowy z Kontrolą Dźwięku</title>
 <link rel="shortcut icon" type="image/png" href="favicon.png" />
 <style>
-:root{
-  --bg:#f0f4f8; --card:#fff; --accent:#4a90e2; --success:#2ecc71; --danger:#e74c3c;
-  --mute:#f39c12; --text:#222; --radius:12px; --shadow:0 3px 10px rgba(0,0,0,0.08);
-}
-*{box-sizing:border-box}
-body{
-  margin:0; padding:18px; font-family:Inter,Segoe UI, system-ui, sans-serif;
-  background:var(--bg); color:var(--text); display:flex; flex-direction:column; align-items:center;
-  min-height:100vh;
-}
-.app{
-  width:100%; max-width:980px; display:flex; gap:18px; justify-content:center; flex-wrap:wrap;
-}
-.visual{
-  width:320px; background:var(--card); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow);
-  display:flex; flex-direction:column; align-items:center; gap:12px;
-}
-.visual-container{ width:280px; height:280px; position:relative; display:flex; align-items:center; justify-content:center; }
-.circle{
-  width:140px; height:140px; background:var(--accent); border-radius:50%; box-shadow:0 0 25px rgba(74,144,226,0.35);
-  transform:scale(1); transition:transform 600ms ease-in-out; z-index:1; opacity:0.95;
-}
-.instruction{
-  position:relative; z-index:2; color:white; font-weight:700; text-shadow:0 2px 6px rgba(0,0,0,0.25);
-  font-size:1.25rem; pointer-events:none;
-}
-.controls{
-  width:320px; background:var(--card); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow);
-  display:flex; flex-direction:column; gap:12px;
-}
-.grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.input{ display:flex; flex-direction:column; align-items:center; }
-.input label{ font-size:0.82rem; color:#666; margin-bottom:6px; text-align:center; }
-.input input{ width:100%; max-width:140px; padding:8px; border-radius:8px; border:1px solid #ddd; text-align:center; }
-.controls-row{ display:flex; gap:8px; }
-button{ padding:10px; border-radius:8px; border:none; font-weight:700; cursor:pointer; }
-#start{ background:var(--success); color:#fff; flex:1 }
-#stop{ background:var(--danger); color:#fff; flex:1 }
-select,input[type="radio"]{ padding:8px; border-radius:8px; border:1px solid #ddd; }
-.mode-row{ display:flex; gap:8px; align-items:center; }
-.small{ font-size:0.9rem; color:#666 }
-@media (max-width:700px){
-  .visual,.controls{ width:100%; max-width:420px; }
-  .visual-container{ width:220px; height:220px; }
-  .circle{ width:110px; height:110px; }
-}
+    :root{
+        --bg-color:#f0f4f8;
+        --circle-color:#4a90e2;
+        --text-color:#333;
+        --panel-bg:#ffffff;
+        --success-color:#2ecc71;
+        --danger-color:#e74c3c;
+        --mute-color:#f39c12;
+        --card-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        --radius:12px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+        margin:0;
+        padding:18px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background:var(--bg-color);
+        color:var(--text-color);
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:flex-start;
+        min-height:100vh;
+        overflow-y:auto;
+        text-align:center;
+    }
+
+    .container{
+        width:100%;
+        max-width:920px;
+        display:flex;
+        gap:20px;
+        align-items:flex-start;
+        justify-content:center;
+        flex-wrap:wrap;
+    }
+
+    .visualizer {
+        background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.85));
+        border-radius:var(--radius);
+        padding:20px;
+        box-shadow:var(--card-shadow);
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+        align-items:center;
+        width:320px;
+        flex-shrink:0;
+    }
+
+    .visualizer-container{
+        position:relative;
+        width:280px;
+        height:280px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+    }
+
+    .breathing-circle{
+        width:140px;
+        height:140px;
+        background-color:var(--circle-color);
+        border-radius:50%;
+        position:absolute;
+        z-index:1;
+        opacity:0.95;
+        box-shadow:0 0 25px rgba(74,144,226,0.35);
+        transform:scale(1);
+        transition:transform 600ms ease-in-out;
+    }
+
+    .instruction-text{
+        position:relative;
+        z-index:2;
+        font-size:1.25rem;
+        font-weight:700;
+        color:white;
+        text-shadow:0 2px 6px rgba(0,0,0,0.25);
+        pointer-events:none;
+        user-select:none;
+    }
+
+    .controls{
+        background:var(--panel-bg);
+        padding:16px;
+        border-radius:var(--radius);
+        box-shadow:var(--card-shadow);
+        display:flex;
+        flex-direction:column;
+        gap:12px;
+        width:320px;
+        flex-shrink:0;
+    }
+
+    .inputs-grid{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+    }
+
+    .input-group{ display:flex; flex-direction:column; align-items:center; }
+    .input-group label{ font-size:0.78rem; margin-bottom:4px; color:#666; text-align:center; }
+    .input-group input{
+        width:100%;
+        max-width:120px;
+        padding:8px 6px;
+        border:1px solid #ddd;
+        border-radius:8px;
+        font-size:0.95rem;
+        text-align:center;
+    }
+
+    .input-group.total-time-input{ grid-column:span 2; }
+
+    .session-timer{ font-weight:600; color:#222; }
+
+    .buttons{ display:flex; gap:8px; }
+    button{
+        flex:1;
+        padding:10px;
+        border:none;
+        border-radius:8px;
+        font-size:0.95rem;
+        cursor:pointer;
+        font-weight:700;
+        transition:background 0.15s ease;
+    }
+    #start-btn{ background-color:var(--success-color); color:white; }
+    #start-btn:hover{ background-color:#27ae60; }
+    #stop-btn{ background-color:var(--danger-color); color:white; }
+    #stop-btn:hover{ background-color:#c0392b; }
+    #mute-btn{
+        background-color:var(--mute-color);
+        color:white;
+        padding:10px;
+        border-radius:8px;
+    }
+    #mute-btn.muted{ background:#95a5a6; }
+    button:disabled{ opacity:0.55; cursor:not-allowed; }
+
+    .meta{
+        font-size:0.9rem;
+        color:#666;
+    }
+
+    /* responsywność */
+    @media (max-width:700px){
+        .container{ padding:0 8px; }
+        .visualizer, .controls{ width:100%; max-width:420px; }
+        .visualizer-container{ width:220px; height:220px; }
+        .breathing-circle{ width:110px; height:110px; }
+    }
 </style>
 </head>
 <body>
-  <h1 style="margin:0 0 12px 0;font-size:1.05rem;">Trening oddechowy — presety i tryb wibracji</h1>
+    <h1 style="margin:0 0 12px 0; font-size:1.1rem;">Trening oddechowy — dźwięk + wizualizacja</h1>
 
-  <div class="app" role="application" aria-label="Trening oddechowy">
-    <section class="visual" aria-labelledby="visTitle">
-      <div id="visTitle" style="display:none">Wizualizacja</div>
-      <div class="visual-container" aria-hidden="false">
-        <div class="circle" id="circle" aria-hidden="true"></div>
-        <div class="instruction" id="instruction">Gotowy?</div>
-      </div>
-      <div class="small">Wizualizacja + efekt dźwiękowy / wibracyjny przy starcie faz.</div>
-    </section>
+    <div class="container" role="application" aria-label="Trening oddechowy">
+        <section class="visualizer" aria-labelledby="vis-title">
+            <div id="vis-title" style="display:none">Wizualizacja oddechu</div>
+            <div class="visualizer-container" aria-hidden="false">
+                <div class="breathing-circle" id="circle" aria-hidden="true"></div>
+                <div class="instruction-text" id="text">Gotowy?</div>
+            </div>
+            <div class="meta">Porusz kołem podczas oddechu — dźwięk dopasowuje się do faz.</div>
+        </section>
 
-    <aside class="controls" aria-labelledby="controlsTitle">
-      <h2 id="controlsTitle" style="margin:0;font-size:0.95rem;">Sterowanie</h2>
+        <aside class="controls" aria-labelledby="controls-title">
+            <h2 id="controls-title" style="margin:0; font-size:0.95rem;">Sterowanie</h2>
 
-      <div style="display:flex;gap:8px;align-items:center;">
-        <label for="preset">Preset:</label>
-        <select id="preset" aria-label="Wybierz preset">
-          <option value="custom">Custom</option>
-          <option value="box">Box 4-4-4-4</option>
-          <option value="4262">4-2-6-2</option>
-        </select>
-        <div style="margin-left:auto;font-size:0.85rem;color:#666">Presety wypełniają pola (edycja przełącza na Custom)</div>
-      </div>
+            <div class="inputs-grid">
+                <div class="input-group">
+                    <label for="inhale">Wdech (sek)</label>
+                    <input type="number" id="inhale" value="4" min="1" step="0.1" aria-label="Wdech w sekundach">
+                </div>
+                <div class="input-group">
+                    <label for="hold1">Zatrzymaj 1 (sek)</label>
+                    <input type="number" id="hold1" value="2" min="0" step="0.1" aria-label="Zatrzymaj po wdechu">
+                </div>
+                <div class="input-group">
+                    <label for="exhale">Wydech (sek)</label>
+                    <input type="number" id="exhale" value="6" min="1" step="0.1" aria-label="Wydech w sekundach">
+                </div>
+                <div class="input-group">
+                    <label for="hold2">Zatrzymaj 2 (sek)</label>
+                    <input type="number" id="hold2" value="2" min="0" step="0.1" aria-label="Zatrzymaj po wydechu">
+                </div>
 
-      <div class="grid">
-        <div class="input">
-          <label for="inhale">Wdech (s)</label>
-          <input id="inhale" type="number" value="4" min="0.1" step="0.1" />
-        </div>
-        <div class="input">
-          <label for="hold1">Zatrzymaj 1 (s)</label>
-          <input id="hold1" type="number" value="2" min="0" step="0.1" />
-        </div>
-        <div class="input">
-          <label for="exhale">Wydech (s)</label>
-          <input id="exhale" type="number" value="4" min="0.1" step="0.1" />
-        </div>
-        <div class="input">
-          <label for="hold2">Zatrzymaj 2 (s)</label>
-          <input id="hold2" type="number" value="4" min="0" step="0.1" />
-        </div>
-        <div class="input" style="grid-column:span 2;">
-          <label for="total">Czas treningu (min)</label>
-          <input id="total" type="number" value="2" min="0.5" step="0.5" />
-        </div>
-      </div>
+                <div class="input-group total-time-input">
+                    <label for="totalTime">Czas treningu (min)</label>
+                    <input type="number" id="totalTime" value="2" min="0.5" step="0.5" aria-label="Czas treningu w minutach">
+                </div>
+            </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div class="small">Czas do końca: <strong id="timer">00:00</strong></div>
-        <div class="small" id="vib-support"></div>
-      </div>
+            <div class="session-timer" aria-live="polite">
+                Czas do końca: <span id="session-countdown">00:00</span>
+            </div>
 
-      <div class="controls-row" style="margin-top:8px;">
-        <button id="start">Start</button>
-        <button id="stop" disabled>Stop</button>
-      </div>
+            <div class="buttons" style="margin-top:8px;">
+                <button id="start-btn" type="button" aria-pressed="false">Start</button>
+                <button id="stop-btn" type="button" disabled>Stop</button>
+            </div>
 
-      <div style="margin-top:8px;">
-        <div class="small" style="margin-bottom:6px;">Tryb efektów:</div>
-        <div class="mode-row" role="radiogroup" aria-label="Tryb efektów">
-          <label><input type="radio" name="mode" value="sound" checked /> Dźwięk</label>
-          <label><input type="radio" name="mode" value="vibration" /> Wibracja</label>
-          <label><input type="radio" name="mode" value="silent" /> Cichy</label>
-        </div>
-      </div>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <button id="mute-btn" type="button" aria-pressed="false">🔇 Wycisz dźwięk</button>
+            </div>
 
-    </aside>
-  </div>
+        </aside>
+    </div>
 
 <script>
-/* Ulepszony skrypt:
- - Presety: wypełniają pola; edycja pól -> preset=custom (opcja C)
- - Tryby: sound / vibration / silent
- - Vibration API: wykrywanie wsparcia + użycie przy starcie faz
- - Web Audio: tworzenie i czyszczenie oscillatorów, cancelScheduledValues()
+/*
+  Ulepszony skrypt audio + logika sesji
+  Kluczowe zmiany:
+  - audioContext tworzony lub wznowiony przy starcie; zamykany po stop
+  - oscillator tworzony za każdym razem przy starcie i poprawnie zatrzymywany
+  - cancelScheduledValues() zamiast cancelAndHoldAtTime()
+  - płynne rampy głośności i częstotliwości
+  - pełna walidacja inputów
 */
 
 'use strict';
 
-/* DOM */
-const presetSel = document.getElementById('preset');
-const inhaleIn = document.getElementById('inhale');
-const hold1In = document.getElementById('hold1');
-const exhaleIn = document.getElementById('exhale');
-const hold2In = document.getElementById('hold2');
-const totalIn = document.getElementById('total');
-const startBtn = document.getElementById('start');
-const stopBtn = document.getElementById('stop');
-const timerEl = document.getElementById('timer');
-const instruction = document.getElementById('instruction');
-const circle = document.getElementById('circle');
-const vibSupportEl = document.getElementById('vib-support');
-const modeRadios = document.querySelectorAll('input[name="mode"]');
-
-let audioContext = null, oscillator = null, gainNode = null;
-let isRunning = false;
-let remainingMs = 0;
-let sessionInterval = null;
-let isMuted = false; // not used directly; mode controls behavior
-
-/* Sound defaults */
+/* --- Konfiguracja dźwięku i domyślne wartości --- */
 const FREQ_START = 164.8;
 const FREQ_END = 329.6;
 const VOLUME_MAX = 0.28;
+const FADE_MS = 200; // czas ramp (ms) dla szybkich zmian głośności
 
-/* Presets */
-const PRESETS = {
-  box: { inhale:4, hold1:4, exhale:4, hold2:4 },
-  '4262': { inhale:4, hold1:2, exhale:6, hold2:2 }
-};
+/* --- Elementy DOM --- */
+const circle = document.getElementById('circle');
+const textDisplay = document.getElementById('text');
+const startBtn = document.getElementById('start-btn');
+const stopBtn = document.getElementById('stop-btn');
+const muteBtn = document.getElementById('mute-btn');
+const inputs = document.querySelectorAll('input');
+const countdownDisplay = document.getElementById('session-countdown');
 
-/* Vibration support */
-const hasVibration = 'vibrate' in navigator;
-vibSupportEl.innerText = hasVibration ? 'Wibracja dostępna' : 'Wibracja niedostępna';
+let audioContext = null;
+let oscillator = null;
+let gainNode = null;
+let isRunning = false;
+let isMuted = false;
+let sessionTimerInterval = null;
+let remainingTimeMs = 0;
 
-/* Utility */
+/* Utility sleep */
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-function ms(n){ return Math.round(n*1000); }
 
-/* Preset handling: preset fills fields; editing fields -> preset = custom */
-presetSel.addEventListener('change', () => {
-  const v = presetSel.value;
-  if (v === 'custom') return;
-  const p = PRESETS[v];
-  if (!p) return;
-  inhaleIn.value = p.inhale;
-  hold1In.value = p.hold1;
-  exhaleIn.value = p.exhale;
-  hold2In.value = p.hold2;
-  // total left intact
-});
-
-/* If user edits any input, switch preset to custom */
-[in inhaleIn, hold1In, exhaleIn, hold2In, totalIn].forEach?.(x=>{}); // placeholder to satisfy some linters
-[in inhaleIn, hold1In, exhaleIn, hold2In, totalIn].forEach(input => {
-  input.addEventListener('input', () => {
-    if (presetSel.value !== 'custom') presetSel.value = 'custom';
-  });
-});
-
-/* Audio helpers */
-async function ensureAudioContext(){
-  if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  else if (audioContext.state === 'suspended') {
-    try { await audioContext.resume(); } catch(e){ console.warn('resume failed', e); }
-  }
-  return audioContext;
-}
-function createOscAndGain(){
-  if (!audioContext) throw new Error('no audio context');
-  const osc = audioContext.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
-  const gain = audioContext.createGain();
-  gain.gain.setValueAtTime(0, audioContext.currentTime);
-  osc.connect(gain);
-  gain.connect(audioContext.destination);
-  return {osc,gain};
-}
-function safeCancelScheduled(param){
-  try {
-    param.cancelScheduledValues(audioContext.currentTime);
-  } catch(e){
-    try { param.cancelAndHoldAtTime?.(audioContext.currentTime); } catch(e2){}
-  }
-}
-function setVolume(target, durS=0.2){
-  if (!gainNode) return;
-  const t = audioContext.currentTime;
-  safeCancelScheduled(gainNode.gain);
-  try {
-    gainNode.gain.setValueAtTime(gainNode.gain.value, t);
-  } catch(e){}
-  gainNode.gain.linearRampToValueAtTime(target, t + durS);
-}
-function transitionFreq(target, durMs=0){
-  if (!oscillator) return;
-  const durS = durMs/1000;
-  const t = audioContext.currentTime;
-  safeCancelScheduled(oscillator.frequency);
-  try {
-    oscillator.frequency.setValueAtTime(oscillator.frequency.value, t);
-  } catch(e){}
-  if (durS>0) oscillator.frequency.linearRampToValueAtTime(target, t + durS);
-  else oscillator.frequency.setValueAtTime(target, t);
-}
-
-/* Start/stop sound */
-async function startSoundIfNeeded(){
-  const mode = getMode();
-  if (mode !== 'sound') return;
-  await ensureAudioContext();
-  // cleanup existing nodes if any
-  try { if (oscillator) { oscillator.stop(); oscillator.disconnect(); } } catch(e){}
-  try { if (gainNode) gainNode.disconnect(); } catch(e){}
-  const nodes = createOscAndGain();
-  oscillator = nodes.osc; gainNode = nodes.gain;
-  oscillator.start();
-  setVolume(VOLUME_MAX, 0.15);
-  transitionFreq(FREQ_START,0);
-}
-async function stopSoundCleanup(){
-  if (!audioContext) return;
-  try {
-    if (gainNode) {
-      setVolume(0,0.15);
-      await wait(200);
+/* --- Audio helpers --- */
+async function ensureAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } else if (audioContext.state === 'suspended') {
+        // Resume requires user gesture in many browsers
+        try { await audioContext.resume(); } catch(e){ console.warn('resume failed', e); }
     }
+    return audioContext;
+}
+
+function createOscillatorAndGain() {
+    if (!audioContext) throw new Error('AudioContext nie istnieje');
+    // tworzymy node'y za każdym razem przy starcie sesji
+    const osc = audioContext.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
+
+    const gain = audioContext.createGain();
+    gain.gain.setValueAtTime(0.0, audioContext.currentTime); // start z ciszą
+
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+
+    return { osc, gain };
+}
+
+function setVolume(target, durationS = 0.2) {
+    if (!gainNode) return;
+    const t = audioContext.currentTime;
+    try {
+        gainNode.gain.cancelScheduledValues(t);
+        gainNode.gain.setValueAtTime(gainNode.gain.value, t); // anchor current value
+        gainNode.gain.linearRampToValueAtTime(target, t + durationS);
+    } catch (e) {
+        // Przy niektórych implementacjach gain.value może być nieaktualne — zabezpieczamy się.
+        try {
+            gainNode.gain.linearRampToValueAtTime(target, t + durationS);
+        } catch (err) {
+            console.warn('setVolume fallback', err);
+        }
+    }
+}
+
+function transitionFrequency(targetFreq, durationMs = 0) {
+    if (!oscillator) return;
+    const durS = durationMs / 1000;
+    const t = audioContext.currentTime;
+    try {
+        oscillator.frequency.cancelScheduledValues(t);
+        oscillator.frequency.setValueAtTime(oscillator.frequency.value || FREQ_START, t);
+        if (durS > 0) oscillator.frequency.linearRampToValueAtTime(targetFreq, t + durS);
+        else oscillator.frequency.setValueAtTime(targetFreq, t);
+    } catch (e) {
+        try { oscillator.frequency.linearRampToValueAtTime(targetFreq, t + durS); } catch (err) {}
+    }
+}
+
+/* Start dźwięku (tworzy nowe node'y przy każdym starcie) */
+async function startSound() {
+    await ensureAudioContext();
+
+    // Jeśli jest już oscillator (np. z poprzedniej sesji), zatrzymaj go bezpośrednio
     if (oscillator) {
-      try { oscillator.stop(); } catch(e){}
-      try { oscillator.disconnect(); } catch(e){}
-      oscillator = null;
+        try {
+            oscillator.stop();
+            oscillator.disconnect();
+        } catch (e) {}
+        oscillator = null;
     }
-    if (gainNode) { try { gainNode.disconnect(); } catch(e){} gainNode=null; }
-    if (audioContext && typeof audioContext.close === 'function') {
-      await audioContext.close();
-    }
-  } catch(e){ console.warn('cleanup err', e); }
-  finally{ audioContext = null; oscillator=null; gainNode=null; }
-}
-
-/* Vibration helper:
-   During each phase we vibrate shortly if mode==='vibration' and device supports it.
-   We'll vibrate a small pulse at phase start to signal transition.
-*/
-function vibratePulseForPhase(phase, durationMs){
-  if (getMode() !== 'vibration') return;
-  if (!hasVibration) return;
-  // customize pulse length by phase
-  const map = { inhale:120, hold:70, exhale:120 };
-  const dur = map[phase] ?? 80;
-  try { navigator.vibrate(dur); } catch(e){ /* ignore */ }
-}
-
-/* Mode helper */
-function getMode(){
-  const checked = document.querySelector('input[name="mode"]:checked');
-  return checked ? checked.value : 'sound';
-}
-function handleModeChange(){
-  const mode = getMode();
-  if (mode === 'sound') {
-    // if we are running, ensure audio is active
-    if (isRunning) startSoundIfNeeded().catch(()=>{});
-  } else {
-    // if switching away from sound, stop audio nodes to save resources
-    stopSoundCleanup().catch(()=>{});
-  }
-}
-modeRadios.forEach(r=>r.addEventListener('change', handleModeChange));
-
-/* Timer display */
-function updateTimerDisplay(msLeft){
-  const totalSeconds = Math.max(0, Math.floor(msLeft/1000));
-  const minutes = Math.floor(totalSeconds/60);
-  const seconds = totalSeconds % 60;
-  timerEl.textContent = String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0');
-}
-
-/* Reflow helper */
-function forceReflow(el){ void el.offsetHeight; }
-
-/* Validate inputs */
-function validate(inhale,hold1,exhale,hold2,totalMin){
-  if (!isFinite(inhale) || inhale <= 0) return 'Wdech musi być większy niż 0.';
-  if (!isFinite(exhale) || exhale <= 0) return 'Wydech musi być większy niż 0.';
-  if (!isFinite(totalMin) || totalMin < 0.5) return 'Czas treningu musi być co najmniej 0.5 minuty.';
-  if (hold1 < 0 || hold2 < 0) return 'Czasy zatrzymania nie mogą być ujemne.';
-  return null;
-}
-
-/* Main breathing loop */
-async function breathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms){
-  while (isRunning && remainingMs > 0){
-    // INHALE
-    instruction.textContent = 'Wdech';
-    circle.style.transition = `transform ${inhaleMs}ms ease-in-out`;
-    forceReflow(circle);
-    circle.style.transform = 'scale(2)';
-    if (getMode() === 'sound') transitionFreq(FREQ_END, inhaleMs);
-    vibratePulseForPhase('inhale', inhaleMs);
-    if (getMode() === 'sound') setVolume(VOLUME_MAX, 0.1);
-    await wait(inhaleMs);
-    if (!isRunning) break;
-
-    // HOLD1
-    if (hold1Ms > 0){
-      instruction.textContent = 'Zatrzymaj';
-      circle.style.transition = 'none';
-      if (getMode() === 'sound') transitionFreq(FREQ_END, 0);
-      if (getMode() === 'sound') setVolume(0, 0.05);
-      vibratePulseForPhase('hold', hold1Ms);
-      await wait(hold1Ms);
-      if (!isRunning) break;
+    if (gainNode) {
+        try { gainNode.disconnect(); } catch(e) {}
+        gainNode = null;
     }
 
-    // EXHALE
-    instruction.textContent = 'Wydech';
-    circle.style.transition = `transform ${exhaleMs}ms ease-in-out`;
+    const nodes = createOscillatorAndGain();
+    oscillator = nodes.osc;
+    gainNode = nodes.gain;
+
+    // uruchom oscylator
+    oscillator.start();
+
+    // Jeśli nie jest wyciszone — ustaw docelową głośność
+    if (!isMuted) {
+        setVolume(VOLUME_MAX, FADE_MS / 1000);
+    } else {
+        setVolume(0, FADE_MS / 1000);
+    }
+
+    // upewnij się, że częstotliwość startowa jest ustawiona
+    transitionFrequency(FREQ_START, 0);
+}
+
+/* Stop dźwięku: płynne wyciszenie, zatrzymanie oscillatora i zamknięcie contextu */
+async function stopSoundAndCleanup() {
+    if (!audioContext || !gainNode) return;
+    try {
+        // płynne wyciszenie
+        setVolume(0, 0.25);
+        // poczekaj chwile, pozwól rampie zadziałać
+        await wait(300);
+        if (oscillator) {
+            try {
+                oscillator.stop();
+            } catch (e) {}
+            try { oscillator.disconnect(); } catch (e) {}
+            oscillator = null;
+        }
+        try { gainNode.disconnect(); } catch (e) {}
+        gainNode = null;
+
+        // zamknij context, aby zwolnić zasoby (np. na mobilnych)
+        if (audioContext && typeof audioContext.close === 'function') {
+            await audioContext.close();
+        }
+    } catch (e) {
+        console.warn('Cleanup audio failed', e);
+    } finally {
+        audioContext = null;
+    }
+}
+
+/* --- Sesja oddechowa i logika UI --- */
+
+function validateInputs(inhaleS, hold1S, exhaleS, hold2S, totalMinutes) {
+    if (!(isFinite(inhaleS) && inhaleS > 0)) return 'Wdech musi być > 0.';
+    if (!(isFinite(exhaleS) && exhaleS > 0)) return 'Wydech musi być > 0.';
+    if (!(isFinite(totalMinutes) && totalMinutes >= 0.5)) return 'Czas treningu musi być co najmniej 0.5 minuty.';
+    if (hold1S < 0 || hold2S < 0) return 'Czasy zatrzymania nie mogą być ujemne.';
+    return null;
+}
+
+function updateTimerDisplay(ms) {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    countdownDisplay.innerText = String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0');
+}
+
+function toggleControls(active) {
+    startBtn.disabled = active;
+    stopBtn.disabled = !active;
+    inputs.forEach(i => i.disabled = active);
+}
+
+/* Reflow helper (rozwiązanie problemu "transition: none" w niektórych przeglądarkach) */
+function forceReflow(el) {
+    // bez efektu pobocznego - tylko wymuszenie reflow
+    void el.offsetHeight;
+}
+
+/* Główna pętla sesji */
+async function runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms) {
+    while (isRunning && remainingTimeMs > 0) {
+        // WDECH
+        textDisplay.innerText = 'Wdech';
+        circle.style.transition = `transform ${inhaleMs}ms ease-in-out`;
+        // wymuszamy reflow przed zmianą transform, żeby transition pewnie zadziałała
+        forceReflow(circle);
+        circle.style.transform = 'scale(2.0)';
+        transitionFrequency(FREQ_END, inhaleMs);
+        if (!isMuted) setVolume(VOLUME_MAX, 0.1);
+        await wait(inhaleMs);
+        if (!isRunning) break;
+
+        // ZATRZYMANIE 1
+        if (hold1Ms > 0) {
+            textDisplay.innerText = 'Zatrzymaj';
+            // natychmiast zatrzymujemy rampy (krótkie wyciszenie)
+            circle.style.transition = 'none';
+            transitionFrequency(FREQ_END, 0);
+            setVolume(0, 0.05);
+            await wait(hold1Ms);
+            if (!isRunning) break;
+        }
+
+        // WYDECH
+        textDisplay.innerText = 'Wydech';
+        circle.style.transition = `transform ${exhaleMs}ms ease-in-out`;
+        forceReflow(circle);
+        circle.style.transform = 'scale(1.0)';
+        transitionFrequency(FREQ_START, exhaleMs);
+        if (!isMuted) setVolume(VOLUME_MAX, 0.1);
+        await wait(exhaleMs);
+        if (!isRunning) break;
+
+        // ZATRZYMANIE 2
+        if (hold2Ms > 0) {
+            textDisplay.innerText = 'Zatrzymaj';
+            circle.style.transition = 'none';
+            transitionFrequency(FREQ_START, 0);
+            setVolume(0, 0.05);
+            await wait(hold2Ms);
+            if (!isRunning) break;
+        }
+    }
+}
+
+/* Start treningu */
+async function startBreathing() {
+    if (isRunning) return;
+
+    // odczyt i walidacja
+    const inhaleS = parseFloat(document.getElementById('inhale').value);
+    const hold1S = parseFloat(document.getElementById('hold1').value);
+    const exhaleS = parseFloat(document.getElementById('exhale').value);
+    const hold2S = parseFloat(document.getElementById('hold2').value);
+    const totalMinutes = parseFloat(document.getElementById('totalTime').value);
+
+    const validationError = validateInputs(inhaleS, hold1S, exhaleS, hold2S, totalMinutes);
+    if (validationError) {
+        alert(validationError);
+        return;
+    }
+
+    // ustawienia czasów w ms
+    const inhaleMs = Math.round(inhaleS * 1000);
+    const hold1Ms = Math.round(hold1S * 1000);
+    const exhaleMs = Math.round(exhaleS * 1000);
+    const hold2Ms = Math.round(hold2S * 1000);
+
+    remainingTimeMs = Math.round(totalMinutes * 60 * 1000);
+
+    isRunning = true;
+    toggleControls(true);
+    textDisplay.innerText = 'Rozpoczynam...';
+
+    // przygotuj audio i włącz dźwięk (jeśli nie wyciszone)
+    try {
+        await startSound();
+    } catch (e) {
+        console.warn('Problem z dźwiękiem:', e);
+    }
+
+    // Timer sesji
+    updateTimerDisplay(remainingTimeMs);
+    sessionTimerInterval = setInterval(() => {
+        remainingTimeMs -= 1000;
+        if (remainingTimeMs < 0) remainingTimeMs = 0;
+        updateTimerDisplay(remainingTimeMs);
+        if (remainingTimeMs <= 0) {
+            clearInterval(sessionTimerInterval);
+            sessionTimerInterval = null;
+            stopBreathing('Trening zakończony! Dobra robota!');
+        }
+    }, 1000);
+
+    // Start pętli oddechowej (asynchronicznie)
+    try {
+        await runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms);
+    } catch (e) {
+        console.error('Błąd pętli oddechowej', e);
+    }
+
+    // gdy pętla zakończona naturalnie (np. isRunning = false) — jeśli still running, zatrzymaj
+    if (isRunning) {
+        stopBreathing('Gotowy?');
+    }
+}
+
+/* Stop treningu */
+async function stopBreathing(finalMessage = 'Gotowy?') {
+    if (!isRunning) {
+        // jeśli nie działała sesja, upewnij się, że czyścimy audio
+        await stopSoundAndCleanup();
+        textDisplay.innerText = finalMessage;
+        updateTimerDisplay(0);
+        return;
+    }
+
+    isRunning = false;
+    toggleControls(false);
+
+    // zatrzymaj timer
+    if (sessionTimerInterval) {
+        clearInterval(sessionTimerInterval);
+        sessionTimerInterval = null;
+    }
+
+    // animacja końcowa
+    textDisplay.innerText = finalMessage;
+    circle.style.transition = 'transform 450ms ease-out';
     forceReflow(circle);
     circle.style.transform = 'scale(1)';
-    if (getMode() === 'sound') transitionFreq(FREQ_START, exhaleMs);
-    vibratePulseForPhase('exhale', exhaleMs);
-    if (getMode() === 'sound') setVolume(VOLUME_MAX, 0.1);
-    await wait(exhaleMs);
-    if (!isRunning) break;
 
-    // HOLD2
-    if (hold2Ms > 0){
-      instruction.textContent = 'Zatrzymaj';
-      circle.style.transition = 'none';
-      if (getMode() === 'sound') transitionFreq(FREQ_START, 0);
-      if (getMode() === 'sound') setVolume(0, 0.05);
-      vibratePulseForPhase('hold', hold2Ms);
-      await wait(hold2Ms);
-      if (!isRunning) break;
+    // zatrzymaj audio i zamknij context
+    await stopSoundAndCleanup();
+
+    // zresetuj licznik jeśli kończymy "Gotowy?"
+    if (finalMessage === 'Gotowy?') updateTimerDisplay(0);
+
+    // odblokuj inputy
+    toggleControls(false);
+}
+
+/* --- Mute toggle --- */
+function updateMuteUI() {
+    if (isMuted) {
+        muteBtn.classList.add('muted');
+        muteBtn.innerText = '🔊 Włącz dźwięk';
+        muteBtn.setAttribute('aria-pressed','true');
+    } else {
+        muteBtn.classList.remove('muted');
+        muteBtn.innerText = '🔇 Wycisz dźwięk';
+        muteBtn.setAttribute('aria-pressed','false');
     }
-  }
 }
 
-/* Start/Stop handlers */
-async function startSession(){
-  if (isRunning) return;
-
-  const inhale = parseFloat(inhaleIn.value);
-  const hold1 = parseFloat(hold1In.value);
-  const exhale = parseFloat(exhaleIn.value);
-  const hold2 = parseFloat(hold2In.value);
-  const totalMin = parseFloat(totalIn.value);
-
-  const err = validate(inhale, hold1, exhale, hold2, totalMin);
-  if (err){ alert(err); return; }
-
-  const inhaleMs = ms(inhale), hold1Ms = ms(hold1), exhaleMs = ms(exhale), hold2Ms = ms(hold2);
-  remainingMs = Math.round(totalMin * 60 * 1000);
-
-  isRunning = true;
-  startBtn.disabled = true;
-  stopBtn.disabled = false;
-  // disable inputs except preset selection & mode (user can still change preset -> becomes custom)
-  [inhaleIn,hold1In,exhaleIn,hold2In,totalIn].forEach(i=>i.disabled=true);
-
-  instruction.textContent = 'Rozpoczynam...';
-  updateTimerDisplay(remainingMs);
-
-  // prepare audio if needed
-  try { await startSoundIfNeeded(); } catch(e){ console.warn('sound start failed', e); }
-
-  // session countdown
-  sessionInterval = setInterval(()=>{
-    remainingMs -= 1000;
-    if (remainingMs < 0) remainingMs = 0;
-    updateTimerDisplay(remainingMs);
-    if (remainingMs <= 0){
-      clearInterval(sessionInterval); sessionInterval = null;
-      stopSession('Trening zakończony! Dobra robota!');
+function toggleMute() {
+    isMuted = !isMuted;
+    updateMuteUI();
+    if (!gainNode) return;
+    // jeżeli sesja trwa — przywróć/wycisz z małym fade
+    if (isMuted) {
+        setVolume(0, 0.15);
+    } else {
+        // przywracamy głośność tylko kiedy sesja działa
+        setVolume(isRunning ? VOLUME_MAX : 0, 0.2);
     }
-  },1000);
-
-  // run loop
-  try {
-    await breathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms);
-  } catch (e){ console.error('loop error', e); }
-
-  // if finished normally and still running => stop
-  if (isRunning) await stopSession('Gotowy?');
 }
 
-async function stopSession(finalText='Gotowy?'){
-  if (!isRunning){
-    // ensure audio cleaned up
-    await stopSoundCleanup();
-    instruction.textContent = finalText;
-    updateTimerDisplay(0);
-    return;
-  }
-  isRunning = false;
-  startBtn.disabled = false;
-  stopBtn.disabled = true;
-  if (sessionInterval){ clearInterval(sessionInterval); sessionInterval=null; }
-  instruction.textContent = finalText;
-  circle.style.transition = 'transform 450ms ease-out';
-  forceReflow(circle);
-  circle.style.transform = 'scale(1)';
-
-  await stopSoundCleanup();
-
-  // re-enable inputs
-  [inhaleIn,hold1In,exhaleIn,hold2In,totalIn].forEach(i=>i.disabled=false);
-  updateTimerDisplay(0);
-}
-
-/* UI binding */
-startBtn.addEventListener('click', ()=>startSession().catch(e=>console.error(e)));
-stopBtn.addEventListener('click', ()=>stopSession('Gotowy?').catch(e=>console.error(e)));
-presetSel.addEventListener('change', ()=>{ /* handled above */ });
-
-// if user edits -> preset->custom (already added)
-[in inhaleIn, hold1In, exhaleIn, hold2In, totalIn] = [inhaleIn, hold1In, exhaleIn, hold2In, totalIn]; // no-op to satisfy some linters
-
-// keyboard: Enter start, Esc stop
-document.addEventListener('keydown', (e)=>{
-  if (e.key === 'Enter' && !startBtn.disabled) startBtn.click();
-  if (e.key === 'Escape' && !stopBtn.disabled) stopBtn.click();
+/* --- Eventy UI --- */
+startBtn.addEventListener('click', () => {
+    // Start wymaga gestu użytkownika aby w wielu przeglądarkach AudioContext wznowił się
+    startBreathing().catch(e => console.error(e));
 });
 
-// init UI: set default preset to box for start? User said "na start 2." — we use 2 presets available and default to 'custom' with UI filled
-(function init(){
-  // Start with preset 'custom' but with values for Box 4-4-4-4 pre-filled to keep previous behavior:
-  // The user requested start with 2 presets — we provide two options in dropdown; default leave as custom and keep current inputs.
-  presetSel.value = 'custom';
-  // show vibration support
-  vibSupportEl.style.opacity = hasVibration ? '1' : '0.7';
-})();
+stopBtn.addEventListener('click', () => {
+    stopBreathing('Gotowy?').catch(e => console.error(e));
+});
 
-/* When mode changes mid-session, reflect immediate effect */
-modeRadios.forEach(r => r.addEventListener('change', () => {
-  handleModeChange();
-}));
+muteBtn.addEventListener('click', () => {
+    // mute działa niezależnie od aktywności sesji
+    toggleMute();
+});
 
-// ensure handleModeChange reflects initial mode
-handleModeChange();
+/* Enter = start, Esc = stop (dla lepszego UX) */
+document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') {
+        if (!isRunning && !startBtn.disabled) startBtn.click();
+    } else if (ev.key === 'Escape') {
+        if (isRunning && !stopBtn.disabled) stopBtn.click();
+    }
+});
+
+/* Przy starcie strony: uaktualnij wyświetlacz czasu z wartości inputa */
+document.addEventListener('DOMContentLoaded', () => {
+    const totalMinutes = parseFloat(document.getElementById('totalTime').value) || 0;
+    const initialMs = Math.round(Math.max(0.5, totalMinutes) * 60 * 1000);
+    updateTimerDisplay(initialMs);
+    updateMuteUI();
+});
+
+/* Ochrona przed przypadkowym zamknięciem strony podczas aktywnej sesji */
+window.addEventListener('beforeunload', (e) => {
+    if (isRunning) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
 </script>
 </body>
 </html>

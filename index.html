@@ -219,8 +219,7 @@
             <button id="mute-btn" onclick="toggleMute()">🔇 Wycisz Dźwięk</button>
         </div>
     </div>
-
-    <script>
+<script>
     let isRunning = false;
     let sessionTimerInterval; 
     let remainingTime; 
@@ -252,7 +251,6 @@
     function initializeAudio() {
         if (audioContext) return;
         
-        // Musi być wywołane PO pierwszej interakcji użytkownika (np. kliknięciu Start)
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         
         oscillator = audioContext.createOscillator();
@@ -265,17 +263,14 @@
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
 
-        // KLUCZOWA ZMIANA: Uruchamiamy oscylator raz i pozostawiamy w tle,
-        // a głośność kontrolujemy za pomocą gainNode.
         oscillator.start();
     }
     
     function startSound() {
         initializeAudio();
         
-        // Włącz głośność, jeśli nie jest wyciszone.
+        // Włącz głośność, jeśli nie jest wyciszone, z płynnym wejściem
         if (!isMuted) {
-            // Użycie FADE_TIME do płynnego wejścia
             setVolume(VOLUME_MAX, FADE_TIME); 
         }
         oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
@@ -283,20 +278,19 @@
 
     function stopSound() {
         if (gainNode) {
-            // Wygaszaj do zera, używając FADE_TIME
+            // Wygaszaj do zera, używając FADE_TIME (bez pyknięć)
             setVolume(VOLUME_MIN, FADE_TIME);
         }
     }
     
     function toggleMute() {
-        // Musimy zainicjować AudioContext przy pierwszym kliknięciu
         initializeAudio(); 
         
         isMuted = !isMuted;
         if (isMuted) {
             muteBtn.innerText = '🔊 Włącz Dźwięk';
             muteBtn.classList.add('muted');
-            setVolume(VOLUME_MIN, 0.05); // Wycisz natychmiast
+            setVolume(VOLUME_MIN, 0.05); 
         } else {
             muteBtn.innerText = '🔇 Wycisz Dźwięk';
             muteBtn.classList.remove('muted');
@@ -306,14 +300,12 @@
         }
     }
     
-    // Zmieniona funkcja do kontroli głośności
     function setVolume(targetVolume, durationS) {
         if (gainNode) {
             gainNode.gain.cancelScheduledValues(audioContext.currentTime);
             
-            // Jeśli targetVolume jest bliskie zera, użyj zanikania wykładniczego
             if (targetVolume <= VOLUME_MIN) {
-                // Zanikanie do wyciszenia (gwarantuje, że nie będzie kliknięcia)
+                // Zanikanie do wyciszenia (gładkie wyłączenie)
                 gainNode.gain.exponentialRampToValueAtTime(VOLUME_MIN, audioContext.currentTime + durationS);
             } else {
                 // Wzrost do głośności docelowej
@@ -329,8 +321,10 @@
         oscillator.frequency.cancelScheduledValues(audioContext.currentTime);
         
         if (durationS > 0) {
+            // Płynna zmiana częstotliwości
             oscillator.frequency.linearRampToValueAtTime(targetFreq, audioContext.currentTime + durationS);
         } else {
+            // Natychmiastowe ustawienie częstotliwości (dla faz zatrzymania)
              oscillator.frequency.setValueAtTime(targetFreq, audioContext.currentTime);
         }
     }
@@ -358,9 +352,7 @@
         toggleControls(true);
         startSound(); 
 
-        // DODATKOWE OPÓŹNIENIE STARTU: Daj Audio Contextowi czas na uruchomienie
-        // Jest to prewencyjna miara przeciwko pyknięciom startowym na niektórych urządzeniach.
-        await wait(50); 
+        await wait(50); // Opóźnienie stabilizujące Audio Context
         
         updateTimerDisplay(remainingTime, countdownDisplay);
 
@@ -382,22 +374,24 @@
             if (remainingTime <= 0) {
                 break;
             }
-
+            
+            // UPEWNIJ SIĘ, ŻE DŹWIĘK JEST AKTYWNY (Z POMINIĘCIEM MUTED)
+            if (!isMuted) setVolume(VOLUME_MAX, 0.05); 
+            
             // 1. WDECH: Częstotliwość rośnie
             textDisplay.innerText = "Wdech";
             circle.style.transition = `transform ${inhaleTime}ms ease-in-out`;
             circle.style.transform = "scale(2.0)"; 
-            transitionFrequency(FREQ_END, inhaleTime); 
-            if (!isMuted) setVolume(VOLUME_MAX, 0.05); 
+            transitionFrequency(FREQ_END, inhaleTime); // Wzrost do najwyższej częstotliwości
             await wait(inhaleTime);
             if (!isRunning) break;
 
-            // 2. ZATRZYMANIE 1: Wycisz dźwięk
+            // 2. ZATRZYMANIE 1: Częstotliwość stała (wysoka) - Brak wyciszenia!
             if (hold1Time > 0) {
                 textDisplay.innerText = "Zatrzymaj";
                 circle.style.transition = "none"; 
-                transitionFrequency(FREQ_END, 0); 
-                setVolume(VOLUME_MIN, 0.05); // Płynne wyciszenie
+                transitionFrequency(FREQ_END, 0); // Utrzymanie najwyższej częstotliwości
+                // setVolume(VOLUME_MIN, 0.05); <-- USUNIĘTO WYCISZENIE
                 await wait(hold1Time);
                 if (!isRunning) break;
             }
@@ -406,27 +400,30 @@
             textDisplay.innerText = "Wydech";
             circle.style.transition = `transform ${exhaleTime}ms ease-in-out`;
             circle.style.transform = "scale(1.0)"; 
-            transitionFrequency(FREQ_START, exhaleTime); 
-            if (!isMuted) setVolume(VOLUME_MAX, 0.05); // Włącz głośność
+            transitionFrequency(FREQ_START, exhaleTime); // Spadek do najniższej częstotliwości
+            // if (!isMuted) setVolume(VOLUME_MAX, 0.05); <-- USUNIĘTO PONOWNE WŁĄCZENIE (jest już włączone na początku pętli)
             await wait(exhaleTime);
             if (!isRunning) break;
 
-            // 4. ZATRZYMANIE 2: Wycisz dźwięk
+            // 4. ZATRZYMANIE 2: Częstotliwość stała (niska) - Brak wyciszenia!
             if (hold2Time > 0) {
                 textDisplay.innerText = "Zatrzymaj";
                 circle.style.transition = "none";
-                transitionFrequency(FREQ_START, 0); 
-                setVolume(VOLUME_MIN, 0.05); // Płynne wyciszenie
+                transitionFrequency(FREQ_START, 0); // Utrzymanie najniższej częstotliwości
+                // setVolume(VOLUME_MIN, 0.05); <-- USUNIĘTO WYCISZENIE
                 await wait(hold2Time);
                 if (!isRunning) break;
             }
         }
+        
+        // Zapewnienie, że po wyjściu z pętli dźwięk się wyciszy.
+        stopSound();
     }
 
     function stopBreathing(finalMessage = "Gotowy?") {
         isRunning = false;
         
-        stopSound(); 
+        stopSound(); // Zawsze wyciszamy przy stop
         
         clearInterval(sessionTimerInterval);
         
@@ -441,8 +438,6 @@
              document.getElementById('session-countdown').innerText = '00:00';
         }
     }
-    
-    // ... (Reszta funkcji JavaScript pozostaje bez zmian) ...
     
     function updateTimerDisplay(ms, displayElement) {
         const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -465,7 +460,11 @@
         const totalMinutes = parseFloat(document.getElementById('totalTime').value);
         const initialTimeMs = totalMinutes * 60 * 1000;
         updateTimerDisplay(initialTimeMs, countdownDisplay);
+        // Inicjalizacja Audio Contextu, ale bez uruchamiania dźwięku,
+        // co minimalizuje szanse na pykanie przy pierwszym kliknięciu Start.
+        initializeAudio(); 
     });
-    </script>
+
+</script>
 </body>
 </html>

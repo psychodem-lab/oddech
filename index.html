@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trening Oddechowy z Czasem</title>
+    <title>Trening Oddechowy z Dźwiękiem</title>
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -16,74 +16,69 @@
 
         body {
             margin: 0;
-            padding: 15px; /* ZMNIEJSZONY PADDING */
+            padding: 15px; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between; /* ZMIANA: Rozłożenie elementów na całą wysokość */
+            justify-content: space-between;
             min-height: 100vh;
-            overflow: hidden; /* ZAPOBIEGANIE PRZEWIJANIU */
+            overflow: hidden;
             text-align: center;
         }
 
-        /* Kontener wizualizacji */
         .visualizer-container {
             position: relative;
-            width: 280px; /* ZMNIEJSZONY */
-            height: 280px; /* ZMNIEJSZONY */
+            width: 280px;
+            height: 280px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 25px; /* ZMNIEJSZONY MARGIN */
-            flex-shrink: 0; /* Zapobiega zmniejszaniu się kontenera w pionie */
+            margin-bottom: 25px;
+            flex-shrink: 0;
         }
 
-        /* Koło oddechowe */
         .breathing-circle {
-            width: 140px; /* ZMNIEJSZONY */
-            height: 140px; /* ZMNIEJSZONY */
+            width: 140px;
+            height: 140px;
             background-color: var(--circle-color);
             border-radius: 50%;
             position: absolute;
             z-index: 1;
             opacity: 0.8;
-            box-shadow: 0 0 15px rgba(74, 144, 226, 0.4); /* ZMNIEJSZONY CIEŃ */
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.4);
             transform: scale(1); 
         }
 
-        /* Tekst instrukcji */
         .instruction-text {
             position: relative;
             z-index: 2;
-            font-size: 1.3rem; /* ZMNIEJSZONY */
+            font-size: 1.3rem;
             font-weight: bold;
             color: white;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.2); /* ZMNIEJSZONY CIEŃ */
+            text-shadow: 0 1px 3px rgba(0,0,0,0.2);
             pointer-events: none;
         }
 
-        /* Panel sterowania */
         .controls {
             background: var(--panel-bg);
-            padding: 15px; /* ZMNIEJSZONY PADDING */
-            border-radius: 12px; /* ZMNIEJSZONY RADIUS */
-            box-shadow: 0 3px 10px rgba(0,0,0,0.08); /* ZMNIEJSZONY CIEŃ */
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
             display: flex;
             flex-direction: column;
-            gap: 12px; /* ZMNIEJSZONY GAP */
+            gap: 12px;
             width: 90%;
-            max-width: 380px; /* ZMNIEJSZONY MAX-WIDTH */
-            flex-shrink: 0; /* Zapobiega zmniejszaniu się kontenera w pionie */
+            max-width: 380px;
+            flex-shrink: 0;
         }
 
-        /* Układ mniejszych inputów */
         .inputs-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px; /* ZMNIEJSZONY GAP */
+            gap: 8px;
         }
 
         .input-group {
@@ -93,58 +88,55 @@
         }
 
         .input-group label {
-            font-size: 0.75rem; /* ZMNIEJSZONA CZCIONKA */
-            margin-bottom: 2px; /* ZMNIEJSZONY MARGIN */
+            font-size: 0.75rem;
+            margin-bottom: 2px;
             color: #666;
             text-align: center;
         }
 
-        /* Wizualne zmniejszenie ramki inputu */
         .input-group input {
-            padding: 5px; /* ZMNIEJSZONY PADDING */
+            padding: 5px;
             border: 1px solid #ddd;
-            border-radius: 5px; /* ZMNIEJSZONY RADIUS */
-            font-size: 0.85rem; /* ZMNIEJSZONA CZCIONKA */
-            max-width: 70px; /* ZMNIEJSZONY MAX-WIDTH */
+            border-radius: 5px;
+            font-size: 0.85rem;
+            max-width: 70px;
             text-align: center;
         }
         
-        /* Input dla czasu treningu zajmuje całą szerokość */
         .input-group.total-time-input {
             grid-column: span 2;
-            margin-top: 8px; /* ZMNIEJSZONY MARGIN */
+            margin-top: 8px;
         }
         .input-group.total-time-input input {
-            max-width: 90px; /* ZMNIEJSZONY MAX-WIDTH */
+            max-width: 90px;
         }
 
-        /* Wskaźnik całkowitego czasu sesji */
         .session-timer {
             text-align: center;
-            font-size: 1rem; /* ZMNIEJSZONY */
+            font-size: 1rem;
             font-weight: 500;
-            padding: 8px 0; /* ZMNIEJSZONY PADDING */
+            padding: 8px 0;
             border-top: 1px solid #eee;
-            margin-top: 12px; /* ZMNIEJSZONY MARGIN */
+            margin-top: 12px;
         }
         #session-countdown {
             font-weight: bold;
-            font-size: 1.2rem; /* ZMNIEJSZONY */
+            font-size: 1.2rem;
             color: var(--circle-color);
         }
 
         .buttons {
             display: flex;
-            gap: 8px; /* ZMNIEJSZONY GAP */
-            margin-top: 8px; /* ZMNIEJSZONY MARGIN */
+            gap: 8px;
+            margin-top: 8px;
         }
 
         button {
             flex: 1;
-            padding: 10px; /* ZMNIEJSZONY PADDING */
+            padding: 10px;
             border: none;
-            border-radius: 7px; /* ZMNIEJSZONY RADIUS */
-            font-size: 0.95rem; /* ZMNIEJSZONY */
+            border-radius: 7px;
+            font-size: 0.95rem;
             cursor: pointer;
             font-weight: bold;
             transition: background 0.2s;
@@ -216,6 +208,14 @@
         let sessionTimerInterval; 
         let remainingTime; 
         
+        // --- Web Audio API Variables ---
+        let audioContext = null;
+        let oscillator = null;
+        let gainNode = null;
+        const FREQ_START = 220; // Niska częstotliwość (A3)
+        const FREQ_END = 440; // Wysoka częstotliwość (A4)
+        // -------------------------------
+        
         const circle = document.getElementById('circle');
         const textDisplay = document.getElementById('text');
         const startBtn = document.getElementById('start-btn');
@@ -225,9 +225,68 @@
 
         const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+        // --- Funkcje Dźwiękowe ---
+
+        function startSound() {
+            // Kontekst audio musi być utworzony po interakcji użytkownika
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Utwórz oscylator (generator tonu)
+                oscillator = audioContext.createOscillator();
+                oscillator.type = 'sine'; // Użyj fali sinusoidalnej
+                oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
+
+                // Utwórz GainNode (kontrola głośności)
+                gainNode = audioContext.createGain();
+                gainNode.gain.setValueAtTime(0.0, audioContext.currentTime); // Start cicho
+                
+                // Połącz: Oscillator -> Gain -> Destination (głośniki)
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // Uruchom generator (działa w tle, ale jest cichy)
+                oscillator.start();
+            }
+            
+            // Rozpocznij od cicha i zwiększ głośność
+            gainNode.gain.cancelAndHoldAtTime(audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.5); // Powoli zwiększ do 0.3
+            oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime); // Ustaw na początkową częstotliwość
+        }
+
+        function stopSound() {
+            if (gainNode) {
+                // Stopniowo wycisz dźwięk
+                gainNode.gain.cancelAndHoldAtTime(audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.0, audioContext.currentTime + 0.5);
+            }
+        }
+        
+        function transitionFrequency(targetFreq, durationMs) {
+            if (!oscillator) return;
+            const durationS = durationMs / 1000;
+            
+            oscillator.frequency.cancelAndHoldAtTime(audioContext.currentTime);
+            
+            if (durationS > 0) {
+                 // Płynna zmiana częstotliwości (wysokości tonu)
+                oscillator.frequency.linearRampToValueAtTime(targetFreq, audioContext.currentTime + durationS);
+            } else {
+                 // Natychmiastowe ustawienie częstotliwości (dla zatrzymania)
+                 oscillator.frequency.setValueAtTime(targetFreq, audioContext.currentTime);
+            }
+        }
+
+        // --- Główna logika ---
+
         async function startBreathing() {
             if (isRunning) return;
             
+            // START DŹWIĘKU I KONTEKSTU AUDIO
+            startSound(); 
+            
+            // ... (Pobieranie i walidacja czasów) ...
             const inhaleTime = parseFloat(document.getElementById('inhale').value) * 1000;
             const hold1Time = parseFloat(document.getElementById('hold1').value) * 1000;
             const exhaleTime = parseFloat(document.getElementById('exhale').value) * 1000;
@@ -238,6 +297,7 @@
 
             if (inhaleTime <= 0 || exhaleTime <= 0 || totalMinutes <= 0) {
                 alert("Czas wdechu, wydechu i treningu musi być większy niż 0.");
+                stopSound();
                 return;
             }
 
@@ -259,45 +319,44 @@
             runBreathingLoop(inhaleTime, hold1Time, exhaleTime, hold2Time);
         }
 
-        function updateTimerDisplay(ms, displayElement) {
-            const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            
-            const formattedMinutes = String(minutes).padStart(2, '0');
-            const formattedSeconds = String(seconds).padStart(2, '0');
-            
-            displayElement.innerText = `${formattedMinutes}:${formattedSeconds}`;
-        }
-        
+        // ... (updateTimerDisplay, wait, toggleControls zostają takie same) ...
+
         async function runBreathingLoop(inhaleTime, hold1Time, exhaleTime, hold2Time) {
             while (isRunning) {
                 if (remainingTime <= 0) {
                     break;
                 }
 
+                // 1. WDECH: Częstotliwość rośnie
                 textDisplay.innerText = "Wdech";
                 circle.style.transition = `transform ${inhaleTime}ms ease-in-out`;
                 circle.style.transform = "scale(2.0)"; 
+                transitionFrequency(FREQ_END, inhaleTime); // Płynnie do wyższej częstotliwości
                 await wait(inhaleTime);
                 if (!isRunning) break;
 
+                // 2. ZATRZYMANIE 1: Częstotliwość stała (wysoka)
                 if (hold1Time > 0) {
                     textDisplay.innerText = "Zatrzymaj";
                     circle.style.transition = "none"; 
+                    transitionFrequency(FREQ_END, 0); // Utrzymaj stałą częstotliwość
                     await wait(hold1Time);
                     if (!isRunning) break;
                 }
 
+                // 3. WYDECH: Częstotliwość maleje
                 textDisplay.innerText = "Wydech";
                 circle.style.transition = `transform ${exhaleTime}ms ease-in-out`;
                 circle.style.transform = "scale(1.0)"; 
+                transitionFrequency(FREQ_START, exhaleTime); // Płynnie do niższej/początkowej częstotliwości
                 await wait(exhaleTime);
                 if (!isRunning) break;
 
+                // 4. ZATRZYMANIE 2: Częstotliwość stała (niska)
                 if (hold2Time > 0) {
                     textDisplay.innerText = "Zatrzymaj";
                     circle.style.transition = "none";
+                    transitionFrequency(FREQ_START, 0); // Utrzymaj stałą częstotliwość
                     await wait(hold2Time);
                     if (!isRunning) break;
                 }
@@ -306,6 +365,9 @@
 
         function stopBreathing(finalMessage = "Gotowy?") {
             isRunning = false;
+            
+            // ZATRZYMANIE DŹWIĘKU
+            stopSound();
             
             clearInterval(sessionTimerInterval);
             
@@ -320,18 +382,32 @@
                  document.getElementById('session-countdown').innerText = '00:00';
             }
         }
-
+        
+        // ... (Reszta funkcji JavaScript) ...
+        
+        function updateTimerDisplay(ms, displayElement) {
+            const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(seconds).padStart(2, '0');
+            
+            displayElement.innerText = `${formattedMinutes}:${formattedSeconds}`;
+        }
+        
         function toggleControls(active) {
             startBtn.disabled = active;
             stopBtn.disabled = !active;
             inputs.forEach(input => input.disabled = active);
         }
-        
+
         document.addEventListener('DOMContentLoaded', () => {
             const totalMinutes = parseFloat(document.getElementById('totalTime').value);
             const initialTimeMs = totalMinutes * 60 * 1000;
             updateTimerDisplay(initialTimeMs, countdownDisplay);
         });
+
     </script>
 </body>
 </html>

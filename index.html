@@ -14,7 +14,7 @@
             --danger-color: #e74c3c;
         }
 
-        body {
+     body {
             margin: 0;
             padding: 20px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -23,9 +23,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start; /* ZMIANA: Wyrównanie do góry */
             min-height: 100vh;
-            overflow: hidden;
+            overflow-y: scroll; /* DODAŁEM: Umożliwia przewijanie w pionie */
+            /* overflow-y: hidden; (USUNIĘTE/ZMIENIONE na scroll) */
             text-align: center;
         }
 

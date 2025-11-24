@@ -230,11 +230,11 @@
     let audioContext = null;
     let oscillator = null;
     let gainNode = null;
-    const FREQ_START = 115; 
+    const FREQ_START = 220; 
     const FREQ_END = 330; 
-    const VOLUME_MAX = 0.2; 
-    const VOLUME_MIN = 0.01; // Używamy bardzo małej wartości zamiast idealnego 0, aby ExponentialRamp działał poprawnie
-    const FADE_TIME = 0.05; // Czas zanikania w sekundach (50ms)
+    const VOLUME_MAX = 0.3; 
+    const VOLUME_MIN = 0.0001; 
+    const FADE_TIME = 0.05; 
     // -------------------------------
     
     const circle = document.getElementById('circle');
@@ -249,26 +249,33 @@
 
     // --- Funkcje Dźwiękowe ---
 
-    function startSound() {
-        if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            oscillator = audioContext.createOscillator();
-            oscillator.type = 'sine'; 
-            oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
-
-            gainNode = audioContext.createGain();
-            // Inicjacja głośności blisko zera, aby użyć exponentialRamp
-            gainNode.gain.setValueAtTime(VOLUME_MIN, audioContext.currentTime); 
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.start();
-        }
+    function initializeAudio() {
+        if (audioContext) return;
         
-        // Zwiększ głośność, jeśli nie jest wyciszone, używając FADE_TIME
+        // Musi być wywołane PO pierwszej interakcji użytkownika (np. kliknięciu Start)
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        oscillator = audioContext.createOscillator();
+        oscillator.type = 'sine'; 
+        oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
+
+        gainNode = audioContext.createGain();
+        gainNode.gain.setValueAtTime(VOLUME_MIN, audioContext.currentTime); 
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        // KLUCZOWA ZMIANA: Uruchamiamy oscylator raz i pozostawiamy w tle,
+        // a głośność kontrolujemy za pomocą gainNode.
+        oscillator.start();
+    }
+    
+    function startSound() {
+        initializeAudio();
+        
+        // Włącz głośność, jeśli nie jest wyciszone.
         if (!isMuted) {
+            // Użycie FADE_TIME do płynnego wejścia
             setVolume(VOLUME_MAX, FADE_TIME); 
         }
         oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
@@ -282,6 +289,9 @@
     }
     
     function toggleMute() {
+        // Musimy zainicjować AudioContext przy pierwszym kliknięciu
+        initializeAudio(); 
+        
         isMuted = !isMuted;
         if (isMuted) {
             muteBtn.innerText = '🔊 Włącz Dźwięk';
@@ -296,18 +306,18 @@
         }
     }
     
-    // ZMIENIONA FUNKCJA KONTROLI GŁOŚNOŚCI
+    // Zmieniona funkcja do kontroli głośności
     function setVolume(targetVolume, durationS) {
         if (gainNode) {
             gainNode.gain.cancelScheduledValues(audioContext.currentTime);
             
-            // Użycie exponentialRamp, który jest lepszy do głośności
-            if (targetVolume > VOLUME_MIN) {
-                // Od głośności bazowej do docelowej
-                gainNode.gain.linearRampToValueAtTime(targetVolume, audioContext.currentTime + durationS);
-            } else {
+            // Jeśli targetVolume jest bliskie zera, użyj zanikania wykładniczego
+            if (targetVolume <= VOLUME_MIN) {
                 // Zanikanie do wyciszenia (gwarantuje, że nie będzie kliknięcia)
                 gainNode.gain.exponentialRampToValueAtTime(VOLUME_MIN, audioContext.currentTime + durationS);
+            } else {
+                // Wzrost do głośności docelowej
+                gainNode.gain.linearRampToValueAtTime(targetVolume, audioContext.currentTime + durationS);
             }
         }
     }
@@ -330,7 +340,6 @@
     async function startBreathing() {
         if (isRunning) return;
         
-        // ... (Pobieranie i walidacja czasów) ...
         const inhaleTime = parseFloat(document.getElementById('inhale').value) * 1000;
         const hold1Time = parseFloat(document.getElementById('hold1').value) * 1000;
         const exhaleTime = parseFloat(document.getElementById('exhale').value) * 1000;
@@ -347,8 +356,12 @@
 
         isRunning = true;
         toggleControls(true);
-        startSound(); // Włącz dźwięk po weryfikacji
+        startSound(); 
 
+        // DODATKOWE OPÓŹNIENIE STARTU: Daj Audio Contextowi czas na uruchomienie
+        // Jest to prewencyjna miara przeciwko pyknięciom startowym na niektórych urządzeniach.
+        await wait(50); 
+        
         updateTimerDisplay(remainingTime, countdownDisplay);
 
         sessionTimerInterval = setInterval(() => {
@@ -375,7 +388,7 @@
             circle.style.transition = `transform ${inhaleTime}ms ease-in-out`;
             circle.style.transform = "scale(2.0)"; 
             transitionFrequency(FREQ_END, inhaleTime); 
-            if (!isMuted) setVolume(VOLUME_MAX, 0.05); // Włącz głośność
+            if (!isMuted) setVolume(VOLUME_MAX, 0.05); 
             await wait(inhaleTime);
             if (!isRunning) break;
 

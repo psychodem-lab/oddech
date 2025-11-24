@@ -6,225 +6,224 @@
 <title>Trening Oddechowy</title>
 <link rel="shortcut icon" type="image/png" href="favicon.png" />
 <style>
-    :root{
-        --bg-color:#f0f4f8;
-        --circle-color:#4a90e2;
-        --text-color:#333;
-        --panel-bg:#ffffff;
-        --success-color:#2ecc71;
-        --danger-color:#e74c3c;
-        --mute-color:#f39c12;
-        --card-shadow: 0 3px 10px rgba(0,0,0,0.08);
-        --radius:12px;
-    }
+    :root{
+        --bg-color:#f0f4f8;
+        --circle-color:#4a90e2;
+        --text-color:#333;
+        --panel-bg:#ffffff;
+        --success-color:#2ecc71;
+        --danger-color:#e74c3c;
+        --mute-color:#f39c12;
+        --card-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        --radius:12px;
+    }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-        margin:0;
-        padding:18px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background:var(--bg-color);
-        color:var(--text-color);
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        justify-content:flex-start;
-        min-height:100vh;
-        overflow-y:auto;
-        text-align:center;
-    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+        margin:0;
+        padding:18px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background:var(--bg-color);
+        color:var(--text-color);
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:flex-start;
+        min-height:100vh;
+        overflow-y:auto;
+        text-align:center;
+    }
 
-    .container{
-        width:100%;
-        max-width:920px;
-        display:flex;
-        gap:20px;
-        align-items:flex-start;
-        justify-content:center;
-        flex-wrap:wrap;
-    }
+    .container{
+        width:100%;
+        max-width:920px;
+        display:flex;
+        gap:20px;
+        align-items:flex-start;
+        justify-content:center;
+        flex-wrap:wrap;
+    }
 
-    .visualizer {
-        background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.85));
-        border-radius:var(--radius);
-        padding:20px;
-        box-shadow:var(--card-shadow);
-        display:flex;
-        flex-direction:column;
-        gap:14px;
-        align-items:center;
-        width:320px;
-        flex-shrink:0;
-    }
+    .visualizer {
+        background:linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.85));
+        border-radius:var(--radius);
+        padding:20px;
+        box-shadow:var(--card-shadow);
+        display:flex;
+        flex-direction:column;
+        gap:14px;
+        align-items:center;
+        width:320px;
+        flex-shrink:0;
+    }
 
-    .visualizer-container{
-        position:relative;
-        width:280px;
-        height:280px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-    }
+    .visualizer-container{
+        position:relative;
+        width:280px;
+        height:280px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+    }
 
-    .breathing-circle{
-        width:140px;
-        height:140px;
-        background-color:var(--circle-color);
-        border-radius:50%;
-        position:absolute;
-        z-index:1;
-        opacity:0.95;
-        box-shadow:0 0 25px rgba(74,144,226,0.35);
-        transform:scale(1);
-        transition:transform 600ms ease-in-out;
-    }
+    .breathing-circle{
+        width:140px;
+        height:140px;
+        background-color:var(--circle-color);
+        border-radius:50%;
+        position:absolute;
+        z-index:1;
+        opacity:0.95;
+        box-shadow:0 0 25px rgba(74,144,226,0.35);
+        transform:scale(1);
+        transition:transform 600ms ease-in-out;
+    }
 
-    .instruction-text{
-        position:relative;
-        z-index:2;
-        font-size:1.25rem;
-        font-weight:700;
-        color:white;
-        text-shadow:0 2px 6px rgba(0,0,0,0.25);
-        pointer-events:none;
-        user-select:none;
-    }
+    .instruction-text{
+        position:relative;
+        z-index:2;
+        font-size:1.25rem;
+        font-weight:700;
+        color:white;
+        text-shadow:0 2px 6px rgba(0,0,0,0.25);
+        pointer-events:none;
+        user-select:none;
+    }
 
-    .controls{
-        background:var(--panel-bg);
-        padding:16px;
-        border-radius:var(--radius);
-        box-shadow:var(--card-shadow);
-        display:flex;
-        flex-direction:column;
-        gap:12px;
-        width:320px;
-        flex-shrink:0;
-    }
+    .controls{
+        background:var(--panel-bg);
+        padding:16px;
+        border-radius:var(--radius);
+        box-shadow:var(--card-shadow);
+        display:flex;
+        flex-direction:column;
+        gap:12px;
+        width:320px;
+        flex-shrink:0;
+    }
 
-    .inputs-grid{
-        display:grid;
-        grid-template-columns:1fr 1fr;
-        gap:10px;
-    }
+    .inputs-grid{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+    }
 
-    .input-group{ display:flex; flex-direction:column; align-items:center; }
-    .input-group label{ font-size:0.78rem; margin-bottom:4px; color:#666; text-align:center; }
-    .input-group input{
-        width:100%;
-        max-width:120px;
-        padding:8px 6px;
-        border:1px solid #ddd;
-        border-radius:8px;
-        font-size:0.95rem;
-        text-align:center;
-    }
+    .input-group{ display:flex; flex-direction:column; align-items:center; }
+    .input-group label{ font-size:0.78rem; margin-bottom:4px; color:#666; text-align:center; }
+    .input-group input{
+        width:100%;
+        max-width:120px;
+        padding:8px 6px;
+        border:1px solid #ddd;
+        border-radius:8px;
+        font-size:0.95rem;
+        text-align:center;
+    }
 
-    .input-group.total-time-input{ grid-column:span 2; }
+    .input-group.total-time-input{ grid-column:span 2; }
 
-    .session-timer{ font-weight:600; color:#222; }
+    .session-timer{ font-weight:600; color:#222; }
 
-    .buttons{ display:flex; gap:8px; }
-    button{
-        flex:1;
-        padding:10px;
-        border:none;
-        border-radius:8px;
-        font-size:0.95rem;
-        cursor:pointer;
-        font-weight:700;
-        transition:background 0.15s ease;
-    }
-    #start-btn{ background-color:var(--success-color); color:white; }
-    #start-btn:hover{ background-color:#27ae60; }
-    #stop-btn{ background-color:var(--danger-color); color:white; }
-    #stop-btn:hover{ background-color:#c0392b; }
-    #mute-btn{
-        background-color:var(--mute-color);
-        color:white;
-        padding:10px;
-        border-radius:8px;
-    }
-    #mute-btn.muted{ background:#95a5a6; }
-    button:disabled{ opacity:0.55; cursor:not-allowed; }
+    .buttons{ display:flex; gap:8px; }
+    button{
+        flex:1;
+        padding:10px;
+        border:none;
+        border-radius:8px;
+        font-size:0.95rem;
+        cursor:pointer;
+        font-weight:700;
+        transition:background 0.15s ease;
+    }
+    #start-btn{ background-color:var(--success-color); color:white; }
+    #start-btn:hover{ background-color:#27ae60; }
+    #stop-btn{ background-color:var(--danger-color); color:white; }
+    #stop-btn:hover{ background-color:#c0392b; }
+    #mute-btn{
+        background-color:var(--mute-color);
+        color:white;
+        padding:10px;
+        border-radius:8px;
+    }
+    #mute-btn.muted{ background:#95a5a6; }
+    button:disabled{ opacity:0.55; cursor:not-allowed; }
 
-    .meta{
-        font-size:0.9rem;
-        color:#666;
-    }
+    .meta{
+        font-size:0.9rem;
+        color:#666;
+    }
 
-    /* responsywność */
-    @media (max-width:700px){
-        .container{ padding:0 8px; }
-        .visualizer, .controls{ width:100%; max-width:420px; }
-        .visualizer-container{ width:220px; height:220px; }
-        .breathing-circle{ width:110px; height:110px; }
-    }
+    /* responsywność */
+    @media (max-width:700px){
+        .container{ padding:0 8px; }
+        .visualizer, .controls{ width:100%; max-width:420px; }
+        .visualizer-container{ width:220px; height:220px; }
+        .breathing-circle{ width:110px; height:110px; }
+    }
 </style>
 </head>
 <body>
-    <h1 style="margin:0 0 12px 0; font-size:1.1rem;">Trening oddechowy</h1>
+    <h1 style="margin:0 0 12px 0; font-size:1.1rem;">Trening oddechowy</h1>
 
-    <div class="container" role="application" aria-label="Trening oddechowy">
-        <section class="visualizer" aria-labelledby="vis-title">
-            <div id="vis-title" style="display:none">Wizualizacja oddechu</div>
-            <div class="visualizer-container" aria-hidden="false">
-                <div class="breathing-circle" id="circle" aria-hidden="true"></div>
-                <div class="instruction-text" id="text">Gotowy?</div>
-            </div>
-        </section>
+    <div class="container" role="application" aria-label="Trening oddechowy">
+        <section class="visualizer" aria-labelledby="vis-title">
+            <div id="vis-title" style="display:none">Wizualizacja oddechu</div>
+            <div class="visualizer-container" aria-hidden="false">
+                <div class="breathing-circle" id="circle" aria-hidden="true"></div>
+                <div class="instruction-text" id="text">Gotowy?</div>
+            </div>
+        </section>
 
-        <aside class="controls" aria-labelledby="controls-title">
-            <h2 id="controls-title" style="margin:0; font-size:0.95rem;">Sterowanie</h2>
+        <aside class="controls" aria-labelledby="controls-title">
+            <h2 id="controls-title" style="margin:0; font-size:0.95rem;">Sterowanie</h2>
 
-            <div class="inputs-grid">
-                <div class="input-group">
-                    <label for="inhale">Wdech (sek)</label>
-                    <input type="number" id="inhale" value="4" min="1" step="0.1" aria-label="Wdech w sekundach">
-                </div>
-                <div class="input-group">
-                    <label for="hold1">Zatrzymaj 1 (sek)</label>
-                    <input type="number" id="hold1" value="2" min="0" step="0.1" aria-label="Zatrzymaj po wdechu">
-                </div>
-                <div class="input-group">
-                    <label for="exhale">Wydech (sek)</label>
-                    <input type="number" id="exhale" value="6" min="1" step="0.1" aria-label="Wydech w sekundach">
-                </div>
-                <div class="input-group">
-                    <label for="hold2">Zatrzymaj 2 (sek)</label>
-                    <input type="number" id="hold2" value="2" min="0" step="0.1" aria-label="Zatrzymaj po wydechu">
-                </div>
+            <div class="inputs-grid">
+                <div class="input-group">
+                    <label for="inhale">Wdech (sek)</label>
+                    <input type="number" id="inhale" value="4" min="1" step="0.1" aria-label="Wdech w sekundach">
+                </div>
+                <div class="input-group">
+                    <label for="hold1">Zatrzymaj 1 (sek)</label>
+                    <input type="number" id="hold1" value="2" min="0" step="0.1" aria-label="Zatrzymaj po wdechu">
+                </div>
+                <div class="input-group">
+                    <label for="exhale">Wydech (sek)</label>
+                    <input type="number" id="exhale" value="6" min="1" step="0.1" aria-label="Wydech w sekundach">
+                </div>
+                <div class="input-group">
+                    <label for="hold2">Zatrzymaj 2 (sek)</label>
+                    <input type="number" id="hold2" value="2" min="0" step="0.1" aria-label="Zatrzymaj po wydechu">
+                </div>
 
-                <div class="input-group total-time-input">
-                    <label for="totalTime">Czas treningu (min)</label>
-                    <input type="number" id="totalTime" value="2" min="0.5" step="0.5" aria-label="Czas treningu w minutach">
-                </div>
-            </div>
+                <div class="input-group total-time-input">
+                    <label for="totalTime">Czas treningu (min)</label>
+                    <input type="number" id="totalTime" value="2" min="0.5" step="0.5" aria-label="Czas treningu w minutach">
+                </div>
+            </div>
 
-            <div class="session-timer" aria-live="polite">
-                Czas do końca: <span id="session-countdown">00:00</span>
-            </div>
+            <div class="session-timer" aria-live="polite">
+                Czas do końca: <span id="session-countdown">00:00</span>
+            </div>
 
-            <div class="buttons" style="margin-top:8px;">
-                <button id="start-btn" type="button" aria-pressed="false">Start</button>
-                <button id="stop-btn" type="button" disabled>Stop</button>
-            </div>
+            <div class="buttons" style="margin-top:8px;">
+                <button id="start-btn" type="button" aria-pressed="false">Start</button>
+                <button id="stop-btn" type="button" disabled>Stop</button>
+            </div>
 
-            <div style="display:flex; gap:8px; margin-top:8px;">
-                <button id="mute-btn" type="button" aria-pressed="true" class="muted">🔊 Włącz dźwięk</button>
-            </div>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <button id="mute-btn" type="button" aria-pressed="true" class="muted">🔊 Włącz dźwięk</button>
+            </div>
 
-        </aside>
-    </div>
+        </aside>
+    </div>
 
 <script>
 /*
-  Skrypt poprawiony:
-  - Całkowita cisza przy starcie w trybie wyciszonym (brak "blipnięcia")
-  - Domyślny start bez dźwięku
-  - Wake Lock API
-  - DODANO: Wymuszenie wyciszenia w startBreathing, aby uniknąć blipnięcia po startSound.
+  Skrypt poprawiony:
+  - Całkowita cisza przy starcie w trybie wyciszonym (brak "blipnięcia")
+  - Domyślny start bez dźwięku
+  - Wake Lock API
 */
 
 'use strict';
@@ -233,7 +232,7 @@
 const FREQ_START = 164.8;
 const FREQ_END = 329.6;
 const VOLUME_MAX = 0.28;
-const FADE_MS = 200; 
+const FADE_MS = 200; 
 
 /* --- Elementy DOM --- */
 const circle = document.getElementById('circle');
@@ -258,322 +257,318 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 /* --- Wake Lock API --- */
 async function requestWakeLock() {
-    if ('wakeLock' in navigator) {
-        try {
-            wakeLock = await navigator.wakeLock.request('screen');
-            wakeLock.addEventListener('release', () => {});
-        } catch (err) {
-            console.warn(`Wake Lock err: ${err.message}`);
-        }
-    }
+    if ('wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            wakeLock.addEventListener('release', () => {});
+        } catch (err) {
+            console.warn(`Wake Lock err: ${err.message}`);
+        }
+    }
 }
 
 async function releaseWakeLock() {
-    if (wakeLock !== null) {
-        try {
-            await wakeLock.release();
-            wakeLock = null;
-        } catch (err) {
-            console.warn(`Release Lock err: ${err.message}`);
-        }
-    }
+    if (wakeLock !== null) {
+        try {
+            await wakeLock.release();
+            wakeLock = null;
+        } catch (err) {
+            console.warn(`Release Lock err: ${err.message}`);
+        }
+    }
 }
 
 /* --- Audio helpers --- */
 async function ensureAudioContext() {
-    if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    } else if (audioContext.state === 'suspended') {
-        try { await audioContext.resume(); } catch(e){ console.warn('resume failed', e); }
-    }
-    return audioContext;
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } else if (audioContext.state === 'suspended') {
+        try { await audioContext.resume(); } catch(e){ console.warn('resume failed', e); }
+    }
+    return audioContext;
 }
 
 function createOscillatorAndGain() {
-    if (!audioContext) throw new Error('AudioContext nie istnieje');
-    const osc = audioContext.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
+    if (!audioContext) throw new Error('AudioContext nie istnieje');
+    const osc = audioContext.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
 
-    const gain = audioContext.createGain();
-    // Inicjalizacja ABSOLUTNYM ZEREM
-    gain.gain.setValueAtTime(0.0, audioContext.currentTime);
+    const gain = audioContext.createGain();
+    // Inicjalizacja ABSOLUTNYM ZEREM
+    gain.gain.setValueAtTime(0.0, audioContext.currentTime);
 
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
 
-    return { osc, gain };
+    return { osc, gain };
 }
 
 function setVolume(target, durationS = 0.2) {
-    if (!gainNode) return;
-    const t = audioContext.currentTime;
-    try {
-        gainNode.gain.cancelScheduledValues(t);
-        gainNode.gain.setValueAtTime(gainNode.gain.value, t);
-        gainNode.gain.linearRampToValueAtTime(target, t + durationS);
-    } catch (e) {
-        try {
-            gainNode.gain.linearRampToValueAtTime(target, t + durationS);
-        } catch (err) {}
-    }
+    if (!gainNode) return;
+    const t = audioContext.currentTime;
+    try {
+        gainNode.gain.cancelScheduledValues(t);
+        gainNode.gain.setValueAtTime(gainNode.gain.value, t);
+        gainNode.gain.linearRampToValueAtTime(target, t + durationS);
+    } catch (e) {
+        try {
+            gainNode.gain.linearRampToValueAtTime(target, t + durationS);
+        } catch (err) {}
+    }
 }
 
 function transitionFrequency(targetFreq, durationMs = 0) {
-    if (!oscillator) return;
-    const durS = durationMs / 1000;
-    const t = audioContext.currentTime;
-    try {
-        oscillator.frequency.cancelScheduledValues(t);
-        oscillator.frequency.setValueAtTime(oscillator.frequency.value || FREQ_START, t);
-        if (durS > 0) oscillator.frequency.linearRampToValueAtTime(targetFreq, t + durS);
-        else oscillator.frequency.setValueAtTime(targetFreq, t);
-    } catch (e) {
-        try { oscillator.frequency.linearRampToValueAtTime(targetFreq, t + durS); } catch (err) {}
-    }
+    if (!oscillator) return;
+    const durS = durationMs / 1000;
+    const t = audioContext.currentTime;
+    try {
+        oscillator.frequency.cancelScheduledValues(t);
+        oscillator.frequency.setValueAtTime(oscillator.frequency.value || FREQ_START, t);
+        if (durS > 0) oscillator.frequency.linearRampToValueAtTime(targetFreq, t + durS);
+        else oscillator.frequency.setValueAtTime(targetFreq, t);
+    } catch (e) {
+        try { oscillator.frequency.linearRampToValueAtTime(targetFreq, t + durS); } catch (err) {}
+    }
 }
 
 /* Start dźwięku */
 async function startSound() {
-    await ensureAudioContext();
+    await ensureAudioContext();
 
-    if (oscillator) {
-        try { oscillator.stop(); oscillator.disconnect(); } catch (e) {}
-        oscillator = null;
-    }
-    if (gainNode) {
-        try { gainNode.disconnect(); } catch(e) {}
-        gainNode = null;
-    }
+    if (oscillator) {
+        try { oscillator.stop(); oscillator.disconnect(); } catch (e) {}
+        oscillator = null;
+    }
+    if (gainNode) {
+        try { gainNode.disconnect(); } catch(e) {}
+        gainNode = null;
+    }
 
-    const nodes = createOscillatorAndGain();
-    oscillator = nodes.osc;
-    gainNode = nodes.gain;
+    const nodes = createOscillatorAndGain();
+    oscillator = nodes.osc;
+    gainNode = nodes.gain;
 
-    oscillator.start();
+    oscillator.start();
 
-    // POPRAWKA: Jeśli jest wyciszony, wymuszamy 0 natychmiastowo, bez FADE_MS
-    if (!isMuted) {
-        setVolume(VOLUME_MAX, FADE_MS / 1000);
-    } else {
-        // Natychmiastowe 0, żeby uniknąć "blipnięcia" przy starcie
-        gainNode.gain.cancelScheduledValues(audioContext.currentTime);
-        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    }
-    
-    transitionFrequency(FREQ_START, 0);
+    // POPRAWKA: Jeśli jest wyciszony, wymuszamy 0 natychmiastowo, bez FADE_MS
+    if (!isMuted) {
+        setVolume(VOLUME_MAX, FADE_MS / 1000);
+    } else {
+        // Natychmiastowe 0, żeby uniknąć "blipnięcia" przy starcie
+        gainNode.gain.cancelScheduledValues(audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    }
+    
+    transitionFrequency(FREQ_START, 0);
 }
 
 async function stopSoundAndCleanup() {
-    if (!audioContext || !gainNode) return;
-    try {
-        // Szybki fade out przy stopie tylko jeśli nie było wyciszone
-        if (!isMuted) setVolume(0, 0.15);
-        else gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    if (!audioContext || !gainNode) return;
+    try {
+        // Szybki fade out przy stopie tylko jeśli nie było wyciszone
+        if (!isMuted) setVolume(0, 0.15);
+        else gainNode.gain.setValueAtTime(0, audioContext.currentTime);
 
-        await wait(200);
-        if (oscillator) {
-            try { oscillator.stop(); } catch (e) {}
-            try { oscillator.disconnect(); } catch (e) {}
-            oscillator = null;
-        }
-        try { gainNode.disconnect(); } catch (e) {}
-        gainNode = null;
+        await wait(200);
+        if (oscillator) {
+            try { oscillator.stop(); } catch (e) {}
+            try { oscillator.disconnect(); } catch (e) {}
+            oscillator = null;
+        }
+        try { gainNode.disconnect(); } catch (e) {}
+        gainNode = null;
 
-        if (audioContext && typeof audioContext.close === 'function') {
-            await audioContext.close();
-        }
-    } catch (e) {
-        console.warn('Cleanup audio failed', e);
-    } finally {
-        audioContext = null;
-    }
+        if (audioContext && typeof audioContext.close === 'function') {
+            await audioContext.close();
+        }
+    } catch (e) {
+        console.warn('Cleanup audio failed', e);
+    } finally {
+        audioContext = null;
+    }
 }
 
 /* --- Sesja oddechowa --- */
 function validateInputs(inhaleS, hold1S, exhaleS, hold2S, totalMinutes) {
-    if (!(isFinite(inhaleS) && inhaleS > 0)) return 'Wdech musi być > 0.';
-    if (!(isFinite(exhaleS) && exhaleS > 0)) return 'Wydech musi być > 0.';
-    if (!(isFinite(totalMinutes) && totalMinutes >= 0.5)) return 'Czas treningu musi być co najmniej 0.5 minuty.';
-    if (hold1S < 0 || hold2S < 0) return 'Czasy zatrzymania nie mogą być ujemne.';
-    return null;
+    if (!(isFinite(inhaleS) && inhaleS > 0)) return 'Wdech musi być > 0.';
+    if (!(isFinite(exhaleS) && exhaleS > 0)) return 'Wydech musi być > 0.';
+    if (!(isFinite(totalMinutes) && totalMinutes >= 0.5)) return 'Czas treningu musi być co najmniej 0.5 minuty.';
+    if (hold1S < 0 || hold2S < 0) return 'Czasy zatrzymania nie mogą być ujemne.';
+    return null;
 }
 
 function updateTimerDisplay(ms) {
-    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    countdownDisplay.innerText = String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0');
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    countdownDisplay.innerText = String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0');
 }
 
 function toggleControls(active) {
-    startBtn.disabled = active;
-    stopBtn.disabled = !active;
-    inputs.forEach(i => i.disabled = active);
+    startBtn.disabled = active;
+    stopBtn.disabled = !active;
+    inputs.forEach(i => i.disabled = active);
 }
 
 function forceReflow(el) {
-    void el.offsetHeight;
+    void el.offsetHeight;
 }
 
 async function runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms) {
-    while (isRunning && remainingTimeMs > 0) {
-        // WDECH
-        textDisplay.innerText = 'Wdech';
-        circle.style.transition = `transform ${inhaleMs}ms ease-in-out`;
-        forceReflow(circle);
-        circle.style.transform = 'scale(2.0)';
-        transitionFrequency(FREQ_END, inhaleMs);
-        if (!isMuted) setVolume(VOLUME_MAX, 0.1);
-        await wait(inhaleMs);
-        if (!isRunning) break;
+    while (isRunning && remainingTimeMs > 0) {
+        // WDECH
+        textDisplay.innerText = 'Wdech';
+        circle.style.transition = `transform ${inhaleMs}ms ease-in-out`;
+        forceReflow(circle);
+        circle.style.transform = 'scale(2.0)';
+        transitionFrequency(FREQ_END, inhaleMs);
+        if (!isMuted) setVolume(VOLUME_MAX, 0.1);
+        await wait(inhaleMs);
+        if (!isRunning) break;
 
-        // ZATRZYMANIE 1
-        if (hold1Ms > 0) {
-            textDisplay.innerText = 'Zatrzymaj';
-            circle.style.transition = 'none';
-            transitionFrequency(FREQ_END, 0);
-            if (!isMuted) setVolume(0.02, 0.1); // Bardzo ciche tło, tylko jeśli niewyciszone
-            else setVolume(0, 0);
-            await wait(hold1Ms);
-            if (!isRunning) break;
-        }
+        // ZATRZYMANIE 1
+        if (hold1Ms > 0) {
+            textDisplay.innerText = 'Zatrzymaj';
+            circle.style.transition = 'none';
+            transitionFrequency(FREQ_END, 0);
+            if (!isMuted) setVolume(0.02, 0.1); // Bardzo ciche tło, tylko jeśli niewyciszone
+            else setVolume(0, 0);
+            await wait(hold1Ms);
+            if (!isRunning) break;
+        }
 
-        // WYDECH
-        textDisplay.innerText = 'Wydech';
-        circle.style.transition = `transform ${exhaleMs}ms ease-in-out`;
-        forceReflow(circle);
-        circle.style.transform = 'scale(1.0)';
-        transitionFrequency(FREQ_START, exhaleMs);
-        if (!isMuted) setVolume(VOLUME_MAX, 0.1);
-        await wait(exhaleMs);
-        if (!isRunning) break;
+        // WYDECH
+        textDisplay.innerText = 'Wydech';
+        circle.style.transition = `transform ${exhaleMs}ms ease-in-out`;
+        forceReflow(circle);
+        circle.style.transform = 'scale(1.0)';
+        transitionFrequency(FREQ_START, exhaleMs);
+        if (!isMuted) setVolume(VOLUME_MAX, 0.1);
+        await wait(exhaleMs);
+        if (!isRunning) break;
 
-        // ZATRZYMANIE 2
-        if (hold2Ms > 0) {
-            textDisplay.innerText = 'Zatrzymaj';
-            circle.style.transition = 'none';
-            transitionFrequency(FREQ_START, 0);
-            if (!isMuted) setVolume(0.02, 0.1);
-            else setVolume(0, 0);
-            await wait(hold2Ms);
-            if (!isRunning) break;
-        }
-    }
+        // ZATRZYMANIE 2
+        if (hold2Ms > 0) {
+            textDisplay.innerText = 'Zatrzymaj';
+            circle.style.transition = 'none';
+            transitionFrequency(FREQ_START, 0);
+            if (!isMuted) setVolume(0.02, 0.1);
+            else setVolume(0, 0);
+            await wait(hold2Ms);
+            if (!isRunning) break;
+        }
+    }
 }
 
 async function startBreathing() {
-    if (isRunning) return;
+    if (isRunning) return;
 
-    const inhaleS = parseFloat(document.getElementById('inhale').value);
-    const hold1S = parseFloat(document.getElementById('hold1').value);
-    const exhaleS = parseFloat(document.getElementById('exhale').value);
-    const hold2S = parseFloat(document.getElementById('hold2').value);
-    const totalMinutes = parseFloat(document.getElementById('totalTime').value);
+    const inhaleS = parseFloat(document.getElementById('inhale').value);
+    const hold1S = parseFloat(document.getElementById('hold1').value);
+    const exhaleS = parseFloat(document.getElementById('exhale').value);
+    const hold2S = parseFloat(document.getElementById('hold2').value);
+    const totalMinutes = parseFloat(document.getElementById('totalTime').value);
 
-    const validationError = validateInputs(inhaleS, hold1S, exhaleS, hold2S, totalMinutes);
-    if (validationError) {
-        alert(validationError);
-        return;
-    }
+    const validationError = validateInputs(inhaleS, hold1S, exhaleS, hold2S, totalMinutes);
+    if (validationError) {
+        alert(validationError);
+        return;
+    }
 
-    const inhaleMs = Math.round(inhaleS * 1000);
-    const hold1Ms = Math.round(hold1S * 1000);
-    const exhaleMs = Math.round(exhaleS * 1000);
-    const hold2Ms = Math.round(hold2S * 1000);
+    const inhaleMs = Math.round(inhaleS * 1000);
+    const hold1Ms = Math.round(hold1S * 1000);
+    const exhaleMs = Math.round(exhaleS * 1000);
+    const hold2Ms = Math.round(hold2S * 1000);
 
-    remainingTimeMs = Math.round(totalMinutes * 60 * 1000);
+    remainingTimeMs = Math.round(totalMinutes * 60 * 1000);
 
-    isRunning = true;
-    toggleControls(true);
-    textDisplay.innerText = 'Rozpoczynam...';
+    isRunning = true;
+    toggleControls(true);
+    textDisplay.innerText = 'Rozpoczynam...';
 
-    await requestWakeLock();
+    await requestWakeLock();
 
-    try {
-        await startSound();
-    } catch (e) {
-        console.warn('Audio err', e);
-    }
+    try {
+        await startSound();
+    } catch (e) {
+        console.warn('Audio err', e);
+    }
 
-    // ZMIANA: Wymusza natychmiastowe wyciszenie po starcie Audio Contextu, 
-    // aby zapobiec ewentualnemu chwilowemu 'blipnięciu' przed wejściem w pętlę.
-    if (isMuted) setVolume(0, 0); // <--- DODANA LINIA
+    updateTimerDisplay(remainingTimeMs);
+    sessionTimerInterval = setInterval(() => {
+        remainingTimeMs -= 1000;
+        if (remainingTimeMs < 0) remainingTimeMs = 0;
+        updateTimerDisplay(remainingTimeMs);
+        if (remainingTimeMs <= 0) {
+            clearInterval(sessionTimerInterval);
+            sessionTimerInterval = null;
+            stopBreathing('Trening zakończony! Dobra robota!');
+        }
+    }, 1000);
 
-    updateTimerDisplay(remainingTimeMs);
-    sessionTimerInterval = setInterval(() => {
-        remainingTimeMs -= 1000;
-        if (remainingTimeMs < 0) remainingTimeMs = 0;
-        updateTimerDisplay(remainingTimeMs);
-        if (remainingTimeMs <= 0) {
-            clearInterval(sessionTimerInterval);
-            sessionTimerInterval = null;
-            stopBreathing('Trening zakończony! Dobra robota!');
-        }
-    }, 1000);
+    try {
+        await runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms);
+    } catch (e) {
+        console.error('Loop err', e);
+    }
 
-    try {
-        await runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms);
-    } catch (e) {
-        console.error('Loop err', e);
-    }
-
-    if (isRunning) {
-        stopBreathing('Gotowy?');
-    }
+    if (isRunning) {
+        stopBreathing('Gotowy?');
+    }
 }
 
 async function stopBreathing(finalMessage = 'Gotowy?') {
-    if (!isRunning) {
-        await stopSoundAndCleanup();
-        await releaseWakeLock();
-        textDisplay.innerText = finalMessage;
-        updateTimerDisplay(0);
-        return;
-    }
+    if (!isRunning) {
+        await stopSoundAndCleanup();
+        await releaseWakeLock();
+        textDisplay.innerText = finalMessage;
+        updateTimerDisplay(0);
+        return;
+    }
 
-    isRunning = false;
-    toggleControls(false);
+    isRunning = false;
+    toggleControls(false);
 
-    if (sessionTimerInterval) {
-        clearInterval(sessionTimerInterval);
-        sessionTimerInterval = null;
-    }
+    if (sessionTimerInterval) {
+        clearInterval(sessionTimerInterval);
+        sessionTimerInterval = null;
+    }
 
-    textDisplay.innerText = finalMessage;
-    circle.style.transition = 'transform 450ms ease-out';
-    forceReflow(circle);
-    circle.style.transform = 'scale(1)';
+    textDisplay.innerText = finalMessage;
+    circle.style.transition = 'transform 450ms ease-out';
+    forceReflow(circle);
+    circle.style.transform = 'scale(1)';
 
-    await stopSoundAndCleanup();
-    await releaseWakeLock();
+    await stopSoundAndCleanup();
+    await releaseWakeLock();
 
-    if (finalMessage === 'Gotowy?') updateTimerDisplay(0);
-    toggleControls(false);
+    if (finalMessage === 'Gotowy?') updateTimerDisplay(0);
+    toggleControls(false);
 }
 
 /* --- Mute UI --- */
 function updateMuteUI() {
-    if (isMuted) {
-        muteBtn.classList.add('muted');
-        muteBtn.innerText = '🔊 Włącz dźwięk';
-        muteBtn.setAttribute('aria-pressed','true');
-    } else {
-        muteBtn.classList.remove('muted');
-        muteBtn.innerText = '🔇 Wycisz dźwięk';
-        muteBtn.setAttribute('aria-pressed','false');
-    }
+    if (isMuted) {
+        muteBtn.classList.add('muted');
+        muteBtn.innerText = '🔊 Włącz dźwięk';
+        muteBtn.setAttribute('aria-pressed','true');
+    } else {
+        muteBtn.classList.remove('muted');
+        muteBtn.innerText = '🔇 Wycisz dźwięk';
+        muteBtn.setAttribute('aria-pressed','false');
+    }
 }
 
 function toggleMute() {
-    isMuted = !isMuted;
-    updateMuteUI();
-    if (!gainNode) return;
-    if (isMuted) {
-        setVolume(0, 0.15);
-    } else {
-        setVolume(isRunning ? VOLUME_MAX : 0, 0.2);
-    }
+    isMuted = !isMuted;
+    updateMuteUI();
+    if (!gainNode) return;
+    if (isMuted) {
+        setVolume(0, 0.15);
+    } else {
+        setVolume(isRunning ? VOLUME_MAX : 0, 0.2);
+    }
 }
 
 /* --- Eventy --- */
@@ -582,22 +577,22 @@ stopBtn.addEventListener('click', () => stopBreathing('Gotowy?').catch(console.e
 muteBtn.addEventListener('click', toggleMute);
 
 document.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter') {
-        if (!isRunning && !startBtn.disabled) startBtn.click();
-    } else if (ev.key === 'Escape') {
-        if (isRunning && !stopBtn.disabled) stopBtn.click();
-    }
+    if (ev.key === 'Enter') {
+        if (!isRunning && !startBtn.disabled) startBtn.click();
+    } else if (ev.key === 'Escape') {
+        if (isRunning && !stopBtn.disabled) stopBtn.click();
+    }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    const totalMinutes = parseFloat(document.getElementById('totalTime').value) || 0;
-    const initialMs = Math.round(Math.max(0.5, totalMinutes) * 60 * 1000);
-    updateTimerDisplay(initialMs);
-    updateMuteUI();
+    const totalMinutes = parseFloat(document.getElementById('totalTime').value) || 0;
+    const initialMs = Math.round(Math.max(0.5, totalMinutes) * 60 * 1000);
+    updateTimerDisplay(initialMs);
+    updateMuteUI();
 });
 
 window.addEventListener('beforeunload', (e) => {
-    if (isRunning) { e.preventDefault(); e.returnValue = ''; }
+    if (isRunning) { e.preventDefault(); e.returnValue = ''; }
 });
 </script>
 </body>

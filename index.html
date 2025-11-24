@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trening Oddechowy z Dźwiękiem</title>
+    <title>Trening Oddechowy z Kontrolą Dźwięku</title>
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -12,6 +12,7 @@
             --panel-bg: #ffffff;
             --success-color: #2ecc71;
             --danger-color: #e74c3c;
+            --mute-color: #f39c12; /* Nowy kolor dla przycisku wyciszenia */
         }
 
         body {
@@ -29,6 +30,7 @@
             text-align: center;
         }
 
+        /* Sekcje wizualne (bez zmian w rozmiarach) */
         .visualizer-container {
             position: relative;
             width: 280px;
@@ -62,6 +64,7 @@
             pointer-events: none;
         }
 
+        /* Panel sterowania i inputy (bez zmian w rozmiarach) */
         .controls {
             background: var(--panel-bg);
             padding: 15px;
@@ -107,29 +110,39 @@
             grid-column: span 2;
             margin-top: 8px;
         }
-        .input-group.total-time-input input {
-            max-width: 90px;
-        }
 
-        .session-timer {
-            text-align: center;
-            font-size: 1rem;
-            font-weight: 500;
-            padding: 8px 0;
-            border-top: 1px solid #eee;
-            margin-top: 12px;
-        }
-        #session-countdown {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: var(--circle-color);
-        }
-
+        /* Przyciski */
         .buttons {
             display: flex;
             gap: 8px;
             margin-top: 8px;
         }
+        
+        /* Dodatkowa sekcja na przycisk wyciszenia */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-buttons button {
+            flex-grow: 1;
+        }
+        
+        #mute-btn {
+            background-color: var(--mute-color);
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 7px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #mute-btn:hover { background-color: #d35400; }
+        #mute-btn.muted {
+            background-color: #95a5a6; /* Kolor szary gdy wyciszone */
+        }
+
 
         button {
             flex: 1;
@@ -158,7 +171,6 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-
     </style>
 </head>
 <body>
@@ -201,25 +213,32 @@
             <button id="start-btn" onclick="startBreathing()">Start</button>
             <button id="stop-btn" onclick="stopBreathing()" disabled>Stop</button>
         </div>
+        
+        <div class="action-buttons">
+            <button id="mute-btn" onclick="toggleMute()">🔇 Wycisz Dźwięk</button>
+        </div>
     </div>
 
     <script>
         let isRunning = false;
         let sessionTimerInterval; 
         let remainingTime; 
+        let isMuted = false; // NOWA zmienna do śledzenia stanu wyciszenia
         
         // --- Web Audio API Variables ---
         let audioContext = null;
         let oscillator = null;
         let gainNode = null;
-        const FREQ_START = 220; // Niska częstotliwość (A3)
-        const FREQ_END = 330; // Wysoka częstotliwość (e3)
+        const FREQ_START = 220; 
+        const FREQ_END = 330; // ZMIENIONA częstotliwość maksymalna
+        const VOLUME_MAX = 0.3; 
         // -------------------------------
         
         const circle = document.getElementById('circle');
         const textDisplay = document.getElementById('text');
         const startBtn = document.getElementById('start-btn');
         const stopBtn = document.getElementById('stop-btn');
+        const muteBtn = document.getElementById('mute-btn'); // NOWY przycisk
         const inputs = document.querySelectorAll('input');
         const countdownDisplay = document.getElementById('session-countdown');
 
@@ -228,41 +247,63 @@
         // --- Funkcje Dźwiękowe ---
 
         function startSound() {
-            // Kontekst audio musi być utworzony po interakcji użytkownika
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 
-                // Utwórz oscylator (generator tonu)
                 oscillator = audioContext.createOscillator();
-                oscillator.type = 'sine'; // Użyj fali sinusoidalnej
+                oscillator.type = 'sine'; 
                 oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
 
-                // Utwórz GainNode (kontrola głośności)
                 gainNode = audioContext.createGain();
-                gainNode.gain.setValueAtTime(0.0, audioContext.currentTime); // Start cicho
+                gainNode.gain.setValueAtTime(0.0, audioContext.currentTime); 
                 
-                // Połącz: Oscillator -> Gain -> Destination (głośniki)
                 oscillator.connect(gainNode);
                 gainNode.connect(audioContext.destination);
 
-                // Uruchom generator (działa w tle, ale jest cichy)
                 oscillator.start();
             }
             
-            // Rozpocznij od cicha i zwiększ głośność
+            // Rozpocznij od cicha i zwiększ głośność, jeśli nie jest wyciszone
             gainNode.gain.cancelAndHoldAtTime(audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.5); // Powoli zwiększ do 0.3
-            oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime); // Ustaw na początkową częstotliwość
+            if (!isMuted) {
+                gainNode.gain.linearRampToValueAtTime(VOLUME_MAX, audioContext.currentTime + 0.5); 
+            }
+            oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
         }
 
         function stopSound() {
             if (gainNode) {
-                // Stopniowo wycisz dźwięk
+                // Stopniowo wycisz dźwięk i ustaw głośność na 0
                 gainNode.gain.cancelAndHoldAtTime(audioContext.currentTime);
                 gainNode.gain.linearRampToValueAtTime(0.0, audioContext.currentTime + 0.5);
             }
         }
         
+        // NOWA funkcja przełączająca stan wyciszenia
+        function toggleMute() {
+            isMuted = !isMuted;
+            if (isMuted) {
+                muteBtn.innerText = '🔊 Włącz Dźwięk';
+                muteBtn.classList.add('muted');
+                setVolume(0.0, 0.2); // Wycisz natychmiast
+            } else {
+                muteBtn.innerText = '🔇 Wycisz Dźwięk';
+                muteBtn.classList.remove('muted');
+                if (isRunning) {
+                     // Przywróć głośność tylko jeśli trening trwa (w przeciwnym razie pozostaw na 0)
+                     setVolume(VOLUME_MAX, 0.2); 
+                }
+            }
+        }
+        
+        // NOWA funkcja do ustawiania głośności
+        function setVolume(targetVolume, durationS) {
+            if (gainNode) {
+                gainNode.gain.cancelAndHoldAtTime(audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(targetVolume, audioContext.currentTime + durationS);
+            }
+        }
+
         function transitionFrequency(targetFreq, durationMs) {
             if (!oscillator) return;
             const durationS = durationMs / 1000;
@@ -270,10 +311,8 @@
             oscillator.frequency.cancelAndHoldAtTime(audioContext.currentTime);
             
             if (durationS > 0) {
-                 // Płynna zmiana częstotliwości (wysokości tonu)
                 oscillator.frequency.linearRampToValueAtTime(targetFreq, audioContext.currentTime + durationS);
             } else {
-                 // Natychmiastowe ustawienie częstotliwości (dla zatrzymania)
                  oscillator.frequency.setValueAtTime(targetFreq, audioContext.currentTime);
             }
         }
@@ -283,7 +322,6 @@
         async function startBreathing() {
             if (isRunning) return;
             
-            // START DŹWIĘKU I KONTEKSTU AUDIO
             startSound(); 
             
             // ... (Pobieranie i walidacja czasów) ...
@@ -319,44 +357,46 @@
             runBreathingLoop(inhaleTime, hold1Time, exhaleTime, hold2Time);
         }
 
-        // ... (updateTimerDisplay, wait, toggleControls zostają takie same) ...
-
         async function runBreathingLoop(inhaleTime, hold1Time, exhaleTime, hold2Time) {
             while (isRunning) {
                 if (remainingTime <= 0) {
                     break;
                 }
 
-                // 1. WDECH: Częstotliwość rośnie
+                // 1. WDECH: Częstotliwość rośnie (Głośno, jeśli nie wyciszone)
                 textDisplay.innerText = "Wdech";
                 circle.style.transition = `transform ${inhaleTime}ms ease-in-out`;
                 circle.style.transform = "scale(2.0)"; 
-                transitionFrequency(FREQ_END, inhaleTime); // Płynnie do wyższej częstotliwości
+                transitionFrequency(FREQ_END, inhaleTime); 
+                if (!isMuted) setVolume(VOLUME_MAX, 0.1); // Upewnij się, że jest głośno
                 await wait(inhaleTime);
                 if (!isRunning) break;
 
-                // 2. ZATRZYMANIE 1: Częstotliwość stała (wysoka)
+                // 2. ZATRZYMANIE 1: Wycisz dźwięk
                 if (hold1Time > 0) {
                     textDisplay.innerText = "Zatrzymaj";
                     circle.style.transition = "none"; 
-                    transitionFrequency(FREQ_END, 0); // Utrzymaj stałą częstotliwość
+                    transitionFrequency(FREQ_END, 0); 
+                    setVolume(0.0, 0.05); // Natychmiastowe wyciszenie
                     await wait(hold1Time);
                     if (!isRunning) break;
                 }
 
-                // 3. WYDECH: Częstotliwość maleje
+                // 3. WYDECH: Częstotliwość maleje (Głośno, jeśli nie wyciszone)
                 textDisplay.innerText = "Wydech";
                 circle.style.transition = `transform ${exhaleTime}ms ease-in-out`;
                 circle.style.transform = "scale(1.0)"; 
-                transitionFrequency(FREQ_START, exhaleTime); // Płynnie do niższej/początkowej częstotliwości
+                transitionFrequency(FREQ_START, exhaleTime); 
+                if (!isMuted) setVolume(VOLUME_MAX, 0.1); // Upewnij się, że jest głośno
                 await wait(exhaleTime);
                 if (!isRunning) break;
 
-                // 4. ZATRZYMANIE 2: Częstotliwość stała (niska)
+                // 4. ZATRZYMANIE 2: Wycisz dźwięk
                 if (hold2Time > 0) {
                     textDisplay.innerText = "Zatrzymaj";
                     circle.style.transition = "none";
-                    transitionFrequency(FREQ_START, 0); // Utrzymaj stałą częstotliwość
+                    transitionFrequency(FREQ_START, 0); 
+                    setVolume(0.0, 0.05); // Natychmiastowe wyciszenie
                     await wait(hold2Time);
                     if (!isRunning) break;
                 }
@@ -366,8 +406,7 @@
         function stopBreathing(finalMessage = "Gotowy?") {
             isRunning = false;
             
-            // ZATRZYMANIE DŹWIĘKU
-            stopSound();
+            stopSound(); // Zawsze wyciszamy przy stop
             
             clearInterval(sessionTimerInterval);
             

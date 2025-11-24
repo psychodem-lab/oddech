@@ -221,13 +221,9 @@
 
 <script>
 /*
-  Ulepszony skrypt audio + logika sesji
-  Kluczowe zmiany:
-  - audioContext tworzony lub wznowiony przy starcie; zamykany po stop
-  - oscillator tworzony za każdym razem przy starcie i poprawnie zatrzymywany
-  - cancelScheduledValues() zamiast cancelAndHoldAtTime()
-  - płynne rampy głośności i częstotliwości
-  - pełna walidacja inputów
+  Ulepszony skrypt:
+  - Audio + wizualizacja
+  - Screen Wake Lock (blokada wygaszania ekranu)
 */
 
 'use strict';
@@ -236,7 +232,7 @@
 const FREQ_START = 164.8;
 const FREQ_END = 329.6;
 const VOLUME_MAX = 0.28;
-const FADE_MS = 200; // czas ramp (ms) dla szybkich zmian głośności
+const FADE_MS = 200; 
 
 /* --- Elementy DOM --- */
 const circle = document.getElementById('circle');
@@ -254,16 +250,42 @@ let isRunning = false;
 let isMuted = false;
 let sessionTimerInterval = null;
 let remainingTimeMs = 0;
+let wakeLock = null; // Uchwyt do blokady ekranu
 
 /* Utility sleep */
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+/* --- Wake Lock API (Blokada ekranu) --- */
+async function requestWakeLock() {
+    if ('wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            // console.log('Wake Lock aktywny');
+            wakeLock.addEventListener('release', () => {
+                // console.log('Wake Lock zwolniony');
+            });
+        } catch (err) {
+            console.warn(`Błąd Wake Lock: ${err.name}, ${err.message}`);
+        }
+    }
+}
+
+async function releaseWakeLock() {
+    if (wakeLock !== null) {
+        try {
+            await wakeLock.release();
+            wakeLock = null;
+        } catch (err) {
+            console.warn(`Błąd zwalniania Wake Lock: ${err.message}`);
+        }
+    }
+}
 
 /* --- Audio helpers --- */
 async function ensureAudioContext() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
     } else if (audioContext.state === 'suspended') {
-        // Resume requires user gesture in many browsers
         try { await audioContext.resume(); } catch(e){ console.warn('resume failed', e); }
     }
     return audioContext;
@@ -271,13 +293,12 @@ async function ensureAudioContext() {
 
 function createOscillatorAndGain() {
     if (!audioContext) throw new Error('AudioContext nie istnieje');
-    // tworzymy node'y za każdym razem przy starcie sesji
     const osc = audioContext.createOscillator();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
 
     const gain = audioContext.createGain();
-    gain.gain.setValueAtTime(0.0, audioContext.currentTime); // start z ciszą
+    gain.gain.setValueAtTime(0.0, audioContext.currentTime);
 
     osc.connect(gain);
     gain.connect(audioContext.destination);
@@ -290,15 +311,12 @@ function setVolume(target, durationS = 0.2) {
     const t = audioContext.currentTime;
     try {
         gainNode.gain.cancelScheduledValues(t);
-        gainNode.gain.setValueAtTime(gainNode.gain.value, t); // anchor current value
+        gainNode.gain.setValueAtTime(gainNode.gain.value, t);
         gainNode.gain.linearRampToValueAtTime(target, t + durationS);
     } catch (e) {
-        // Przy niektórych implementacjach gain.value może być nieaktualne — zabezpieczamy się.
         try {
             gainNode.gain.linearRampToValueAtTime(target, t + durationS);
-        } catch (err) {
-            console.warn('setVolume fallback', err);
-        }
+        } catch (err) {}
     }
 }
 
@@ -316,11 +334,10 @@ function transitionFrequency(targetFreq, durationMs = 0) {
     }
 }
 
-/* Start dźwięku (tworzy nowe node'y przy każdym starcie) */
+/* Start dźwięku */
 async function startSound() {
     await ensureAudioContext();
 
-    // Jeśli jest już oscillator (np. z poprzedniej sesji), zatrzymaj go bezpośrednio
     if (oscillator) {
         try {
             oscillator.stop();
@@ -337,39 +354,30 @@ async function startSound() {
     oscillator = nodes.osc;
     gainNode = nodes.gain;
 
-    // uruchom oscylator
     oscillator.start();
 
-    // Jeśli nie jest wyciszone — ustaw docelową głośność
     if (!isMuted) {
         setVolume(VOLUME_MAX, FADE_MS / 1000);
     } else {
         setVolume(0, FADE_MS / 1000);
     }
-
-    // upewnij się, że częstotliwość startowa jest ustawiona
     transitionFrequency(FREQ_START, 0);
 }
 
-/* Stop dźwięku: płynne wyciszenie, zatrzymanie oscillatora i zamknięcie contextu */
+/* Stop dźwięku */
 async function stopSoundAndCleanup() {
     if (!audioContext || !gainNode) return;
     try {
-        // płynne wyciszenie
         setVolume(0, 0.25);
-        // poczekaj chwile, pozwól rampie zadziałać
         await wait(300);
         if (oscillator) {
-            try {
-                oscillator.stop();
-            } catch (e) {}
+            try { oscillator.stop(); } catch (e) {}
             try { oscillator.disconnect(); } catch (e) {}
             oscillator = null;
         }
         try { gainNode.disconnect(); } catch (e) {}
         gainNode = null;
 
-        // zamknij context, aby zwolnić zasoby (np. na mobilnych)
         if (audioContext && typeof audioContext.close === 'function') {
             await audioContext.close();
         }
@@ -403,9 +411,7 @@ function toggleControls(active) {
     inputs.forEach(i => i.disabled = active);
 }
 
-/* Reflow helper (rozwiązanie problemu "transition: none" w niektórych przeglądarkach) */
 function forceReflow(el) {
-    // bez efektu pobocznego - tylko wymuszenie reflow
     void el.offsetHeight;
 }
 
@@ -415,7 +421,6 @@ async function runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms) {
         // WDECH
         textDisplay.innerText = 'Wdech';
         circle.style.transition = `transform ${inhaleMs}ms ease-in-out`;
-        // wymuszamy reflow przed zmianą transform, żeby transition pewnie zadziałała
         forceReflow(circle);
         circle.style.transform = 'scale(2.0)';
         transitionFrequency(FREQ_END, inhaleMs);
@@ -426,10 +431,9 @@ async function runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms) {
         // ZATRZYMANIE 1
         if (hold1Ms > 0) {
             textDisplay.innerText = 'Zatrzymaj';
-            // natychmiast zatrzymujemy rampy (krótkie wyciszenie)
             circle.style.transition = 'none';
             transitionFrequency(FREQ_END, 0);
-            setVolume(0, 0.05);
+            setVolume(0, 0.05); // Cisza podczas zatrzymania
             await wait(hold1Ms);
             if (!isRunning) break;
         }
@@ -460,7 +464,7 @@ async function runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms) {
 async function startBreathing() {
     if (isRunning) return;
 
-    // odczyt i walidacja
+    // Walidacja
     const inhaleS = parseFloat(document.getElementById('inhale').value);
     const hold1S = parseFloat(document.getElementById('hold1').value);
     const exhaleS = parseFloat(document.getElementById('exhale').value);
@@ -473,7 +477,6 @@ async function startBreathing() {
         return;
     }
 
-    // ustawienia czasów w ms
     const inhaleMs = Math.round(inhaleS * 1000);
     const hold1Ms = Math.round(hold1S * 1000);
     const exhaleMs = Math.round(exhaleS * 1000);
@@ -485,14 +488,17 @@ async function startBreathing() {
     toggleControls(true);
     textDisplay.innerText = 'Rozpoczynam...';
 
-    // przygotuj audio i włącz dźwięk (jeśli nie wyciszone)
+    // 1. Aktywuj blokadę ekranu
+    await requestWakeLock();
+
+    // 2. Start Audio
     try {
         await startSound();
     } catch (e) {
         console.warn('Problem z dźwiękiem:', e);
     }
 
-    // Timer sesji
+    // 3. Timer
     updateTimerDisplay(remainingTimeMs);
     sessionTimerInterval = setInterval(() => {
         remainingTimeMs -= 1000;
@@ -505,14 +511,13 @@ async function startBreathing() {
         }
     }, 1000);
 
-    // Start pętli oddechowej (asynchronicznie)
+    // 4. Pętla animacji
     try {
         await runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms);
     } catch (e) {
         console.error('Błąd pętli oddechowej', e);
     }
 
-    // gdy pętla zakończona naturalnie (np. isRunning = false) — jeśli still running, zatrzymaj
     if (isRunning) {
         stopBreathing('Gotowy?');
     }
@@ -521,8 +526,9 @@ async function startBreathing() {
 /* Stop treningu */
 async function stopBreathing(finalMessage = 'Gotowy?') {
     if (!isRunning) {
-        // jeśli nie działała sesja, upewnij się, że czyścimy audio
         await stopSoundAndCleanup();
+        // Upewnij się, że zwalniamy lock nawet przy "miękkim" stopie
+        await releaseWakeLock();
         textDisplay.innerText = finalMessage;
         updateTimerDisplay(0);
         return;
@@ -531,25 +537,24 @@ async function stopBreathing(finalMessage = 'Gotowy?') {
     isRunning = false;
     toggleControls(false);
 
-    // zatrzymaj timer
     if (sessionTimerInterval) {
         clearInterval(sessionTimerInterval);
         sessionTimerInterval = null;
     }
 
-    // animacja końcowa
+    // Reset animacji
     textDisplay.innerText = finalMessage;
     circle.style.transition = 'transform 450ms ease-out';
     forceReflow(circle);
     circle.style.transform = 'scale(1)';
 
-    // zatrzymaj audio i zamknij context
+    // Stop audio
     await stopSoundAndCleanup();
 
-    // zresetuj licznik jeśli kończymy "Gotowy?"
-    if (finalMessage === 'Gotowy?') updateTimerDisplay(0);
+    // ZWOLNIJ BLOKADĘ EKRANU
+    await releaseWakeLock();
 
-    // odblokuj inputy
+    if (finalMessage === 'Gotowy?') updateTimerDisplay(0);
     toggleControls(false);
 }
 
@@ -570,18 +575,15 @@ function toggleMute() {
     isMuted = !isMuted;
     updateMuteUI();
     if (!gainNode) return;
-    // jeżeli sesja trwa — przywróć/wycisz z małym fade
     if (isMuted) {
         setVolume(0, 0.15);
     } else {
-        // przywracamy głośność tylko kiedy sesja działa
         setVolume(isRunning ? VOLUME_MAX : 0, 0.2);
     }
 }
 
 /* --- Eventy UI --- */
 startBtn.addEventListener('click', () => {
-    // Start wymaga gestu użytkownika aby w wielu przeglądarkach AudioContext wznowił się
     startBreathing().catch(e => console.error(e));
 });
 
@@ -590,11 +592,9 @@ stopBtn.addEventListener('click', () => {
 });
 
 muteBtn.addEventListener('click', () => {
-    // mute działa niezależnie od aktywności sesji
     toggleMute();
 });
 
-/* Enter = start, Esc = stop (dla lepszego UX) */
 document.addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter') {
         if (!isRunning && !startBtn.disabled) startBtn.click();
@@ -603,7 +603,10 @@ document.addEventListener('keydown', (ev) => {
     }
 });
 
-/* Przy starcie strony: uaktualnij wyświetlacz czasu z wartości inputa */
+/* Jeśli użytkownik zmieni kartę/zminimalizuje okno, Wake Lock może zostać zrzucony przez system.
+   Opcjonalnie można nasłuchiwać 'visibilitychange' i prosić ponownie, ale w tej prostej wersji
+   skupiamy się na podstawowej obsłudze. */
+
 document.addEventListener('DOMContentLoaded', () => {
     const totalMinutes = parseFloat(document.getElementById('totalTime').value) || 0;
     const initialMs = Math.round(Math.max(0.5, totalMinutes) * 60 * 1000);
@@ -611,7 +614,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateMuteUI();
 });
 
-/* Ochrona przed przypadkowym zamknięciem strony podczas aktywnej sesji */
 window.addEventListener('beforeunload', (e) => {
     if (isRunning) {
         e.preventDefault();

@@ -213,7 +213,7 @@
             </div>
 
             <div style="display:flex; gap:8px; margin-top:8px;">
-                <button id="mute-btn" type="button" aria-pressed="false">🔇 Wycisz dźwięk</button>
+                <button id="mute-btn" type="button" aria-pressed="true" class="muted">🔊 Włącz dźwięk</button>
             </div>
 
         </aside>
@@ -222,6 +222,7 @@
 <script>
 /*
   Ulepszony skrypt:
+  - Domyślnie wyciszony (isMuted = true)
   - Audio + wizualizacja
   - Screen Wake Lock (blokada wygaszania ekranu)
 */
@@ -247,10 +248,11 @@ let audioContext = null;
 let oscillator = null;
 let gainNode = null;
 let isRunning = false;
-let isMuted = false;
+// ZMIANA: domyślnie true (wyciszony)
+let isMuted = true;
 let sessionTimerInterval = null;
 let remainingTimeMs = 0;
-let wakeLock = null; // Uchwyt do blokady ekranu
+let wakeLock = null;
 
 /* Utility sleep */
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -260,9 +262,8 @@ async function requestWakeLock() {
     if ('wakeLock' in navigator) {
         try {
             wakeLock = await navigator.wakeLock.request('screen');
-            // console.log('Wake Lock aktywny');
             wakeLock.addEventListener('release', () => {
-                // console.log('Wake Lock zwolniony');
+                // ...
             });
         } catch (err) {
             console.warn(`Błąd Wake Lock: ${err.name}, ${err.message}`);
@@ -356,6 +357,7 @@ async function startSound() {
 
     oscillator.start();
 
+    // Jeśli jest wyciszony, ustawiamy 0, jeśli nie - max
     if (!isMuted) {
         setVolume(VOLUME_MAX, FADE_MS / 1000);
     } else {
@@ -464,7 +466,6 @@ async function runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms) {
 async function startBreathing() {
     if (isRunning) return;
 
-    // Walidacja
     const inhaleS = parseFloat(document.getElementById('inhale').value);
     const hold1S = parseFloat(document.getElementById('hold1').value);
     const exhaleS = parseFloat(document.getElementById('exhale').value);
@@ -488,17 +489,14 @@ async function startBreathing() {
     toggleControls(true);
     textDisplay.innerText = 'Rozpoczynam...';
 
-    // 1. Aktywuj blokadę ekranu
     await requestWakeLock();
 
-    // 2. Start Audio
     try {
         await startSound();
     } catch (e) {
         console.warn('Problem z dźwiękiem:', e);
     }
 
-    // 3. Timer
     updateTimerDisplay(remainingTimeMs);
     sessionTimerInterval = setInterval(() => {
         remainingTimeMs -= 1000;
@@ -511,7 +509,6 @@ async function startBreathing() {
         }
     }, 1000);
 
-    // 4. Pętla animacji
     try {
         await runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms);
     } catch (e) {
@@ -527,7 +524,6 @@ async function startBreathing() {
 async function stopBreathing(finalMessage = 'Gotowy?') {
     if (!isRunning) {
         await stopSoundAndCleanup();
-        // Upewnij się, że zwalniamy lock nawet przy "miękkim" stopie
         await releaseWakeLock();
         textDisplay.innerText = finalMessage;
         updateTimerDisplay(0);
@@ -542,16 +538,12 @@ async function stopBreathing(finalMessage = 'Gotowy?') {
         sessionTimerInterval = null;
     }
 
-    // Reset animacji
     textDisplay.innerText = finalMessage;
     circle.style.transition = 'transform 450ms ease-out';
     forceReflow(circle);
     circle.style.transform = 'scale(1)';
 
-    // Stop audio
     await stopSoundAndCleanup();
-
-    // ZWOLNIJ BLOKADĘ EKRANU
     await releaseWakeLock();
 
     if (finalMessage === 'Gotowy?') updateTimerDisplay(0);
@@ -603,14 +595,11 @@ document.addEventListener('keydown', (ev) => {
     }
 });
 
-/* Jeśli użytkownik zmieni kartę/zminimalizuje okno, Wake Lock może zostać zrzucony przez system.
-   Opcjonalnie można nasłuchiwać 'visibilitychange' i prosić ponownie, ale w tej prostej wersji
-   skupiamy się na podstawowej obsłudze. */
-
 document.addEventListener('DOMContentLoaded', () => {
     const totalMinutes = parseFloat(document.getElementById('totalTime').value) || 0;
     const initialMs = Math.round(Math.max(0.5, totalMinutes) * 60 * 1000);
     updateTimerDisplay(initialMs);
+    // UI zaktualizuje się do domyślnej wartości isMuted = true
     updateMuteUI();
 });
 

@@ -220,245 +220,232 @@
         </div>
     </div>
 <script>
-    let isRunning = false;
-    let sessionTimerInterval; 
-    let remainingTime; 
-    let isMuted = false; 
-    
-    // --- Web Audio API Variables ---
-    let audioContext = null;
-    let oscillator = null;
-    let gainNode = null;
-    const FREQ_START = 220; 
-    const FREQ_END = 330; 
-    const VOLUME_MAX = 0.3; 
-    const VOLUME_MIN = 0.0001; 
-    const FADE_TIME = 0.05; 
-    // -------------------------------
-    
-    const circle = document.getElementById('circle');
-    const textDisplay = document.getElementById('text');
-    const startBtn = document.getElementById('start-btn');
-    const stopBtn = document.getElementById('stop-btn');
-    const muteBtn = document.getElementById('mute-btn'); 
-    const inputs = document.querySelectorAll('input');
-    const countdownDisplay = document.getElementById('session-countdown');
-
-    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-    // --- Funkcje Dźwiękowe ---
-
-    function initializeAudio() {
-        if (audioContext) return;
+let isRunning = false;
+        let sessionTimerInterval; 
+        let remainingTime; 
+        let isMuted = false; // NOWA zmienna do śledzenia stanu wyciszenia
         
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // --- Web Audio API Variables ---
+        let audioContext = null;
+        let oscillator = null;
+        let gainNode = null;
+        const FREQ_START = 220; 
+        const FREQ_END = 330; // ZMIENIONA częstotliwość maksymalna
+        const VOLUME_MAX = 0.3; 
+        // -------------------------------
         
-        oscillator = audioContext.createOscillator();
-        oscillator.type = 'sine'; 
-        oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
+        const circle = document.getElementById('circle');
+        const textDisplay = document.getElementById('text');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const muteBtn = document.getElementById('mute-btn'); // NOWY przycisk
+        const inputs = document.querySelectorAll('input');
+        const countdownDisplay = document.getElementById('session-countdown');
 
-        gainNode = audioContext.createGain();
-        gainNode.gain.setValueAtTime(VOLUME_MIN, audioContext.currentTime); 
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        oscillator.start();
-    }
-    
-    function startSound() {
-        initializeAudio();
-        
-        // Włącz głośność, jeśli nie jest wyciszone, z płynnym wejściem
-        if (!isMuted) {
-            setVolume(VOLUME_MAX, FADE_TIME); 
+        // --- Funkcje Dźwiękowe ---
+
+        function startSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                oscillator = audioContext.createOscillator();
+                oscillator.type = 'sine'; 
+                oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
+
+                gainNode = audioContext.createGain();
+                gainNode.gain.setValueAtTime(0.0, audioContext.currentTime); 
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.start();
+            }
+            
+            // Rozpocznij od cicha i zwiększ głośność, jeśli nie jest wyciszone
+            gainNode.gain.cancelAndHoldAtTime(audioContext.currentTime);
+            if (!isMuted) {
+                gainNode.gain.linearRampToValueAtTime(VOLUME_MAX, audioContext.currentTime + 0.5); 
+            }
+            oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
         }
-        oscillator.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
-    }
 
-    function stopSound() {
-        if (gainNode) {
-            // Wygaszaj do zera, używając FADE_TIME (bez pyknięć)
-            setVolume(VOLUME_MIN, FADE_TIME);
-        }
-    }
-    
-    function toggleMute() {
-        initializeAudio(); 
-        
-        isMuted = !isMuted;
-        if (isMuted) {
-            muteBtn.innerText = '🔊 Włącz Dźwięk';
-            muteBtn.classList.add('muted');
-            setVolume(VOLUME_MIN, 0.05); 
-        } else {
-            muteBtn.innerText = '🔇 Wycisz Dźwięk';
-            muteBtn.classList.remove('muted');
-            if (isRunning) {
-                 setVolume(VOLUME_MAX, 0.05); 
+        function stopSound() {
+            if (gainNode) {
+                // Stopniowo wycisz dźwięk i ustaw głośność na 0
+                gainNode.gain.cancelAndHoldAtTime(audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.0, audioContext.currentTime + 0.5);
             }
         }
-    }
-    
-    function setVolume(targetVolume, durationS) {
-        if (gainNode) {
-            gainNode.gain.cancelScheduledValues(audioContext.currentTime);
-            
-            if (targetVolume <= VOLUME_MIN) {
-                // Zanikanie do wyciszenia (gładkie wyłączenie)
-                gainNode.gain.exponentialRampToValueAtTime(VOLUME_MIN, audioContext.currentTime + durationS);
+        
+        // NOWA funkcja przełączająca stan wyciszenia
+        function toggleMute() {
+            isMuted = !isMuted;
+            if (isMuted) {
+                muteBtn.innerText = '🔊 Włącz Dźwięk';
+                muteBtn.classList.add('muted');
+                setVolume(0.0, 0.2); // Wycisz natychmiast
             } else {
-                // Wzrost do głośności docelowej
+                muteBtn.innerText = '🔇 Wycisz Dźwięk';
+                muteBtn.classList.remove('muted');
+                if (isRunning) {
+                     // Przywróć głośność tylko jeśli trening trwa (w przeciwnym razie pozostaw na 0)
+                     setVolume(VOLUME_MAX, 0.2); 
+                }
+            }
+        }
+        
+        // NOWA funkcja do ustawiania głośności
+        function setVolume(targetVolume, durationS) {
+            if (gainNode) {
+                gainNode.gain.cancelAndHoldAtTime(audioContext.currentTime);
                 gainNode.gain.linearRampToValueAtTime(targetVolume, audioContext.currentTime + durationS);
             }
         }
-    }
 
-    function transitionFrequency(targetFreq, durationMs) {
-        if (!oscillator) return;
-        const durationS = durationMs / 1000;
-        
-        oscillator.frequency.cancelScheduledValues(audioContext.currentTime);
-        
-        if (durationS > 0) {
-            // Płynna zmiana częstotliwości
-            oscillator.frequency.linearRampToValueAtTime(targetFreq, audioContext.currentTime + durationS);
-        } else {
-            // Natychmiastowe ustawienie częstotliwości (dla faz zatrzymania)
-             oscillator.frequency.setValueAtTime(targetFreq, audioContext.currentTime);
-        }
-    }
-
-    // --- Główna logika ---
-
-    async function startBreathing() {
-        if (isRunning) return;
-        
-        const inhaleTime = parseFloat(document.getElementById('inhale').value) * 1000;
-        const hold1Time = parseFloat(document.getElementById('hold1').value) * 1000;
-        const exhaleTime = parseFloat(document.getElementById('exhale').value) * 1000;
-        const hold2Time = parseFloat(document.getElementById('hold2').value) * 1000;
-        
-        const totalMinutes = parseFloat(document.getElementById('totalTime').value);
-        remainingTime = totalMinutes * 60 * 1000;
-
-        if (inhaleTime <= 0 || exhaleTime <= 0 || totalMinutes <= 0) {
-            alert("Czas wdechu, wydechu i treningu musi być większy niż 0.");
-            stopSound();
-            return;
+        function transitionFrequency(targetFreq, durationMs) {
+            if (!oscillator) return;
+            const durationS = durationMs / 1000;
+            
+            oscillator.frequency.cancelAndHoldAtTime(audioContext.currentTime);
+            
+            if (durationS > 0) {
+                oscillator.frequency.linearRampToValueAtTime(targetFreq, audioContext.currentTime + durationS);
+            } else {
+                 oscillator.frequency.setValueAtTime(targetFreq, audioContext.currentTime);
+            }
         }
 
-        isRunning = true;
-        toggleControls(true);
-        startSound(); 
+        // --- Główna logika ---
 
-        await wait(50); // Opóźnienie stabilizujące Audio Context
-        
-        updateTimerDisplay(remainingTime, countdownDisplay);
+        async function startBreathing() {
+            if (isRunning) return;
+            
+            startSound(); 
+            
+            // ... (Pobieranie i walidacja czasów) ...
+            const inhaleTime = parseFloat(document.getElementById('inhale').value) * 1000;
+            const hold1Time = parseFloat(document.getElementById('hold1').value) * 1000;
+            const exhaleTime = parseFloat(document.getElementById('exhale').value) * 1000;
+            const hold2Time = parseFloat(document.getElementById('hold2').value) * 1000;
+            
+            const totalMinutes = parseFloat(document.getElementById('totalTime').value);
+            remainingTime = totalMinutes * 60 * 1000;
 
-        sessionTimerInterval = setInterval(() => {
-            remainingTime -= 1000;
+            if (inhaleTime <= 0 || exhaleTime <= 0 || totalMinutes <= 0) {
+                alert("Czas wdechu, wydechu i treningu musi być większy niż 0.");
+                stopSound();
+                return;
+            }
+
+            isRunning = true;
+            toggleControls(true);
+            
             updateTimerDisplay(remainingTime, countdownDisplay);
 
-            if (remainingTime <= 0) {
-                clearInterval(sessionTimerInterval);
-                stopBreathing("Trening zakończony! Dobra robota!");
-            }
-        }, 1000);
+            sessionTimerInterval = setInterval(() => {
+                remainingTime -= 1000;
+                updateTimerDisplay(remainingTime, countdownDisplay);
 
-    async function runBreathingLoop(inhaleTime, hold1Time, exhaleTime, hold2Time) {
-        // Sprawdzenie głośności na początku pętli (KLUCZOWA ZMIANA)
-        if (!isMuted) setVolume(VOLUME_MAX, 0.05); 
-        
-        while (isRunning) {
-            if (remainingTime <= 0) {
-                break;
+                if (remainingTime <= 0) {
+                    clearInterval(sessionTimerInterval);
+                    stopBreathing("Trening zakończony! Dobra robota!");
+                }
+            }, 1000);
+
+            runBreathingLoop(inhaleTime, hold1Time, exhaleTime, hold2Time);
+        }
+
+        async function runBreathingLoop(inhaleTime, hold1Time, exhaleTime, hold2Time) {
+            while (isRunning) {
+                if (remainingTime <= 0) {
+                    break;
+                }
+
+                // 1. WDECH: Częstotliwość rośnie (Głośno, jeśli nie wyciszone)
+                textDisplay.innerText = "Wdech";
+                circle.style.transition = `transform ${inhaleTime}ms ease-in-out`;
+                circle.style.transform = "scale(2.0)"; 
+                transitionFrequency(FREQ_END, inhaleTime); 
+                if (!isMuted) setVolume(VOLUME_MAX, 0.1); // Upewnij się, że jest głośno
+                await wait(inhaleTime);
+                if (!isRunning) break;
+
+                // 2. ZATRZYMANIE 1: Wycisz dźwięk
+                if (hold1Time > 0) {
+                    textDisplay.innerText = "Zatrzymaj";
+                    circle.style.transition = "none"; 
+                    transitionFrequency(FREQ_END, 0); 
+                    setVolume(0.0, 0.05); // Natychmiastowe wyciszenie
+                    await wait(hold1Time);
+                    if (!isRunning) break;
+                }
+
+                // 3. WYDECH: Częstotliwość maleje (Głośno, jeśli nie wyciszone)
+                textDisplay.innerText = "Wydech";
+                circle.style.transition = `transform ${exhaleTime}ms ease-in-out`;
+                circle.style.transform = "scale(1.0)"; 
+                transitionFrequency(FREQ_START, exhaleTime); 
+                if (!isMuted) setVolume(VOLUME_MAX, 0.1); // Upewnij się, że jest głośno
+                await wait(exhaleTime);
+                if (!isRunning) break;
+
+                // 4. ZATRZYMANIE 2: Wycisz dźwięk
+                if (hold2Time > 0) {
+                    textDisplay.innerText = "Zatrzymaj";
+                    circle.style.transition = "none";
+                    transitionFrequency(FREQ_START, 0); 
+                    setVolume(0.0, 0.05); // Natychmiastowe wyciszenie
+                    await wait(hold2Time);
+                    if (!isRunning) break;
+                }
             }
+        }
+
+        function stopBreathing(finalMessage = "Gotowy?") {
+            isRunning = false;
             
-            // 1. WDECH: Częstotliwość rośnie
-            textDisplay.innerText = "Wdech";
-            circle.style.transition = `transform ${inhaleTime}ms ease-in-out`;
-            circle.style.transform = "scale(2.0)"; 
-            transitionFrequency(FREQ_END, inhaleTime); // Wzrost do najwyższej częstotliwości
-            await wait(inhaleTime);
-            if (!isRunning) break;
-
-            // 2. ZATRZYMANIE 1: Częstotliwość stała (wysoka) - Ciągły dźwięk
-            if (hold1Time > 0) {
-                textDisplay.innerText = "Zatrzymaj";
-                circle.style.transition = "none"; 
-                transitionFrequency(FREQ_END, 0); // Utrzymanie najwyższej częstotliwości
-                await wait(hold1Time);
-                if (!isRunning) break;
-            }
-
-            // 3. WYDECH: Częstotliwość maleje 
-            textDisplay.innerText = "Wydech";
-            circle.style.transition = `transform ${exhaleTime}ms ease-in-out`;
-            circle.style.transform = "scale(1.0)"; 
-            transitionFrequency(FREQ_START, exhaleTime); // Spadek do najniższej częstotliwości
-            await wait(exhaleTime);
-            if (!isRunning) break;
-
-            // 4. ZATRZYMANIE 2: Częstotliwość stała (niska) - Ciągły dźwięk
-            if (hold2Time > 0) {
-                textDisplay.innerText = "Zatrzymaj";
-                circle.style.transition = "none";
-                transitionFrequency(FREQ_START, 0); // Utrzymanie najniższej częstotliwości
-                await wait(hold2Time);
-                if (!isRunning) break;
+            stopSound(); // Zawsze wyciszamy przy stop
+            
+            clearInterval(sessionTimerInterval);
+            
+            textDisplay.innerText = finalMessage;
+            
+            circle.style.transition = "transform 0.5s ease-out";
+            circle.style.transform = "scale(1)";
+            
+            toggleControls(false);
+            
+            if (finalMessage === "Gotowy?") {
+                 document.getElementById('session-countdown').innerText = '00:00';
             }
         }
         
-        // Zapewnienie, że po wyjściu z pętli dźwięk się wyciszy.
-        stopSound();
-    }
-
-    function stopBreathing(finalMessage = "Gotowy?") {
-        isRunning = false;
+        // ... (Reszta funkcji JavaScript) ...
         
-        stopSound(); // Zawsze wyciszamy przy stop
-        
-        clearInterval(sessionTimerInterval);
-        
-        textDisplay.innerText = finalMessage;
-        
-        circle.style.transition = "transform 0.5s ease-out";
-        circle.style.transform = "scale(1)";
-        
-        toggleControls(false);
-        
-        if (finalMessage === "Gotowy?") {
-             document.getElementById('session-countdown').innerText = '00:00';
+        function updateTimerDisplay(ms, displayElement) {
+            const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(seconds).padStart(2, '0');
+            
+            displayElement.innerText = `${formattedMinutes}:${formattedSeconds}`;
         }
-    }
-    
-    function updateTimerDisplay(ms, displayElement) {
-        const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
         
-        const formattedMinutes = String(minutes).padStart(2, '0');
-        const formattedSeconds = String(seconds).padStart(2, '0');
-        
-        displayElement.innerText = `${formattedMinutes}:${formattedSeconds}`;
-    }
-    
-    function toggleControls(active) {
-        startBtn.disabled = active;
-        stopBtn.disabled = !active;
-        inputs.forEach(input => input.disabled = active);
-    }
+        function toggleControls(active) {
+            startBtn.disabled = active;
+            stopBtn.disabled = !active;
+            inputs.forEach(input => input.disabled = active);
+        }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const totalMinutes = parseFloat(document.getElementById('totalTime').value);
-        const initialTimeMs = totalMinutes * 60 * 1000;
-        updateTimerDisplay(initialTimeMs, countdownDisplay);
-        // Inicjalizacja Audio Contextu, ale bez uruchamiania dźwięku,
-        // co minimalizuje szanse na pykanie przy pierwszym kliknięciu Start.
-        initializeAudio(); 
-    });
-
+        document.addEventListener('DOMContentLoaded', () => {
+            const totalMinutes = parseFloat(document.getElementById('totalTime').value);
+            const initialTimeMs = totalMinutes * 60 * 1000;
+            updateTimerDisplay(initialTimeMs, countdownDisplay);
+        });
 </script>
 </body>
 </html>

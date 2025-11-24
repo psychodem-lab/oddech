@@ -221,15 +221,15 @@
 
 <script>
 /*
-  Ulepszony skrypt:
-  - Domyślnie wyciszony (isMuted = true)
-  - Audio + wizualizacja
-  - Screen Wake Lock (blokada wygaszania ekranu)
+  Skrypt poprawiony:
+  - Całkowita cisza przy starcie w trybie wyciszonym (brak "blipnięcia")
+  - Domyślny start bez dźwięku
+  - Wake Lock API
 */
 
 'use strict';
 
-/* --- Konfiguracja dźwięku i domyślne wartości --- */
+/* --- Konfiguracja dźwięku --- */
 const FREQ_START = 164.8;
 const FREQ_END = 329.6;
 const VOLUME_MAX = 0.28;
@@ -248,8 +248,7 @@ let audioContext = null;
 let oscillator = null;
 let gainNode = null;
 let isRunning = false;
-// ZMIANA: domyślnie true (wyciszony)
-let isMuted = true;
+let isMuted = true; // Domyślnie wyciszone
 let sessionTimerInterval = null;
 let remainingTimeMs = 0;
 let wakeLock = null;
@@ -257,16 +256,14 @@ let wakeLock = null;
 /* Utility sleep */
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-/* --- Wake Lock API (Blokada ekranu) --- */
+/* --- Wake Lock API --- */
 async function requestWakeLock() {
     if ('wakeLock' in navigator) {
         try {
             wakeLock = await navigator.wakeLock.request('screen');
-            wakeLock.addEventListener('release', () => {
-                // ...
-            });
+            wakeLock.addEventListener('release', () => {});
         } catch (err) {
-            console.warn(`Błąd Wake Lock: ${err.name}, ${err.message}`);
+            console.warn(`Wake Lock err: ${err.message}`);
         }
     }
 }
@@ -277,7 +274,7 @@ async function releaseWakeLock() {
             await wakeLock.release();
             wakeLock = null;
         } catch (err) {
-            console.warn(`Błąd zwalniania Wake Lock: ${err.message}`);
+            console.warn(`Release Lock err: ${err.message}`);
         }
     }
 }
@@ -299,6 +296,7 @@ function createOscillatorAndGain() {
     osc.frequency.setValueAtTime(FREQ_START, audioContext.currentTime);
 
     const gain = audioContext.createGain();
+    // Inicjalizacja ABSOLUTNYM ZEREM
     gain.gain.setValueAtTime(0.0, audioContext.currentTime);
 
     osc.connect(gain);
@@ -340,10 +338,7 @@ async function startSound() {
     await ensureAudioContext();
 
     if (oscillator) {
-        try {
-            oscillator.stop();
-            oscillator.disconnect();
-        } catch (e) {}
+        try { oscillator.stop(); oscillator.disconnect(); } catch (e) {}
         oscillator = null;
     }
     if (gainNode) {
@@ -357,21 +352,26 @@ async function startSound() {
 
     oscillator.start();
 
-    // Jeśli jest wyciszony, ustawiamy 0, jeśli nie - max
+    // POPRAWKA: Jeśli jest wyciszony, wymuszamy 0 natychmiastowo, bez FADE_MS
     if (!isMuted) {
         setVolume(VOLUME_MAX, FADE_MS / 1000);
     } else {
-        setVolume(0, FADE_MS / 1000);
+        // Natychmiastowe 0, żeby uniknąć "blipnięcia" przy starcie
+        gainNode.gain.cancelScheduledValues(audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
     }
+    
     transitionFrequency(FREQ_START, 0);
 }
 
-/* Stop dźwięku */
 async function stopSoundAndCleanup() {
     if (!audioContext || !gainNode) return;
     try {
-        setVolume(0, 0.25);
-        await wait(300);
+        // Szybki fade out przy stopie tylko jeśli nie było wyciszone
+        if (!isMuted) setVolume(0, 0.15);
+        else gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+
+        await wait(200);
         if (oscillator) {
             try { oscillator.stop(); } catch (e) {}
             try { oscillator.disconnect(); } catch (e) {}
@@ -390,8 +390,7 @@ async function stopSoundAndCleanup() {
     }
 }
 
-/* --- Sesja oddechowa i logika UI --- */
-
+/* --- Sesja oddechowa --- */
 function validateInputs(inhaleS, hold1S, exhaleS, hold2S, totalMinutes) {
     if (!(isFinite(inhaleS) && inhaleS > 0)) return 'Wdech musi być > 0.';
     if (!(isFinite(exhaleS) && exhaleS > 0)) return 'Wydech musi być > 0.';
@@ -417,7 +416,6 @@ function forceReflow(el) {
     void el.offsetHeight;
 }
 
-/* Główna pętla sesji */
 async function runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms) {
     while (isRunning && remainingTimeMs > 0) {
         // WDECH
@@ -435,7 +433,8 @@ async function runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms) {
             textDisplay.innerText = 'Zatrzymaj';
             circle.style.transition = 'none';
             transitionFrequency(FREQ_END, 0);
-            setVolume(0, 0.05); // Cisza podczas zatrzymania
+            if (!isMuted) setVolume(0.02, 0.1); // Bardzo ciche tło, tylko jeśli niewyciszone
+            else setVolume(0, 0);
             await wait(hold1Ms);
             if (!isRunning) break;
         }
@@ -455,14 +454,14 @@ async function runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms) {
             textDisplay.innerText = 'Zatrzymaj';
             circle.style.transition = 'none';
             transitionFrequency(FREQ_START, 0);
-            setVolume(0, 0.05);
+            if (!isMuted) setVolume(0.02, 0.1);
+            else setVolume(0, 0);
             await wait(hold2Ms);
             if (!isRunning) break;
         }
     }
 }
 
-/* Start treningu */
 async function startBreathing() {
     if (isRunning) return;
 
@@ -494,7 +493,7 @@ async function startBreathing() {
     try {
         await startSound();
     } catch (e) {
-        console.warn('Problem z dźwiękiem:', e);
+        console.warn('Audio err', e);
     }
 
     updateTimerDisplay(remainingTimeMs);
@@ -512,7 +511,7 @@ async function startBreathing() {
     try {
         await runBreathingLoop(inhaleMs, hold1Ms, exhaleMs, hold2Ms);
     } catch (e) {
-        console.error('Błąd pętli oddechowej', e);
+        console.error('Loop err', e);
     }
 
     if (isRunning) {
@@ -520,7 +519,6 @@ async function startBreathing() {
     }
 }
 
-/* Stop treningu */
 async function stopBreathing(finalMessage = 'Gotowy?') {
     if (!isRunning) {
         await stopSoundAndCleanup();
@@ -550,7 +548,7 @@ async function stopBreathing(finalMessage = 'Gotowy?') {
     toggleControls(false);
 }
 
-/* --- Mute toggle --- */
+/* --- Mute UI --- */
 function updateMuteUI() {
     if (isMuted) {
         muteBtn.classList.add('muted');
@@ -574,18 +572,10 @@ function toggleMute() {
     }
 }
 
-/* --- Eventy UI --- */
-startBtn.addEventListener('click', () => {
-    startBreathing().catch(e => console.error(e));
-});
-
-stopBtn.addEventListener('click', () => {
-    stopBreathing('Gotowy?').catch(e => console.error(e));
-});
-
-muteBtn.addEventListener('click', () => {
-    toggleMute();
-});
+/* --- Eventy --- */
+startBtn.addEventListener('click', () => startBreathing().catch(console.error));
+stopBtn.addEventListener('click', () => stopBreathing('Gotowy?').catch(console.error));
+muteBtn.addEventListener('click', toggleMute);
 
 document.addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter') {
@@ -599,15 +589,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalMinutes = parseFloat(document.getElementById('totalTime').value) || 0;
     const initialMs = Math.round(Math.max(0.5, totalMinutes) * 60 * 1000);
     updateTimerDisplay(initialMs);
-    // UI zaktualizuje się do domyślnej wartości isMuted = true
     updateMuteUI();
 });
 
 window.addEventListener('beforeunload', (e) => {
-    if (isRunning) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
+    if (isRunning) { e.preventDefault(); e.returnValue = ''; }
 });
 </script>
 </body>

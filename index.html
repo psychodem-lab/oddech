@@ -14,43 +14,43 @@
             --danger-color: #e74c3c;
         }
 
-     body {
+        body {
             margin: 0;
-            padding: 20px;
+            padding: 15px; /* ZMNIEJSZONY PADDING */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start; /* ZMIANA: Wyrównanie do góry */
+            justify-content: space-between; /* ZMIANA: Rozłożenie elementów na całą wysokość */
             min-height: 100vh;
-            overflow-y: scroll; /* DODAŁEM: Umożliwia przewijanie w pionie */
-            /* overflow-y: hidden; (USUNIĘTE/ZMIENIONE na scroll) */
+            overflow: hidden; /* ZAPOBIEGANIE PRZEWIJANIU */
             text-align: center;
         }
 
         /* Kontener wizualizacji */
         .visualizer-container {
             position: relative;
-            width: 300px;
-            height: 300px;
+            width: 280px; /* ZMNIEJSZONY */
+            height: 280px; /* ZMNIEJSZONY */
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 40px;
+            margin-bottom: 25px; /* ZMNIEJSZONY MARGIN */
+            flex-shrink: 0; /* Zapobiega zmniejszaniu się kontenera w pionie */
         }
 
         /* Koło oddechowe */
         .breathing-circle {
-            width: 150px;
-            height: 150px;
+            width: 140px; /* ZMNIEJSZONY */
+            height: 140px; /* ZMNIEJSZONY */
             background-color: var(--circle-color);
             border-radius: 50%;
             position: absolute;
             z-index: 1;
             opacity: 0.8;
-            box-shadow: 0 0 20px rgba(74, 144, 226, 0.4);
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.4); /* ZMNIEJSZONY CIEŃ */
             transform: scale(1); 
         }
 
@@ -58,92 +58,93 @@
         .instruction-text {
             position: relative;
             z-index: 2;
-            font-size: 1.5rem;
+            font-size: 1.3rem; /* ZMNIEJSZONY */
             font-weight: bold;
             color: white;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.2); /* ZMNIEJSZONY CIEŃ */
             pointer-events: none;
         }
 
         /* Panel sterowania */
         .controls {
             background: var(--panel-bg);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 15px; /* ZMNIEJSZONY PADDING */
+            border-radius: 12px; /* ZMNIEJSZONY RADIUS */
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08); /* ZMNIEJSZONY CIEŃ */
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px; /* ZMNIEJSZONY GAP */
             width: 90%;
-            max-width: 400px;
+            max-width: 380px; /* ZMNIEJSZONY MAX-WIDTH */
+            flex-shrink: 0; /* Zapobiega zmniejszaniu się kontenera w pionie */
         }
 
         /* Układ mniejszych inputów */
         .inputs-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 8px; /* ZMNIEJSZONY GAP */
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
-            align-items: center; /* Wyśrodkowanie wewnątrz grupy */
+            align-items: center;
         }
 
         .input-group label {
-            font-size: 0.8rem; /* Zmniejszenie czcionki etykiety */
-            margin-bottom: 3px;
+            font-size: 0.75rem; /* ZMNIEJSZONA CZCIONKA */
+            margin-bottom: 2px; /* ZMNIEJSZONY MARGIN */
             color: #666;
             text-align: center;
         }
 
         /* Wizualne zmniejszenie ramki inputu */
         .input-group input {
-            padding: 6px; /* Zmniejszony padding */
+            padding: 5px; /* ZMNIEJSZONY PADDING */
             border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 0.9rem; /* Zmniejszona czcionka */
-            max-width: 80px; /* Ograniczenie szerokości */
+            border-radius: 5px; /* ZMNIEJSZONY RADIUS */
+            font-size: 0.85rem; /* ZMNIEJSZONA CZCIONKA */
+            max-width: 70px; /* ZMNIEJSZONY MAX-WIDTH */
             text-align: center;
         }
         
         /* Input dla czasu treningu zajmuje całą szerokość */
         .input-group.total-time-input {
             grid-column: span 2;
-            margin-top: 10px;
+            margin-top: 8px; /* ZMNIEJSZONY MARGIN */
         }
         .input-group.total-time-input input {
-            max-width: 100px; /* Nieco większy niż te faz oddechu */
+            max-width: 90px; /* ZMNIEJSZONY MAX-WIDTH */
         }
 
         /* Wskaźnik całkowitego czasu sesji */
         .session-timer {
             text-align: center;
-            font-size: 1.1rem;
+            font-size: 1rem; /* ZMNIEJSZONY */
             font-weight: 500;
-            padding: 10px 0;
+            padding: 8px 0; /* ZMNIEJSZONY PADDING */
             border-top: 1px solid #eee;
-            margin-top: 15px;
+            margin-top: 12px; /* ZMNIEJSZONY MARGIN */
         }
         #session-countdown {
             font-weight: bold;
-            font-size: 1.4rem;
+            font-size: 1.2rem; /* ZMNIEJSZONY */
             color: var(--circle-color);
         }
 
         .buttons {
             display: flex;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 8px; /* ZMNIEJSZONY GAP */
+            margin-top: 8px; /* ZMNIEJSZONY MARGIN */
         }
 
         button {
             flex: 1;
-            padding: 12px;
+            padding: 10px; /* ZMNIEJSZONY PADDING */
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
+            border-radius: 7px; /* ZMNIEJSZONY RADIUS */
+            font-size: 0.95rem; /* ZMNIEJSZONY */
             cursor: pointer;
             font-weight: bold;
             transition: background 0.2s;
@@ -212,8 +213,8 @@
 
     <script>
         let isRunning = false;
-        let sessionTimerInterval; // Interwał dla licznika całkowitego
-        let remainingTime; // Czas pozostały (ms)
+        let sessionTimerInterval; 
+        let remainingTime; 
         
         const circle = document.getElementById('circle');
         const textDisplay = document.getElementById('text');
@@ -222,23 +223,19 @@
         const inputs = document.querySelectorAll('input');
         const countdownDisplay = document.getElementById('session-countdown');
 
-        // Funkcja pomocnicza do czekania (Promise-based delay)
         const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
         async function startBreathing() {
             if (isRunning) return;
             
-            // --- Pobieranie czasów faz oddechu ---
             const inhaleTime = parseFloat(document.getElementById('inhale').value) * 1000;
             const hold1Time = parseFloat(document.getElementById('hold1').value) * 1000;
             const exhaleTime = parseFloat(document.getElementById('exhale').value) * 1000;
             const hold2Time = parseFloat(document.getElementById('hold2').value) * 1000;
             
-            // --- Pobieranie całkowitego czasu treningu ---
             const totalMinutes = parseFloat(document.getElementById('totalTime').value);
-            remainingTime = totalMinutes * 60 * 1000; // Konwersja na milisekundy
+            remainingTime = totalMinutes * 60 * 1000;
 
-            // Walidacja
             if (inhaleTime <= 0 || exhaleTime <= 0 || totalMinutes <= 0) {
                 alert("Czas wdechu, wydechu i treningu musi być większy niż 0.");
                 return;
@@ -247,26 +244,21 @@
             isRunning = true;
             toggleControls(true);
             
-            // Ustawienie początkowego wyświetlania licznika
             updateTimerDisplay(remainingTime, countdownDisplay);
 
-            // --- Start Licznika Sesji ---
             sessionTimerInterval = setInterval(() => {
                 remainingTime -= 1000;
                 updateTimerDisplay(remainingTime, countdownDisplay);
 
                 if (remainingTime <= 0) {
                     clearInterval(sessionTimerInterval);
-                    // Cała sesja się skończyła
                     stopBreathing("Trening zakończony! Dobra robota!");
                 }
             }, 1000);
 
-            // --- Start Pętli Oddechowej ---
             runBreathingLoop(inhaleTime, hold1Time, exhaleTime, hold2Time);
         }
 
-        // Funkcja do aktualizacji wyświetlania czasu w formacie MM:SS
         function updateTimerDisplay(ms, displayElement) {
             const totalSeconds = Math.max(0, Math.floor(ms / 1000));
             const minutes = Math.floor(totalSeconds / 60);
@@ -278,22 +270,18 @@
             displayElement.innerText = `${formattedMinutes}:${formattedSeconds}`;
         }
         
-        // Funkcja odpowiedzialna za cykl oddechowy
         async function runBreathingLoop(inhaleTime, hold1Time, exhaleTime, hold2Time) {
             while (isRunning) {
-                // Dodatkowe sprawdzenie, czy czas sesji się nie skończył
                 if (remainingTime <= 0) {
                     break;
                 }
 
-                // 1. WDECH
                 textDisplay.innerText = "Wdech";
                 circle.style.transition = `transform ${inhaleTime}ms ease-in-out`;
                 circle.style.transform = "scale(2.0)"; 
                 await wait(inhaleTime);
                 if (!isRunning) break;
 
-                // 2. ZATRZYMANIE 1
                 if (hold1Time > 0) {
                     textDisplay.innerText = "Zatrzymaj";
                     circle.style.transition = "none"; 
@@ -301,14 +289,12 @@
                     if (!isRunning) break;
                 }
 
-                // 3. WYDECH
                 textDisplay.innerText = "Wydech";
                 circle.style.transition = `transform ${exhaleTime}ms ease-in-out`;
                 circle.style.transform = "scale(1.0)"; 
                 await wait(exhaleTime);
                 if (!isRunning) break;
 
-                // 4. ZATRZYMANIE 2
                 if (hold2Time > 0) {
                     textDisplay.innerText = "Zatrzymaj";
                     circle.style.transition = "none";
@@ -318,22 +304,18 @@
             }
         }
 
-        // Funkcja do zatrzymania treningu
         function stopBreathing(finalMessage = "Gotowy?") {
             isRunning = false;
             
-            // Wyczyść interwał licznika sesji
             clearInterval(sessionTimerInterval);
             
             textDisplay.innerText = finalMessage;
             
-            // Reset koła
             circle.style.transition = "transform 0.5s ease-out";
             circle.style.transform = "scale(1)";
             
             toggleControls(false);
             
-            // Resetuj wyświetlany czas licznika tylko przy manualnym zatrzymaniu
             if (finalMessage === "Gotowy?") {
                  document.getElementById('session-countdown').innerText = '00:00';
             }
@@ -345,7 +327,6 @@
             inputs.forEach(input => input.disabled = active);
         }
         
-        // Wyświetlenie czasu początkowego (2:00) przy ładowaniu strony
         document.addEventListener('DOMContentLoaded', () => {
             const totalMinutes = parseFloat(document.getElementById('totalTime').value);
             const initialTimeMs = totalMinutes * 60 * 1000;

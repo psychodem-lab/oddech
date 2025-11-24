@@ -366,17 +366,14 @@
             }
         }, 1000);
 
-        runBreathingLoop(inhaleTime, hold1Time, exhaleTime, hold2Time);
-    }
-
     async function runBreathingLoop(inhaleTime, hold1Time, exhaleTime, hold2Time) {
+        // Sprawdzenie głośności na początku pętli (KLUCZOWA ZMIANA)
+        if (!isMuted) setVolume(VOLUME_MAX, 0.05); 
+        
         while (isRunning) {
             if (remainingTime <= 0) {
                 break;
             }
-            
-            // UPEWNIJ SIĘ, ŻE DŹWIĘK JEST AKTYWNY (Z POMINIĘCIEM MUTED)
-            if (!isMuted) setVolume(VOLUME_MAX, 0.05); 
             
             // 1. WDECH: Częstotliwość rośnie
             textDisplay.innerText = "Wdech";
@@ -386,12 +383,11 @@
             await wait(inhaleTime);
             if (!isRunning) break;
 
-            // 2. ZATRZYMANIE 1: Częstotliwość stała (wysoka) - Brak wyciszenia!
+            // 2. ZATRZYMANIE 1: Częstotliwość stała (wysoka) - Ciągły dźwięk
             if (hold1Time > 0) {
                 textDisplay.innerText = "Zatrzymaj";
                 circle.style.transition = "none"; 
                 transitionFrequency(FREQ_END, 0); // Utrzymanie najwyższej częstotliwości
-                // setVolume(VOLUME_MIN, 0.05); <-- USUNIĘTO WYCISZENIE
                 await wait(hold1Time);
                 if (!isRunning) break;
             }
@@ -401,16 +397,14 @@
             circle.style.transition = `transform ${exhaleTime}ms ease-in-out`;
             circle.style.transform = "scale(1.0)"; 
             transitionFrequency(FREQ_START, exhaleTime); // Spadek do najniższej częstotliwości
-            // if (!isMuted) setVolume(VOLUME_MAX, 0.05); <-- USUNIĘTO PONOWNE WŁĄCZENIE (jest już włączone na początku pętli)
             await wait(exhaleTime);
             if (!isRunning) break;
 
-            // 4. ZATRZYMANIE 2: Częstotliwość stała (niska) - Brak wyciszenia!
+            // 4. ZATRZYMANIE 2: Częstotliwość stała (niska) - Ciągły dźwięk
             if (hold2Time > 0) {
                 textDisplay.innerText = "Zatrzymaj";
                 circle.style.transition = "none";
                 transitionFrequency(FREQ_START, 0); // Utrzymanie najniższej częstotliwości
-                // setVolume(VOLUME_MIN, 0.05); <-- USUNIĘTO WYCISZENIE
                 await wait(hold2Time);
                 if (!isRunning) break;
             }

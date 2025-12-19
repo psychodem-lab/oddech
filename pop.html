@@ -2,150 +2,160 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cicha Woda - Poprawione Bąbelki</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bąbelki - Naprawione Sterowanie</title>
     <style>
         body { 
-            background: #e3f2fd; 
+            background: #f0f9ff; 
             margin: 0; 
+            padding: 0;
             overflow: hidden; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            font-family: 'Segoe UI', sans-serif;
-            color: #0277bd;
+            font-family: sans-serif;
+            touch-action: none;
         }
+        .ui { padding: 15px; text-align: center; background: white; width: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         canvas { 
-            background: linear-gradient(to bottom, #4fc3f7, #0288d1); 
-            box-shadow: 0 15px 45px rgba(0,0,0,0.2);
-            border-radius: 25px;
+            background: #0099ff; 
+            display: block;
             margin-top: 20px;
-            cursor: crosshair;
-            border: 8px solid white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-radius: 15px;
+            cursor: pointer;
+            touch-action: none;
             max-width: 95vw;
-            touch-action: none; /* Ważne dla urządzeń mobilnych */
+            max-height: 70vh;
         }
-        .ui { text-align: center; padding: 15px; }
     </style>
 </head>
 <body>
 
 <div class="ui">
-    <h2 style="margin:5px">Pękające Bąbelki</h2>
-    <p style="margin:0">Kliknij lub dotknij bąbelka, aby go rozbić.</p>
+    <h2 style="margin:0">Bąbelki Zen</h2>
+    <p style="margin:5px; color: #666;">Klikaj bąbelki, aby pękały.</p>
 </div>
 
-<canvas id="bubbleCanvas" width="800" height="550"></canvas>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
 
 <script>
-    const canvas = document.getElementById("bubbleCanvas");
+    const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
     let bubbles = [];
-    let particles = []; // Efekty pękania
+    let particles = [];
 
-    // Funkcja tworząca bąbelek
+    // Funkcja tworzenia bąbelka
     function createBubble() {
-        if (bubbles.length < 40) {
+        if (bubbles.length < 35) {
             bubbles.push({
                 x: Math.random() * canvas.width,
                 y: canvas.height + 50,
-                radius: 15 + Math.random() * 25,
-                speed: 0.5 + Math.random() * 1,
-                sway: Math.random() * 0.02,
-                offset: Math.random() * 100
+                r: 20 + Math.random() * 30,
+                speed: 1 + Math.random() * 1.5,
+                sinOffset: Math.random() * 1000
             });
         }
     }
 
-    // Obsługa kliknięcia/dotyku
-    canvas.addEventListener('pointerdown', function(e) {
-        // Obliczanie pozycji względem canvasu (działa na PC i Mobile)
+    // GŁÓWNA FUNKCJA OBSŁUGI KLIKNIĘCIA
+    function handleInput(e) {
+        e.preventDefault();
+        
+        // Pobieramy pozycję dotyku/myszki
         const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        // Obliczamy współrzędne wewnątrz canvasu
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
-        const mouseX = (e.clientX - rect.left) * scaleX;
-        const mouseY = (e.clientY - rect.top) * scaleY;
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
 
-        // Sprawdzanie kolizji od końca (aby klikać te "na wierzchu")
+        // Sprawdzamy kolizję z bąbelkami
         for (let i = bubbles.length - 1; i >= 0; i--) {
-            const b = bubbles[i];
-            const dx = mouseX - b.x;
-            const dy = mouseY - b.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance < b.radius) {
-                // Stwórz cząsteczki pęknięcia
-                createSplash(b.x, b.y, b.radius);
-                // Usuń bąbelek
+            let b = bubbles[i];
+            let dist = Math.sqrt((x - b.x) ** 2 + (y - b.y) ** 2);
+            
+            if (dist < b.r + 10) { // +10px marginesu dla łatwiejszego klikania
+                createSplash(b.x, b.y);
                 bubbles.splice(i, 1);
-                break; // Jeden klik rozbija jeden bąbelek
+                return; // Rozbijamy tylko jeden bąbelek na raz
             }
         }
-    });
+    }
 
-    function createSplash(x, y, radius) {
-        for (let i = 0; i < 8; i++) {
+    function createSplash(x, y) {
+        for (let i = 0; i < 10; i++) {
             particles.push({
-                x: x,
-                y: y,
-                vx: (Math.random() - 0.5) * 5,
-                vy: (Math.random() - 0.5) * 5,
-                life: 1.0,
-                color: 'rgba(255, 255, 255, 0.8)'
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                life: 1.0
             });
         }
     }
 
-    function draw() {
+    // Rejestracja zdarzeń dla wszystkich typów urządzeń
+    canvas.addEventListener("touchstart", handleInput, { passive: false });
+    canvas.addEventListener("mousedown", handleInput);
+
+    function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Rysowanie i aktualizacja bąbelków
-        for (let i = bubbles.length - 1; i >= 0; i--) {
-            const b = bubbles[i];
-            b.y -= b.speed;
-            b.x += Math.sin(b.y * b.sway + b.offset) * 0.8;
+        // Niebieski gradient wody
+        let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grad.addColorStop(0, "#4fc3f7");
+        grad.addColorStop(1, "#0288d1");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Rysowanie bąbelka
+        // Aktualizacja i rysowanie bąbelków
+        for (let i = bubbles.length - 1; i >= 0; i--) {
+            let b = bubbles[i];
+            b.y -= b.speed;
+            b.x += Math.sin(Date.now() / 500 + b.sinOffset) * 1;
+
             ctx.beginPath();
-            let grad = ctx.createRadialGradient(b.x - b.radius*0.3, b.y - b.radius*0.3, b.radius*0.1, b.x, b.y, b.radius);
-            grad.addColorStop(0, "rgba(255, 255, 255, 0.6)");
-            grad.addColorStop(1, "rgba(255, 255, 255, 0.1)");
-            ctx.fillStyle = grad;
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-            ctx.lineWidth = 2;
-            ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+            ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+            ctx.lineWidth = 3;
             ctx.fill();
             ctx.stroke();
+            
+            // Odblask na bąbelku
+            ctx.beginPath();
+            ctx.arc(b.x - b.r/3, b.y - b.r/3, b.r/4, 0, Math.PI*2);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.fill();
 
-            // Usuwanie bąbelków poza ekranem
-            if (b.y < -50) bubbles.splice(i, 1);
+            if (b.y < -100) bubbles.splice(i, 1);
         }
 
-        // Rysowanie efektu pękania
+        // Cząsteczki (pękanie)
         for (let i = particles.length - 1; i >= 0; i--) {
-            const p = particles[i];
+            let p = particles[i];
             p.x += p.vx;
             p.y += p.vy;
-            p.life -= 0.05;
-
+            p.life -= 0.04;
             if (p.life <= 0) {
                 particles.splice(i, 1);
-                continue;
+            } else {
+                ctx.fillStyle = `rgba(255,255,255,${p.life})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+                ctx.fill();
             }
-
-            ctx.beginPath();
-            ctx.fillStyle = `rgba(255, 255, 255, ${p.life})`;
-            ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-            ctx.fill();
         }
 
-        if (Math.random() < 0.05) createBubble();
-
-        requestAnimationFrame(draw);
+        if (Math.random() < 0.04) createBubble();
+        requestAnimationFrame(loop);
     }
 
-    draw();
+    loop();
 </script>
 
 </body>

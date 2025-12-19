@@ -3,38 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bąbelki - Naprawione Sterowanie</title>
+    <title>Bąbelki Zen - Wolne i Spokojne</title>
     <style>
         body { 
-            background: #f0f9ff; 
+            background: #e0f7fa; 
             margin: 0; 
             padding: 0;
             overflow: hidden; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            font-family: sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             touch-action: none;
         }
-        .ui { padding: 15px; text-align: center; background: white; width: 100%; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .ui { padding: 20px; text-align: center; color: #006064; }
         canvas { 
-            background: #0099ff; 
+            background: #4dd0e1; 
             display: block;
-            margin-top: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border-radius: 40px;
             cursor: pointer;
             touch-action: none;
-            max-width: 95vw;
+            max-width: 90vw;
             max-height: 70vh;
+            border: 10px solid white;
         }
     </style>
 </head>
 <body>
 
 <div class="ui">
-    <h2 style="margin:0">Bąbelki Zen</h2>
-    <p style="margin:5px; color: #666;">Klikaj bąbelki, aby pękały.</p>
+    <h2 style="margin:0; font-weight: 300;">Cisza i Spokój</h2>
+    <p style="margin:5px; opacity: 0.7;">Bardzo powolne bąbelki dla Twojego relaksu.</p>
 </div>
 
 <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -46,112 +46,102 @@
     let bubbles = [];
     let particles = [];
 
-    // Funkcja tworzenia bąbelka
     function createBubble() {
-        if (bubbles.length < 35) {
+        // Zmniejszyłem limit bąbelków do 12 (było 35)
+        if (bubbles.length < 12) {
             bubbles.push({
                 x: Math.random() * canvas.width,
-                y: canvas.height + 50,
-                r: 20 + Math.random() * 30,
-                speed: 1 + Math.random() * 1.5,
-                sinOffset: Math.random() * 1000
+                y: canvas.height + 60,
+                r: 25 + Math.random() * 35,
+                // Prędkość zmniejszona do zakresu 0.3 - 0.7 (było ok. 1.5 - 2.5)
+                speed: 0.3 + Math.random() * 0.4,
+                sinOffset: Math.random() * 1000,
+                swayAmplitude: 0.5 + Math.random() * 0.5
             });
         }
     }
 
-    // GŁÓWNA FUNKCJA OBSŁUGI KLIKNIĘCIA
     function handleInput(e) {
         e.preventDefault();
-        
-        // Pobieramy pozycję dotyku/myszki
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        // Obliczamy współrzędne wewnątrz canvasu
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
         const x = (clientX - rect.left) * scaleX;
         const y = (clientY - rect.top) * scaleY;
 
-        // Sprawdzamy kolizję z bąbelkami
         for (let i = bubbles.length - 1; i >= 0; i--) {
             let b = bubbles[i];
             let dist = Math.sqrt((x - b.x) ** 2 + (y - b.y) ** 2);
-            
-            if (dist < b.r + 10) { // +10px marginesu dla łatwiejszego klikania
+            if (dist < b.r + 15) {
                 createSplash(b.x, b.y);
                 bubbles.splice(i, 1);
-                return; // Rozbijamy tylko jeden bąbelek na raz
+                return;
             }
         }
     }
 
     function createSplash(x, y) {
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 6; i++) {
             particles.push({
                 x: x, y: y,
-                vx: (Math.random() - 0.5) * 8,
-                vy: (Math.random() - 0.5) * 8,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
                 life: 1.0
             });
         }
     }
 
-    // Rejestracja zdarzeń dla wszystkich typów urządzeń
     canvas.addEventListener("touchstart", handleInput, { passive: false });
     canvas.addEventListener("mousedown", handleInput);
 
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Niebieski gradient wody
+        // Jeszcze jaśniejszy, kojący niebieski
         let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        grad.addColorStop(0, "#4fc3f7");
-        grad.addColorStop(1, "#0288d1");
+        grad.addColorStop(0, "#80deea");
+        grad.addColorStop(1, "#26c6da");
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Aktualizacja i rysowanie bąbelków
         for (let i = bubbles.length - 1; i >= 0; i--) {
             let b = bubbles[i];
             b.y -= b.speed;
-            b.x += Math.sin(Date.now() / 500 + b.sinOffset) * 1;
+            b.x += Math.sin(Date.now() / 1000 + b.sinOffset) * b.swayAmplitude;
 
             ctx.beginPath();
             ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-            ctx.lineWidth = 3;
+            ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+            ctx.lineWidth = 2;
             ctx.fill();
             ctx.stroke();
             
-            // Odblask na bąbelku
             ctx.beginPath();
-            ctx.arc(b.x - b.r/3, b.y - b.r/3, b.r/4, 0, Math.PI*2);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.arc(b.x - b.r/3, b.y - b.r/3, b.r/5, 0, Math.PI*2);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
             ctx.fill();
 
             if (b.y < -100) bubbles.splice(i, 1);
         }
 
-        // Cząsteczki (pękanie)
         for (let i = particles.length - 1; i >= 0; i--) {
             let p = particles[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.life -= 0.04;
-            if (p.life <= 0) {
-                particles.splice(i, 1);
-            } else {
+            p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+            if (p.life <= 0) particles.splice(i, 1);
+            else {
                 ctx.fillStyle = `rgba(255,255,255,${p.life})`;
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 3, 0, Math.PI*2);
+                ctx.arc(p.x, p.y, 2, 0, Math.PI*2);
                 ctx.fill();
             }
         }
 
-        if (Math.random() < 0.04) createBubble();
+        // Zmniejszyłem szansę na pojawienie się bąbelka (0.01 zamiast 0.04)
+        if (Math.random() < 0.015) createBubble();
         requestAnimationFrame(loop);
     }
 

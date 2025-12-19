@@ -3,57 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arkanoid - Większy Ekran i Przyciski</title>
+    <title>Relaksujące Łapanie Światła</title>
     <style>
         body { 
-            background: #222; 
+            background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); /* Spokojny gradient */
             display: flex; 
             flex-direction: column;
             justify-content: center; 
             align-items: center; 
             height: 100vh; 
             margin: 0; 
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            color: white;
         }
-        /* Większy obszar gry */
         canvas { 
-            background: #000; 
-            border: 3px solid #fff; 
+            background: rgba(0, 0, 0, 0.3); /* Półprzezroczyste tło */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
             max-width: 95vw;
-            max-height: 70vh;
+            max-height: 65vh;
         }
-        /* Styl przycisków sterowania */
+        .score { font-size: 24px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
         .controls {
             display: flex;
-            gap: 20px;
+            gap: 40px;
             margin-top: 20px;
-            width: 100%;
-            justify-content: center;
         }
         .btn {
-            width: 80px;
-            height: 80px;
-            background: #444;
-            border: 2px solid #fff;
-            border-radius: 10px;
+            width: 100px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid white;
+            border-radius: 30px;
             color: white;
-            font-size: 30px;
+            font-size: 24px;
             display: flex;
             justify-content: center;
             align-items: center;
-            user-select: none;
             cursor: pointer;
-            touch-action: manipulation; /* Zapobiega przybliżaniu przy klikaniu */
+            user-select: none;
+            backdrop-filter: blur(5px);
+            transition: all 0.2s;
         }
-        .btn:active {
-            background: #666;
-            transform: scale(0.95);
-        }
+        .btn:active { background: rgba(255, 255, 255, 0.3); transform: scale(0.9); }
     </style>
 </head>
 <body>
 
-<canvas id="gameCanvas" width="800" height="500"></canvas>
+<div class="score">Złapane światło: <span id="scoreVal">0</span></div>
+<canvas id="zenCanvas" width="800" height="500"></canvas>
 
 <div class="controls">
     <div class="btn" id="btnLeft">◀</div>
@@ -61,43 +61,31 @@
 </div>
 
 <script>
-    const canvas = document.getElementById("gameCanvas");
+    const canvas = document.getElementById("zenCanvas");
     const ctx = canvas.getContext("2d");
+    const scoreDisplay = document.getElementById("scoreVal");
 
-    // Piłka (Kwadrat)
-    let x = canvas.width / 2;
-    let y = canvas.height - 30;
-    let dx = 4;
-    let dy = -4;
-    const ballSize = 12;
-
-    // Paletka
-    const paddleHeight = 15;
-    const paddleWidth = 120;
+    let score = 0;
+    let paddleWidth = 120;
     let paddleX = (canvas.width - paddleWidth) / 2;
-
-    // Sterowanie
     let rightPressed = false;
     let leftPressed = false;
 
-    // Bloki
-    const rowCount = 5;
-    const columnCount = 8;
-    const brickWidth = 85;
-    const brickHeight = 25;
-    const brickPadding = 10;
-    const brickOffsetTop = 50;
-    const brickOffsetLeft = 35;
+    // Tablica przechowująca spadające elementy
+    let particles = [];
 
-    const bricks = [];
-    for(let c = 0; c < columnCount; c++) {
-        bricks[c] = [];
-        for(let r = 0; r < rowCount; r++) {
-            bricks[c][r] = { x: 0, y: 0, status: 1 };
-        }
+    function createParticle() {
+        const size = Math.random() * 15 + 5;
+        particles.push({
+            x: Math.random() * (canvas.width - size),
+            y: -20,
+            size: size,
+            speed: Math.random() * 1.5 + 0.5, // Bardzo wolne opadanie
+            color: `hsla(${Math.random() * 360}, 70%, 80%, 0.8)` // Pastelowe kolory
+        });
     }
 
-    // Obsługa Klawiatury
+    // Obsługa sterowania
     document.addEventListener("keydown", (e) => {
         if(e.key === "ArrowRight") rightPressed = true;
         if(e.key === "ArrowLeft") leftPressed = true;
@@ -107,93 +95,69 @@
         if(e.key === "ArrowLeft") leftPressed = false;
     });
 
-    // Obsługa Przycisków Ekranowych
     const bLeft = document.getElementById("btnLeft");
     const bRight = document.getElementById("btnRight");
+    
+    const setLeft = (val) => leftPressed = val;
+    const setRight = (val) => rightPressed = val;
 
-    bLeft.addEventListener("mousedown", () => leftPressed = true);
-    bLeft.addEventListener("mouseup", () => leftPressed = false);
-    bLeft.addEventListener("touchstart", (e) => { e.preventDefault(); leftPressed = true; });
-    bLeft.addEventListener("touchend", () => leftPressed = false);
-
-    bRight.addEventListener("mousedown", () => rightPressed = true);
-    bRight.addEventListener("mouseup", () => rightPressed = false);
-    bRight.addEventListener("touchstart", (e) => { e.preventDefault(); rightPressed = true; });
-    bRight.addEventListener("touchend", () => rightPressed = false);
-
-    function collisionDetection() {
-        for(let c = 0; c < columnCount; c++) {
-            for(let r = 0; r < rowCount; r++) {
-                let b = bricks[c][r];
-                if(b.status === 1) {
-                    if(x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
-                        dy = -dy;
-                        b.status = 0;
-                    }
-                }
-            }
-        }
-    }
-
-    function drawBall() {
-        ctx.beginPath();
-        ctx.rect(x, y, ballSize, ballSize);
-        ctx.fillStyle = "#FFD700"; // Złoty kwadrat
-        ctx.fill();
-        ctx.closePath();
-    }
-
-    function drawPaddle() {
-        ctx.beginPath();
-        ctx.rect(paddleX, canvas.height - paddleHeight - 5, paddleWidth, paddleHeight);
-        ctx.fillStyle = "#0095DD";
-        ctx.fill();
-        ctx.closePath();
-    }
-
-    function drawBricks() {
-        for(let c = 0; c < columnCount; c++) {
-            for(let r = 0; r < rowCount; r++) {
-                if(bricks[c][r].status === 1) {
-                    let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
-                    let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
-                    bricks[c][r].x = brickX;
-                    bricks[c][r].y = brickY;
-                    ctx.beginPath();
-                    ctx.rect(brickX, brickY, brickWidth, brickHeight);
-                    ctx.fillStyle = "#e74c3c";
-                    ctx.fill();
-                    ctx.closePath();
-                }
-            }
-        }
-    }
+    bLeft.onmousedown = () => setLeft(true);
+    bLeft.onmouseup = () => setLeft(false);
+    bRight.onmousedown = () => setRight(true);
+    bRight.onmouseup = () => setRight(false);
+    
+    // Obsługa dotyku
+    bLeft.ontouchstart = (e) => { e.preventDefault(); setLeft(true); };
+    bLeft.ontouchend = () => setLeft(false);
+    bRight.ontouchstart = (e) => { e.preventDefault(); setRight(true); };
+    bRight.ontouchend = () => setRight(false);
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawBricks();
-        drawBall();
-        drawPaddle();
-        collisionDetection();
 
-        // Odbicia
-        if(x + dx > canvas.width - ballSize || x + dx < 0) dx = -dx;
-        if(y + dy < 0) dy = -dy;
-        else if(y + dy > canvas.height - ballSize - 5) {
-            if(x > paddleX && x < paddleX + paddleWidth) {
-                dy = -dy;
-            } else if (y > canvas.height) {
-                alert("KONIEC GRY");
-                document.location.reload();
+        // Rysowanie paletki (koszyka)
+        ctx.beginPath();
+        ctx.roundRect(paddleX, canvas.height - 25, paddleWidth, 15, 10);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.fill();
+        ctx.closePath();
+
+        // Zarządzanie cząsteczkami
+        if (Math.random() < 0.03) createParticle(); // Nowa cząsteczka co jakiś czas
+
+        for (let i = 0; i < particles.length; i++) {
+            let p = particles[i];
+            p.y += p.speed;
+
+            // Rysowanie cząsteczki z delikatną poświatą
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.color;
+            ctx.fillStyle = p.color;
+            ctx.fill();
+            ctx.closePath();
+            ctx.shadowBlur = 0; // Reset blura dla wydajności
+
+            // Wykrywanie łapania
+            if (p.y + p.size > canvas.height - 25 && 
+                p.x > paddleX && p.x < paddleX + paddleWidth) {
+                particles.splice(i, 1);
+                score++;
+                scoreDisplay.innerText = score;
+                i--;
+            } 
+            // Usuwanie jeśli wypadnie poza ekran (bez kary)
+            else if (p.y > canvas.height + 20) {
+                particles.splice(i, 1);
+                i--;
             }
         }
 
         // Ruch paletki
-        if(rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 8;
-        else if(leftPressed && paddleX > 0) paddleX -= 8;
+        if(rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 6;
+        else if(leftPressed && paddleX > 0) paddleX -= 6;
 
-        x += dx;
-        y += dy;
         requestAnimationFrame(draw);
     }
 

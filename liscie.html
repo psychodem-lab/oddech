@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rytm Natury - Spadające Liście</title>
+    <style>
+        body { 
+            background: #fdf6e3; 
+            margin: 0; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            font-family: 'Georgia', serif;
+            color: #5c4033;
+        }
+        canvas { 
+            background: linear-gradient(to bottom, #d1eefc 0%, #e0f7fa 70%, #81d4fa 100%);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            margin-top: 20px;
+            max-width: 95vw;
+            max-height: 70vh;
+            cursor: pointer;
+        }
+        .instruction { text-align: center; padding: 15px; max-width: 600px; }
+        .status { font-style: italic; color: #8d6e63; height: 20px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="instruction">
+    <h2 style="margin:5px">Rytm Drzewa</h2>
+    <p>Kliknij w ekran, aby liść spadł do rzeki. Znajdź spokojny rytm. Jeśli będziesz klikać za szybko, drzewo nie wypuści liścia.</p>
+</div>
+
+<canvas id="natureCanvas" width="800" height="500"></canvas>
+<div id="statusMsg" class="status"></div>
+
+<script>
+    const canvas = document.getElementById("natureCanvas");
+    const ctx = canvas.getContext("2d");
+    const statusMsg = document.getElementById("statusMsg");
+
+    let lastClickTime = 0;
+    const minInterval = 900; // Minimalny czas między kliknięciami (900ms = spokojny rytm)
+    
+    let leaves = [];
+    let treeShake = 0;
+
+    // Obsługa kliknięcia
+    canvas.addEventListener('mousedown', (e) => {
+        const now = Date.now();
+        const interval = now - lastClickTime;
+
+        if (interval < minInterval) {
+            // Za szybko!
+            treeShake = 10; 
+            statusMsg.innerText = "Za szybko... zwolnij oddech.";
+            setTimeout(() => statusMsg.innerText = "", 2000);
+        } else {
+            // W sam raz
+            dropLeaf();
+            lastClickTime = now;
+            statusMsg.innerText = "";
+        }
+    });
+
+    function dropLeaf() {
+        leaves.push({
+            x: 250 + Math.random() * 100,
+            y: 150 + Math.random() * 50,
+            angle: Math.random() * Math.PI * 2,
+            speedY: 1 + Math.random(),
+            speedX: Math.sin(Math.random() * 2),
+            rotation: (Math.random() - 0.5) * 0.05,
+            inRiver: false,
+            color: `hsl(${30 + Math.random() * 40}, 70%, 40%)` // Jesienne kolory
+        });
+    }
+
+    function drawTree() {
+        ctx.save();
+        if (treeShake > 0) {
+            ctx.translate(Math.sin(Date.now() * 0.5) * treeShake, 0);
+            treeShake *= 0.9; // Wygasanie drżenia
+        }
+
+        // Pień
+        ctx.fillStyle = "#5d4037";
+        ctx.fillRect(280, 150, 40, 300);
+
+        // Korona (uproszczona, kojąca)
+        ctx.fillStyle = "#2e7d32";
+        ctx.beginPath();
+        ctx.arc(300, 150, 80, 0, Math.PI * 2);
+        ctx.arc(240, 180, 60, 0, Math.PI * 2);
+        ctx.arc(360, 180, 65, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function drawRiver() {
+        const time = Date.now() * 0.002;
+        ctx.fillStyle = "#0288d1";
+        ctx.beginPath();
+        ctx.moveTo(0, 420);
+        
+        // Animacja fali
+        for (let x = 0; x <= canvas.width; x += 10) {
+            ctx.lineTo(x, 420 + Math.sin(x * 0.02 + time) * 10);
+        }
+        
+        ctx.lineTo(canvas.width, canvas.height);
+        ctx.lineTo(0, canvas.height);
+        ctx.fill();
+    }
+
+    function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        drawRiver();
+        drawTree();
+
+        leaves.forEach((leaf, index) => {
+            if (!leaf.inRiver) {
+                // Spadanie
+                leaf.y += leaf.speedY;
+                leaf.x += Math.sin(leaf.y * 0.05) * 2; // Kołysanie liścia
+                leaf.angle += leaf.rotation;
+
+                // Czy dotknął rzeki?
+                if (leaf.y >= 420) {
+                    leaf.inRiver = true;
+                }
+            } else {
+                // Płynięcie z prądem
+                leaf.x += 1.5;
+                leaf.y = 420 + Math.sin(leaf.x * 0.02 + Date.now() * 0.002) * 10;
+            }
+
+            // Rysowanie liścia
+            ctx.save();
+            ctx.translate(leaf.x, leaf.y);
+            ctx.rotate(leaf.angle);
+            ctx.fillStyle = leaf.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 10, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // Usuwanie liści, które odpłynęły
+            if (leaf.x > canvas.width + 20) {
+                leaves.splice(index, 1);
+            }
+        });
+
+        requestAnimationFrame(update);
+    }
+
+    update();
+</script>
+
+</body>
+</html>

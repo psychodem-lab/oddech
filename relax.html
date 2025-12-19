@@ -3,132 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Podniebny Ogród - Zen Game</title>
+    <title>Wirtualny Las - Relaksacyjny Wzrost</title>
     <style>
         body { 
-            background: #e0f2f1; /* Bardzo jasny, kojący morski */
+            background: #f0f4f0; /* Bardzo jasna, „leśna” szarość-zieleń */
             margin: 0; 
             overflow: hidden; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
             font-family: 'Segoe UI', sans-serif;
+            color: #2d5a27;
         }
         canvas { 
-            background: linear-gradient(to bottom, #81d4fa, #e1f5fe); 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border-radius: 20px;
+            background: linear-gradient(to bottom, #a1c4fd 0%, #c2e9fb 100%); /* Miękkie niebo */
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border-radius: 24px;
             margin-top: 20px;
             max-width: 95vw;
-            max-height: 60vh;
+            max-height: 65vh;
+            border: 4px solid white;
         }
-        .info { color: #546e7a; margin: 15px; text-align: center; }
+        .ui { text-align: center; padding: 10px; }
         .controls { display: flex; gap: 30px; margin-top: 20px; }
         .btn {
-            width: 120px; height: 70px;
-            background: white; border: none;
-            border-radius: 35px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            font-size: 24px; cursor: pointer; color: #81d4fa;
+            width: 130px; height: 80px;
+            background: #ffffff; border: none;
+            border-radius: 40px; box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+            font-size: 32px; cursor: pointer; color: #4facfe;
             display: flex; justify-content: center; align-items: center;
             touch-action: manipulation;
+            transition: all 0.3s;
         }
-        .btn:active { transform: scale(0.95); background: #f1f8e9; }
+        .btn:active { transform: scale(0.9); background: #e8f5e9; }
+        .legend { font-size: 14px; opacity: 0.7; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="info">
-    <h2 style="margin:0">Podniebny Ogród</h2>
-    <p>Przesuwaj chmurę, aby podlewać nasiona. Pozwól im rosnąć w ich własnym tempie.</p>
+<div class="ui">
+    <h2 style="margin:5px">Spokojny Las</h2>
+    <p style="margin:0">Zatrzymaj chmurę nad drzewem, aby pomóc mu urosnąć. Ciesz się chwilą.</p>
 </div>
 
-<canvas id="zenCanvas" width="800" height="500"></canvas>
+<canvas id="forestCanvas" width="800" height="500"></canvas>
 
 <div class="controls">
     <button class="btn" id="left">◀</button>
     <button class="btn" id="right">▶</button>
 </div>
 
+<div class="legend">Wzrost drzew wymaga czasu i uwagi</div>
+
 <script>
-    const canvas = document.getElementById("zenCanvas");
+    const canvas = document.getElementById("forestCanvas");
     const ctx = canvas.getContext("2d");
 
-    // Gracz - Chmura
     let cloudX = canvas.width / 2;
-    const cloudY = 80;
-    const cloudWidth = 100;
     let rightPressed = false;
     let leftPressed = false;
 
-    // Rośliny
-    let plants = [];
-    const maxPlants = 6;
+    // Drzewa - konfiguracja
+    let trees = [];
+    const numTrees = 5;
 
-    // Inicjalizacja nasion
-    for(let i=0; i < maxPlants; i++) {
-        plants.push({
-            x: 100 + i * 120,
-            height: 0,
-            targetHeight: Math.random() * 200 + 50,
-            growth: 0,
-            color: `hsl(${120 + Math.random() * 40}, 40%, 60%)`, // Odcienie zieleni
-            bloomed: false
+    for(let i=0; i < numTrees; i++) {
+        trees.push({
+            x: 120 + i * 140,
+            height: 5,        // Początkowa wysokość
+            maxHeight: 180 + Math.random() * 120,
+            leafSize: 0,
+            trunkWidth: 2,
+            color: `hsl(${100 + Math.random() * 40}, 30%, ${40 + Math.random() * 20}%)`
         });
     }
 
     // Sterowanie
-    document.getElementById('left').onmousedown = () => leftPressed = true;
-    document.getElementById('left').onmouseup = () => leftPressed = false;
-    document.getElementById('right').onmousedown = () => rightPressed = true;
-    document.getElementById('right').onmouseup = () => rightPressed = false;
-    document.getElementById('left').ontouchstart = (e) => { e.preventDefault(); leftPressed = true; };
-    document.getElementById('left').ontouchend = () => leftPressed = false;
-    document.getElementById('right').ontouchstart = (e) => { e.preventDefault(); rightPressed = true; };
-    document.getElementById('right').ontouchend = () => rightPressed = false;
+    const setL = (v) => leftPressed = v;
+    const setR = (v) => rightPressed = v;
+
+    document.getElementById('left').onmousedown = () => setL(true);
+    document.getElementById('left').onmouseup = () => setL(false);
+    document.getElementById('right').onmousedown = () => setR(true);
+    document.getElementById('right').onmouseup = () => setR(false);
+    
+    document.getElementById('left').ontouchstart = (e) => { e.preventDefault(); setL(true); };
+    document.getElementById('left').ontouchend = () => setL(false);
+    document.getElementById('right').ontouchstart = (e) => { e.preventDefault(); setR(true); };
+    document.getElementById('right').ontouchend = () => setR(false);
 
     function drawCloud(x, y) {
-        ctx.beginPath();
-        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-        ctx.arc(x, y, 30, 0, Math.PI * 2);
-        ctx.arc(x + 35, y, 40, 0, Math.PI * 2);
-        ctx.arc(x + 70, y, 30, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
         
-        // Krople deszczu
-        ctx.fillStyle = "rgba(129, 212, 250, 0.4)";
-        for(let i=0; i<5; i++) {
-            ctx.fillRect(x + i*18, y + 50 + (Date.now()/10 % 20), 2, 10);
+        // Kształt chmury
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.arc(35, -10, 40, 0, Math.PI * 2);
+        ctx.arc(75, 0, 30, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Deszcz (animowany)
+        ctx.fillStyle = "rgba(100, 180, 255, 0.5)";
+        for(let i=0; i<6; i++) {
+            let dropY = 40 + (Date.now() / 5 + i * 20) % 40;
+            ctx.fillRect(i * 15, dropY, 2, 8);
         }
+        ctx.restore();
     }
 
-    function drawPlant(plant) {
-        // Łodyga
-        ctx.beginPath();
-        ctx.lineWidth = 6;
-        ctx.strokeStyle = plant.color;
-        ctx.moveTo(plant.x, canvas.height);
-        ctx.quadraticCurveTo(plant.x + Math.sin(Date.now()/1000) * 10, canvas.height - plant.growth/2, plant.x, canvas.height - plant.growth);
-        ctx.stroke();
+    function drawTree(tree) {
+        // Pień
+        ctx.fillStyle = "#5d4037"; // Brązowy
+        const currentTrunkWidth = 2 + (tree.height / 30);
+        ctx.fillRect(tree.x - currentTrunkWidth/2, canvas.height - tree.height, currentTrunkWidth, tree.height);
 
-        // Liście
-        if(plant.growth > 20) {
-            ctx.fillStyle = plant.color;
+        // Korona drzewa (liście)
+        if(tree.height > 40) {
+            ctx.fillStyle = tree.color;
+            let bloomSize = (tree.height - 40) * 0.6; // Korona rośnie proporcjonalnie do pnia
+            
             ctx.beginPath();
-            ctx.ellipse(plant.x - 10, canvas.height - plant.growth + 10, 10, 5, Math.PI/4, 0, Math.PI*2);
-            ctx.fill();
-        }
-
-        // Kwiat
-        if(plant.growth >= plant.targetHeight - 5) {
-            ctx.beginPath();
-            ctx.fillStyle = "#ff80ab"; // Delikatny róż
-            for(let i=0; i<5; i++) {
-                ctx.ellipse(plant.x, canvas.height - plant.growth - 5, 8, 15, (i * 72) * Math.PI/180, 0, Math.PI*2);
-                ctx.fill();
-            }
-            ctx.beginPath();
-            ctx.fillStyle = "#fff176";
-            ctx.arc(plant.x, canvas.height - plant.growth - 5, 5, 0, Math.PI*2);
+            // Rysujemy trzy kule liści dla bardziej naturalnego wyglądu
+            ctx.arc(tree.x, canvas.height - tree.height - 10, bloomSize * 0.8, 0, Math.PI * 2);
+            ctx.arc(tree.x - bloomSize/2, canvas.height - tree.height + 5, bloomSize * 0.6, 0, Math.PI * 2);
+            ctx.arc(tree.x + bloomSize/2, canvas.height - tree.height + 5, bloomSize * 0.6, 0, Math.PI * 2);
             ctx.fill();
         }
     }
@@ -136,20 +136,25 @@
     function update() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Ruch chmury (płynny)
-        if(rightPressed && cloudX < canvas.width - 100) cloudX += 4;
-        if(leftPressed && cloudX > 0) cloudX -= 4;
+        // Podłoże
+        ctx.fillStyle = "#8bc34a";
+        ctx.fillRect(0, canvas.height - 5, canvas.width, 5);
 
-        drawCloud(cloudX, cloudY);
+        // Ruch chmury
+        if(rightPressed && cloudX < canvas.width - 100) cloudX += 3.5;
+        if(leftPressed && cloudX > 0) cloudX -= 3.5;
 
-        plants.forEach(plant => {
-            // Sprawdzanie czy chmura jest nad rośliną
-            if(cloudX < plant.x && cloudX + 100 > plant.x) {
-                if(plant.growth < plant.targetHeight) {
-                    plant.growth += 0.5; // Powolny wzrost
+        drawCloud(cloudX, 70);
+
+        trees.forEach(tree => {
+            // Czy chmura podlewa drzewo?
+            // Chmura ma szerokość ok 100px, sprawdzamy czy drzewo jest pod nią
+            if(cloudX < tree.x + 20 && cloudX + 80 > tree.x) {
+                if(tree.height < tree.maxHeight) {
+                    tree.height += 0.08; // BARDZO POWOLNY WZROST (ok. 10x wolniej niż wcześniej)
                 }
             }
-            drawPlant(plant);
+            drawTree(tree);
         });
 
         requestAnimationFrame(update);

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rytm Natury - Spokojna Rzeka</title>
+    <title>Rytm Natury - Wieczór nad Rzeką</title>
     <style>
         body { 
             background: #f0f4f8; 
@@ -14,10 +14,10 @@
             align-items: center; 
             font-family: 'Segoe UI', sans-serif;
             color: #445;
+            transition: background 2s;
         }
         canvas { 
-            background: linear-gradient(to bottom, #a1c4fd 0%, #c2e9fb 100%);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
             border-radius: 30px;
             margin-top: 20px;
             cursor: pointer;
@@ -25,14 +25,14 @@
             max-width: 95vw;
         }
         .ui { text-align: center; padding: 10px; }
-        .combo-info { font-size: 18px; color: #2e7d32; font-weight: bold; height: 25px; }
+        .combo-info { font-size: 18px; color: #2e7d32; font-weight: bold; height: 25px; transition: color 1s; }
     </style>
 </head>
 <body>
 
 <div class="ui">
-    <h2 style="margin:5px">Rytm Rzeki</h2>
-    <div id="comboText" class="combo-info">Utrzymuj rytm, aby zobaczyć łódki...</div>
+    <h2 id="title" style="margin:5px">Rytm Rzeki</h2>
+    <div id="comboText" class="combo-info">Znajdź swój rytm...</div>
     <div id="alertBox" style="color: #e57373; height: 20px; font-size: 14px;"></div>
 </div>
 
@@ -43,14 +43,21 @@
     const ctx = canvas.getContext("2d");
     const comboText = document.getElementById("comboText");
     const alertBox = document.getElementById("alertBox");
+    const title = document.getElementById("title");
 
     let lastClickTime = 0;
     const minInterval = 1000; 
     let combo = 0;
     let floatingObjects = [];
     let treeShake = 0;
+    let stars = [];
 
-    // Generowanie statycznej korony drzewa, aby uniknąć migotania
+    // Inicjalizacja gwiazd (pojawią się wieczorem)
+    for(let i=0; i<30; i++) {
+        stars.push({ x: Math.random()*800, y: Math.random()*300, opacity: 0 });
+    }
+
+    // Statyczny obraz drzewa
     const treeCanvas = document.createElement('canvas');
     treeCanvas.width = 800;
     treeCanvas.height = 550;
@@ -59,7 +66,7 @@
     function drawStaticTree(x, y, len, angle, thickness) {
         tCtx.beginPath();
         tCtx.save();
-        tCtx.strokeStyle = "#4b3621";
+        tCtx.strokeStyle = "#3e2723";
         tCtx.lineWidth = thickness;
         tCtx.lineCap = "round";
         tCtx.translate(x, y);
@@ -67,11 +74,10 @@
         tCtx.moveTo(0, 0);
         tCtx.lineTo(0, -len);
         tCtx.stroke();
-
         if (len < 15) {
             tCtx.beginPath();
-            tCtx.fillStyle = "rgba(46, 125, 50, 0.7)";
-            tCtx.arc(0, -len, 15, 0, Math.PI * 2);
+            tCtx.fillStyle = "rgba(34, 100, 34, 0.8)";
+            tCtx.arc(0, -len, 16, 0, Math.PI * 2);
             tCtx.fill();
             tCtx.restore();
             return;
@@ -80,65 +86,84 @@
         drawStaticTree(0, -len, len * 0.75, angle - 25, thickness * 0.7);
         tCtx.restore();
     }
-    drawStaticTree(400, 465, 100, 0, 15);
+    drawStaticTree(400, 465, 105, 0, 16);
 
     canvas.addEventListener('mousedown', () => {
         const now = Date.now();
         if (now - lastClickTime < minInterval) {
-            treeShake = 10;
+            treeShake = 12;
             combo = 0;
-            alertBox.innerText = "Zbyt szybko. Spokojnie...";
-            comboText.innerText = "Rytm przerwany";
+            alertBox.innerText = "Zbyt szybko. Odetchnij...";
+            comboText.style.color = "#2e7d32";
             setTimeout(() => alertBox.innerText = "", 1000);
         } else {
             combo++;
             lastClickTime = now;
             addObject();
-            updateComboUI();
         }
+        updateUI();
     });
 
-    function updateComboUI() {
-        if (combo < 5) comboText.innerText = "Dobry rytm...";
-        else if (combo < 10) comboText.innerText = "Pojawiają się kwiaty! ✨";
-        else comboText.innerText = "Magia! Papierowe łódki płyną ⛵";
+    function updateUI() {
+        if (combo === 0) comboText.innerText = "Spokojnie...";
+        else if (combo < 5) comboText.innerText = "Dobry rytm...";
+        else if (combo < 12) comboText.innerText = "Kwiaty opadają... ✨";
+        else if (combo < 20) comboText.innerText = "Łódki płyną z nurtem ⛵";
+        else {
+            comboText.innerText = "Wieczorna cisza... 🌙";
+            comboText.style.color = "#5c6bc0";
+            title.style.color = "#1a237e";
+        }
     }
 
     function addObject() {
         let type = 'leaf';
-        if (combo >= 10 && Math.random() > 0.5) type = 'boat';
-        else if (combo >= 5) type = 'petal';
+        if (combo >= 15) type = Math.random() > 0.4 ? 'boat' : 'petal';
+        else if (combo >= 6) type = Math.random() > 0.3 ? 'petal' : 'leaf';
 
         floatingObjects.push({
             type: type,
-            x: 400 + (Math.random() - 0.5) * 150,
-            y: 150 + Math.random() * 100,
+            x: 400 + (Math.random() - 0.5) * 180,
+            y: 120 + Math.random() * 100,
             angle: Math.random() * Math.PI,
-            speedY: 0.7 + Math.random(),
-            rotation: (Math.random() - 0.5) * 0.03,
-            color: type === 'petal' ? '#ff80ab' : (type === 'boat' ? '#fff' : '#388e3c'),
+            speedY: 0.6 + Math.random()*0.8,
+            rotation: (Math.random() - 0.5) * 0.04,
+            color: type === 'petal' ? '#f48fb1' : (type === 'boat' ? '#ffffff' : '#43a047'),
             inRiver: false
         });
     }
 
-    function drawBoat(ctx) {
-        ctx.beginPath();
-        ctx.moveTo(-15, 0);
-        ctx.lineTo(15, 0);
-        ctx.lineTo(10, 8);
-        ctx.lineTo(-10, 8);
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, -15);
-        ctx.lineTo(10, 0);
-        ctx.fill();
+    function drawBackground() {
+        // Płynne przejście koloru nieba na podstawie combo
+        let factor = Math.min(combo / 25, 1);
+        
+        // Niebo: od błękitu do granatu
+        let skyGrad = ctx.createLinearGradient(0, 0, 0, 450);
+        let r1 = 161 - (161-26)*factor, g1 = 196 - (196-35)*factor, b1 = 253 - (253-126)*factor;
+        let r2 = 194 - (194-40)*factor, g2 = 233 - (233-53)*factor, b2 = 251 - (251-147)*factor;
+        
+        skyGrad.addColorStop(0, `rgb(${r1},${g1},${b1})`);
+        skyGrad.addColorStop(1, `rgb(${r2},${g2},${b2})`);
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, 800, 550);
+
+        // Gwiazdy
+        stars.forEach(s => {
+            s.opacity = Math.max(0, factor - 0.5) * 2;
+            if(s.opacity > 0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${s.opacity * (0.5 + Math.random()*0.5)})`;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, 1.2, 0, Math.PI*2);
+                ctx.fill();
+            }
+        });
     }
 
     function drawRiver() {
         const time = Date.now() * 0.001;
-        ctx.fillStyle = "#0277bd";
+        let factor = Math.min(combo / 25, 1);
+        ctx.fillStyle = `rgb(${2 - 2*factor}, ${119 - 50*factor}, ${189 - 60*factor})`;
+        
         ctx.beginPath();
         ctx.moveTo(0, 465);
         for (let x = 0; x <= canvas.width; x += 20) {
@@ -151,6 +176,7 @@
 
     function update() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
         drawRiver();
 
         ctx.save();
@@ -158,6 +184,10 @@
             ctx.translate(Math.sin(Date.now() * 0.5) * treeShake, 0);
             treeShake *= 0.9;
         }
+        
+        // Przyciemnienie drzewa wieczorem
+        let factor = Math.min(combo / 25, 1);
+        ctx.filter = `brightness(${100 - factor*60}%)`;
         ctx.drawImage(treeCanvas, 0, 0);
         ctx.restore();
 
@@ -167,23 +197,27 @@
                 obj.x += Math.sin(obj.y * 0.03) * 1.5;
                 if (obj.y >= 465) obj.inRiver = true;
             } else {
-                obj.x += 1.2;
+                obj.x += 1.3;
                 obj.y = 470 + Math.sin(obj.x * 0.015 + Date.now() * 0.001) * 10;
             }
 
             ctx.save();
             ctx.translate(obj.x, obj.y);
             ctx.rotate(obj.angle);
-            ctx.fillStyle = obj.color;
             
-            if (obj.type === 'boat') drawBoat(ctx);
-            else if (obj.type === 'petal') {
+            // Przyciemnienie obiektów płynących wieczorem
+            ctx.fillStyle = obj.color;
+            if(factor > 0.5) ctx.globalAlpha = 0.9;
+
+            if (obj.type === 'boat') {
                 ctx.beginPath();
-                ctx.ellipse(0, 0, 8, 5, 0, 0, Math.PI * 2);
+                ctx.moveTo(-15, 0); ctx.lineTo(15, 0); ctx.lineTo(10, 8); ctx.lineTo(-10, 8); ctx.closePath();
                 ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(0, 0); ctx.lineTo(0, -15); ctx.lineTo(10, 0); ctx.fill();
             } else {
                 ctx.beginPath();
-                ctx.ellipse(0, 0, 12, 6, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, 0, obj.type === 'petal' ? 8 : 12, obj.type === 'petal' ? 5 : 6, 0, 0, Math.PI * 2);
                 ctx.fill();
             }
             ctx.restore();

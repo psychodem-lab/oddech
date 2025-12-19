@@ -3,165 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relaksujące Łapanie Światła</title>
+    <title>Podniebny Ogród - Zen Game</title>
     <style>
         body { 
-            background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); /* Spokojny gradient */
-            display: flex; 
-            flex-direction: column;
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
+            background: #e0f2f1; /* Bardzo jasny, kojący morski */
             margin: 0; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-            color: white;
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            font-family: 'Segoe UI', sans-serif;
         }
         canvas { 
-            background: rgba(0, 0, 0, 0.3); /* Półprzezroczyste tło */
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            max-width: 95vw;
-            max-height: 65vh;
-        }
-        .score { font-size: 24px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        .controls {
-            display: flex;
-            gap: 40px;
+            background: linear-gradient(to bottom, #81d4fa, #e1f5fe); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 20px;
             margin-top: 20px;
+            max-width: 95vw;
+            max-height: 60vh;
         }
+        .info { color: #546e7a; margin: 15px; text-align: center; }
+        .controls { display: flex; gap: 30px; margin-top: 20px; }
         .btn {
-            width: 100px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid white;
-            border-radius: 30px;
-            color: white;
-            font-size: 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            user-select: none;
-            backdrop-filter: blur(5px);
-            transition: all 0.2s;
+            width: 120px; height: 70px;
+            background: white; border: none;
+            border-radius: 35px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-size: 24px; cursor: pointer; color: #81d4fa;
+            display: flex; justify-content: center; align-items: center;
+            touch-action: manipulation;
         }
-        .btn:active { background: rgba(255, 255, 255, 0.3); transform: scale(0.9); }
+        .btn:active { transform: scale(0.95); background: #f1f8e9; }
     </style>
 </head>
 <body>
 
-<div class="score">Złapane światło: <span id="scoreVal">0</span></div>
+<div class="info">
+    <h2 style="margin:0">Podniebny Ogród</h2>
+    <p>Przesuwaj chmurę, aby podlewać nasiona. Pozwól im rosnąć w ich własnym tempie.</p>
+</div>
+
 <canvas id="zenCanvas" width="800" height="500"></canvas>
 
 <div class="controls">
-    <div class="btn" id="btnLeft">◀</div>
-    <div class="btn" id="btnRight">▶</div>
+    <button class="btn" id="left">◀</button>
+    <button class="btn" id="right">▶</button>
 </div>
 
 <script>
     const canvas = document.getElementById("zenCanvas");
     const ctx = canvas.getContext("2d");
-    const scoreDisplay = document.getElementById("scoreVal");
 
-    let score = 0;
-    let paddleWidth = 120;
-    let paddleX = (canvas.width - paddleWidth) / 2;
+    // Gracz - Chmura
+    let cloudX = canvas.width / 2;
+    const cloudY = 80;
+    const cloudWidth = 100;
     let rightPressed = false;
     let leftPressed = false;
 
-    // Tablica przechowująca spadające elementy
-    let particles = [];
+    // Rośliny
+    let plants = [];
+    const maxPlants = 6;
 
-    function createParticle() {
-        const size = Math.random() * 15 + 5;
-        particles.push({
-            x: Math.random() * (canvas.width - size),
-            y: -20,
-            size: size,
-            speed: Math.random() * 1.5 + 0.5, // Bardzo wolne opadanie
-            color: `hsla(${Math.random() * 360}, 70%, 80%, 0.8)` // Pastelowe kolory
+    // Inicjalizacja nasion
+    for(let i=0; i < maxPlants; i++) {
+        plants.push({
+            x: 100 + i * 120,
+            height: 0,
+            targetHeight: Math.random() * 200 + 50,
+            growth: 0,
+            color: `hsl(${120 + Math.random() * 40}, 40%, 60%)`, // Odcienie zieleni
+            bloomed: false
         });
     }
 
-    // Obsługa sterowania
-    document.addEventListener("keydown", (e) => {
-        if(e.key === "ArrowRight") rightPressed = true;
-        if(e.key === "ArrowLeft") leftPressed = true;
-    });
-    document.addEventListener("keyup", (e) => {
-        if(e.key === "ArrowRight") rightPressed = false;
-        if(e.key === "ArrowLeft") leftPressed = false;
-    });
+    // Sterowanie
+    document.getElementById('left').onmousedown = () => leftPressed = true;
+    document.getElementById('left').onmouseup = () => leftPressed = false;
+    document.getElementById('right').onmousedown = () => rightPressed = true;
+    document.getElementById('right').onmouseup = () => rightPressed = false;
+    document.getElementById('left').ontouchstart = (e) => { e.preventDefault(); leftPressed = true; };
+    document.getElementById('left').ontouchend = () => leftPressed = false;
+    document.getElementById('right').ontouchstart = (e) => { e.preventDefault(); rightPressed = true; };
+    document.getElementById('right').ontouchend = () => rightPressed = false;
 
-    const bLeft = document.getElementById("btnLeft");
-    const bRight = document.getElementById("btnRight");
-    
-    const setLeft = (val) => leftPressed = val;
-    const setRight = (val) => rightPressed = val;
-
-    bLeft.onmousedown = () => setLeft(true);
-    bLeft.onmouseup = () => setLeft(false);
-    bRight.onmousedown = () => setRight(true);
-    bRight.onmouseup = () => setRight(false);
-    
-    // Obsługa dotyku
-    bLeft.ontouchstart = (e) => { e.preventDefault(); setLeft(true); };
-    bLeft.ontouchend = () => setLeft(false);
-    bRight.ontouchstart = (e) => { e.preventDefault(); setRight(true); };
-    bRight.ontouchend = () => setRight(false);
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Rysowanie paletki (koszyka)
+    function drawCloud(x, y) {
         ctx.beginPath();
-        ctx.roundRect(paddleX, canvas.height - 25, paddleWidth, 15, 10);
-        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.arc(x, y, 30, 0, Math.PI * 2);
+        ctx.arc(x + 35, y, 40, 0, Math.PI * 2);
+        ctx.arc(x + 70, y, 30, 0, Math.PI * 2);
         ctx.fill();
-        ctx.closePath();
-
-        // Zarządzanie cząsteczkami
-        if (Math.random() < 0.03) createParticle(); // Nowa cząsteczka co jakiś czas
-
-        for (let i = 0; i < particles.length; i++) {
-            let p = particles[i];
-            p.y += p.speed;
-
-            // Rysowanie cząsteczki z delikatną poświatą
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = p.color;
-            ctx.fillStyle = p.color;
-            ctx.fill();
-            ctx.closePath();
-            ctx.shadowBlur = 0; // Reset blura dla wydajności
-
-            // Wykrywanie łapania
-            if (p.y + p.size > canvas.height - 25 && 
-                p.x > paddleX && p.x < paddleX + paddleWidth) {
-                particles.splice(i, 1);
-                score++;
-                scoreDisplay.innerText = score;
-                i--;
-            } 
-            // Usuwanie jeśli wypadnie poza ekran (bez kary)
-            else if (p.y > canvas.height + 20) {
-                particles.splice(i, 1);
-                i--;
-            }
+        
+        // Krople deszczu
+        ctx.fillStyle = "rgba(129, 212, 250, 0.4)";
+        for(let i=0; i<5; i++) {
+            ctx.fillRect(x + i*18, y + 50 + (Date.now()/10 % 20), 2, 10);
         }
-
-        // Ruch paletki
-        if(rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 6;
-        else if(leftPressed && paddleX > 0) paddleX -= 6;
-
-        requestAnimationFrame(draw);
     }
 
-    draw();
+    function drawPlant(plant) {
+        // Łodyga
+        ctx.beginPath();
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = plant.color;
+        ctx.moveTo(plant.x, canvas.height);
+        ctx.quadraticCurveTo(plant.x + Math.sin(Date.now()/1000) * 10, canvas.height - plant.growth/2, plant.x, canvas.height - plant.growth);
+        ctx.stroke();
+
+        // Liście
+        if(plant.growth > 20) {
+            ctx.fillStyle = plant.color;
+            ctx.beginPath();
+            ctx.ellipse(plant.x - 10, canvas.height - plant.growth + 10, 10, 5, Math.PI/4, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        // Kwiat
+        if(plant.growth >= plant.targetHeight - 5) {
+            ctx.beginPath();
+            ctx.fillStyle = "#ff80ab"; // Delikatny róż
+            for(let i=0; i<5; i++) {
+                ctx.ellipse(plant.x, canvas.height - plant.growth - 5, 8, 15, (i * 72) * Math.PI/180, 0, Math.PI*2);
+                ctx.fill();
+            }
+            ctx.beginPath();
+            ctx.fillStyle = "#fff176";
+            ctx.arc(plant.x, canvas.height - plant.growth - 5, 5, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+
+    function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Ruch chmury (płynny)
+        if(rightPressed && cloudX < canvas.width - 100) cloudX += 4;
+        if(leftPressed && cloudX > 0) cloudX -= 4;
+
+        drawCloud(cloudX, cloudY);
+
+        plants.forEach(plant => {
+            // Sprawdzanie czy chmura jest nad rośliną
+            if(cloudX < plant.x && cloudX + 100 > plant.x) {
+                if(plant.growth < plant.targetHeight) {
+                    plant.growth += 0.5; // Powolny wzrost
+                }
+            }
+            drawPlant(plant);
+        });
+
+        requestAnimationFrame(update);
+    }
+
+    update();
 </script>
 
 </body>

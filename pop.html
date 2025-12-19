@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cicha Woda - Antystresowe Bąbelki</title>
+    <style>
+        body { 
+            background: linear-gradient(to bottom, #d6eaf8, #aed6f1);
+            margin: 0; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            font-family: 'Open Sans', sans-serif;
+            color: #2c3e50;
+        }
+        canvas { 
+            background: linear-gradient(to bottom, #85c1e9, #5dade2); 
+            box-shadow: 0 15px 45px rgba(0,0,0,0.15);
+            border-radius: 30px;
+            margin-top: 20px;
+            cursor: pointer;
+            border: 10px solid white;
+            max-width: 95vw;
+        }
+        .ui { text-align: center; padding: 15px; }
+        .instructions { font-size: 16px; color: #5dade2; }
+    </style>
+</head>
+<body>
+
+<div class="ui">
+    <h2 style="margin:5px">Cicha Woda</h2>
+    <p class="instructions">Dotknij bąbelków, aby je rozerwać. Bez presji, po prostu patrz, jak znikają.</p>
+</div>
+
+<canvas id="bubbleCanvas" width="800" height="550"></canvas>
+
+<script>
+    const canvas = document.getElementById("bubbleCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let bubbles = [];
+    const maxBubbles = 30; // Maksymalna liczba bąbelków naraz
+
+    // Funkcja do tworzenia nowego bąbelka
+    function createBubble() {
+        if (bubbles.length < maxBubbles) {
+            bubbles.push({
+                x: Math.random() * canvas.width,
+                y: canvas.height + 20, // Start poniżej ekranu
+                radius: Math.random() * 20 + 15, // Rozmiar 15-35px
+                speed: Math.random() * 0.5 + 0.3, // Wolne wznoszenie
+                opacity: 0.8 + Math.random() * 0.2,
+                sway: (Math.random() - 0.5) * 0.05 // Kołysanie na boki
+            });
+        }
+    }
+
+    // Tworzenie bąbelków co jakiś czas
+    setInterval(createBubble, 500); // Nowy bąbelek co 0.5 sekundy
+
+    // Obsługa kliknięcia (rozrywanie bąbelków)
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        for (let i = bubbles.length - 1; i >= 0; i--) {
+            const b = bubbles[i];
+            const dist = Math.sqrt((clickX - b.x)**2 + (clickY - b.y)**2);
+            if (dist < b.radius) {
+                // Usuń bąbelek
+                bubbles.splice(i, 1);
+                // Można dodać mały efekt 'eksplozji' tutaj
+                break; // Kliknięcie trafia tylko w jeden bąbelek
+            }
+        }
+    });
+
+    function drawBubble(bubble) {
+        ctx.beginPath();
+        // Rysowanie z efektem przezroczystości i delikatnym gradientem
+        let gradient = ctx.createRadialGradient(bubble.x - bubble.radius / 3, bubble.y - bubble.radius / 3, 0, bubble.x, bubble.y, bubble.radius);
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${bubble.opacity * 1.2})`); // Błysk w środku
+        gradient.addColorStop(0.7, `rgba(170, 210, 255, ${bubble.opacity})`);
+        gradient.addColorStop(1, `rgba(100, 180, 255, ${bubble.opacity * 0.5})`); // Ciemniejsza krawędź
+        ctx.fillStyle = gradient;
+        ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Delikatny, niebieski cień/obramowanie
+        ctx.strokeStyle = `rgba(0, 150, 255, ${bubble.opacity * 0.7})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = bubbles.length - 1; i >= 0; i--) {
+            const b = bubbles[i];
+            b.y -= b.speed;
+            b.x += Math.sin(b.y * b.sway) * 0.5; // Delikatne kołysanie na boki
+
+            drawBubble(b);
+
+            // Usuń bąbelek, jeśli wyleci poza ekran
+            if (b.y < -b.radius) {
+                bubbles.splice(i, 1);
+            }
+        }
+
+        requestAnimationFrame(update);
+    }
+
+    update();
+</script>
+
+</body>
+</html>

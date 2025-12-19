@@ -2,44 +2,92 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Prosty Arkanoid</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arkanoid - Większy Ekran i Przyciski</title>
     <style>
-        body { background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        canvas { background: #000; border: 2px solid #fff; display: block; }
+        body { 
+            background: #222; 
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            font-family: Arial, sans-serif;
+        }
+        /* Większy obszar gry */
+        canvas { 
+            background: #000; 
+            border: 3px solid #fff; 
+            max-width: 95vw;
+            max-height: 70vh;
+        }
+        /* Styl przycisków sterowania */
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            width: 100%;
+            justify-content: center;
+        }
+        .btn {
+            width: 80px;
+            height: 80px;
+            background: #444;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            color: white;
+            font-size: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            cursor: pointer;
+            touch-action: manipulation; /* Zapobiega przybliżaniu przy klikaniu */
+        }
+        .btn:active {
+            background: #666;
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
 
-<canvas id="gameCanvas" width="480" height="320"></canvas>
+<canvas id="gameCanvas" width="800" height="500"></canvas>
+
+<div class="controls">
+    <div class="btn" id="btnLeft">◀</div>
+    <div class="btn" id="btnRight">▶</div>
+</div>
 
 <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    // Ustawienia piłki (kwadratu)
+    // Piłka (Kwadrat)
     let x = canvas.width / 2;
     let y = canvas.height - 30;
-    let dx = 2;
-    let dy = -2;
-    const ballSize = 10;
+    let dx = 4;
+    let dy = -4;
+    const ballSize = 12;
 
-    // Ustawienia paletki (prostokąta)
-    const paddleHeight = 10;
-    const paddleWidth = 75;
+    // Paletka
+    const paddleHeight = 15;
+    const paddleWidth = 120;
     let paddleX = (canvas.width - paddleWidth) / 2;
 
     // Sterowanie
     let rightPressed = false;
     let leftPressed = false;
 
-    // Ustawienia bloków
-    const rowCount = 3;
-    const columnCount = 5;
-    const brickWidth = 75;
-    const brickHeight = 20;
+    // Bloki
+    const rowCount = 5;
+    const columnCount = 8;
+    const brickWidth = 85;
+    const brickHeight = 25;
     const brickPadding = 10;
-    const brickOffsetTop = 30;
-    const brickOffsetLeft = 30;
+    const brickOffsetTop = 50;
+    const brickOffsetLeft = 35;
 
     const bricks = [];
     for(let c = 0; c < columnCount; c++) {
@@ -49,18 +97,29 @@
         }
     }
 
-    document.addEventListener("keydown", keyDownHandler);
-    document.addEventListener("keyup", keyUpHandler);
+    // Obsługa Klawiatury
+    document.addEventListener("keydown", (e) => {
+        if(e.key === "ArrowRight") rightPressed = true;
+        if(e.key === "ArrowLeft") leftPressed = true;
+    });
+    document.addEventListener("keyup", (e) => {
+        if(e.key === "ArrowRight") rightPressed = false;
+        if(e.key === "ArrowLeft") leftPressed = false;
+    });
 
-    function keyDownHandler(e) {
-        if(e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
-        else if(e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
-    }
+    // Obsługa Przycisków Ekranowych
+    const bLeft = document.getElementById("btnLeft");
+    const bRight = document.getElementById("btnRight");
 
-    function keyUpHandler(e) {
-        if(e.key === "Right" || e.key === "ArrowRight") rightPressed = false;
-        else if(e.key === "Left" || e.key === "ArrowLeft") leftPressed = false;
-    }
+    bLeft.addEventListener("mousedown", () => leftPressed = true);
+    bLeft.addEventListener("mouseup", () => leftPressed = false);
+    bLeft.addEventListener("touchstart", (e) => { e.preventDefault(); leftPressed = true; });
+    bLeft.addEventListener("touchend", () => leftPressed = false);
+
+    bRight.addEventListener("mousedown", () => rightPressed = true);
+    bRight.addEventListener("mouseup", () => rightPressed = false);
+    bRight.addEventListener("touchstart", (e) => { e.preventDefault(); rightPressed = true; });
+    bRight.addEventListener("touchend", () => rightPressed = false);
 
     function collisionDetection() {
         for(let c = 0; c < columnCount; c++) {
@@ -69,7 +128,7 @@
                 if(b.status === 1) {
                     if(x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
                         dy = -dy;
-                        b.status = 0; // Blok zniszczony
+                        b.status = 0;
                     }
                 }
             }
@@ -79,14 +138,14 @@
     function drawBall() {
         ctx.beginPath();
         ctx.rect(x, y, ballSize, ballSize);
-        ctx.fillStyle = "#0095DD";
+        ctx.fillStyle = "#FFD700"; // Złoty kwadrat
         ctx.fill();
         ctx.closePath();
     }
 
     function drawPaddle() {
         ctx.beginPath();
-        ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+        ctx.rect(paddleX, canvas.height - paddleHeight - 5, paddleWidth, paddleHeight);
         ctx.fillStyle = "#0095DD";
         ctx.fill();
         ctx.closePath();
@@ -102,7 +161,7 @@
                     bricks[c][r].y = brickY;
                     ctx.beginPath();
                     ctx.rect(brickX, brickY, brickWidth, brickHeight);
-                    ctx.fillStyle = "#c0392b";
+                    ctx.fillStyle = "#e74c3c";
                     ctx.fill();
                     ctx.closePath();
                 }
@@ -117,21 +176,21 @@
         drawPaddle();
         collisionDetection();
 
-        // Odbicia od ścian
+        // Odbicia
         if(x + dx > canvas.width - ballSize || x + dx < 0) dx = -dx;
         if(y + dy < 0) dy = -dy;
-        else if(y + dy > canvas.height - ballSize) {
+        else if(y + dy > canvas.height - ballSize - 5) {
             if(x > paddleX && x < paddleX + paddleWidth) {
                 dy = -dy;
-            } else {
+            } else if (y > canvas.height) {
                 alert("KONIEC GRY");
                 document.location.reload();
             }
         }
 
         // Ruch paletki
-        if(rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 7;
-        else if(leftPressed && paddleX > 0) paddleX -= 7;
+        if(rightPressed && paddleX < canvas.width - paddleWidth) paddleX += 8;
+        else if(leftPressed && paddleX > 0) paddleX -= 8;
 
         x += dx;
         y += dy;

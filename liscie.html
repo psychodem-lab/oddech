@@ -3,44 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rytm Natury - Realistyczne Drzewo</title>
+    <title>Rytm Natury - Spokojna Rzeka</title>
     <style>
         body { 
-            background: #eef2f3; 
+            background: #f0f4f8; 
             margin: 0; 
             overflow: hidden; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            font-family: 'Segoe UI', serif;
-            color: #2c3e50;
+            font-family: 'Segoe UI', sans-serif;
+            color: #445;
         }
         canvas { 
-            background: linear-gradient(to bottom, #74ebd5, #acb6e5); /* Miękkie niebo */
-            box-shadow: 0 15px 45px rgba(0,0,0,0.15);
+            background: linear-gradient(to bottom, #a1c4fd 0%, #c2e9fb 100%);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
             border-radius: 30px;
             margin-top: 20px;
-            max-width: 95vw;
-            max-height: 75vh;
             cursor: pointer;
-            border: 8px solid white;
+            border: 10px solid white;
+            max-width: 95vw;
         }
-        .ui { text-align: center; padding: 15px; }
-        .alert { 
-            color: #e74c3c; 
-            font-weight: bold; 
-            height: 24px; 
-            margin-top: 5px;
-            transition: opacity 0.3s;
-        }
+        .ui { text-align: center; padding: 10px; }
+        .combo-info { font-size: 18px; color: #2e7d32; font-weight: bold; height: 25px; }
     </style>
 </head>
 <body>
 
 <div class="ui">
-    <h2 style="margin:5px">Rytm Spokoju</h2>
-    <p style="margin:0">Kliknij spokojnie, by uwolnić liść. Jeśli klikniesz za szybko, drzewo zadrży.</p>
-    <div id="alertBox" class="alert"></div>
+    <h2 style="margin:5px">Rytm Rzeki</h2>
+    <div id="comboText" class="combo-info">Utrzymuj rytm, aby zobaczyć łódki...</div>
+    <div id="alertBox" style="color: #e57373; height: 20px; font-size: 14px;"></div>
 </div>
 
 <canvas id="natureCanvas" width="800" height="550"></canvas>
@@ -48,138 +41,155 @@
 <script>
     const canvas = document.getElementById("natureCanvas");
     const ctx = canvas.getContext("2d");
+    const comboText = document.getElementById("comboText");
     const alertBox = document.getElementById("alertBox");
 
     let lastClickTime = 0;
-    const minInterval = 1000; // 1 sekunda - optymalny rytm relaksacyjny
-    let leaves = [];
+    const minInterval = 1000; 
+    let combo = 0;
+    let floatingObjects = [];
     let treeShake = 0;
 
-    // Obsługa kliknięcia
+    // Generowanie statycznej korony drzewa, aby uniknąć migotania
+    const treeCanvas = document.createElement('canvas');
+    treeCanvas.width = 800;
+    treeCanvas.height = 550;
+    const tCtx = treeCanvas.getContext('2d');
+
+    function drawStaticTree(x, y, len, angle, thickness) {
+        tCtx.beginPath();
+        tCtx.save();
+        tCtx.strokeStyle = "#4b3621";
+        tCtx.lineWidth = thickness;
+        tCtx.lineCap = "round";
+        tCtx.translate(x, y);
+        tCtx.rotate(angle * Math.PI / 180);
+        tCtx.moveTo(0, 0);
+        tCtx.lineTo(0, -len);
+        tCtx.stroke();
+
+        if (len < 15) {
+            tCtx.beginPath();
+            tCtx.fillStyle = "rgba(46, 125, 50, 0.7)";
+            tCtx.arc(0, -len, 15, 0, Math.PI * 2);
+            tCtx.fill();
+            tCtx.restore();
+            return;
+        }
+        drawStaticTree(0, -len, len * 0.75, angle + 25, thickness * 0.7);
+        drawStaticTree(0, -len, len * 0.75, angle - 25, thickness * 0.7);
+        tCtx.restore();
+    }
+    drawStaticTree(400, 465, 100, 0, 15);
+
     canvas.addEventListener('mousedown', () => {
         const now = Date.now();
         if (now - lastClickTime < minInterval) {
-            // ZA SZYBKO
-            treeShake = 12;
-            alertBox.style.opacity = "1";
-            alertBox.innerText = "Zwolnij... poczekaj na odpowiedni moment.";
-            setTimeout(() => alertBox.style.opacity = "0", 1500);
+            treeShake = 10;
+            combo = 0;
+            alertBox.innerText = "Zbyt szybko. Spokojnie...";
+            comboText.innerText = "Rytm przerwany";
+            setTimeout(() => alertBox.innerText = "", 1000);
         } else {
-            // DOBRE TEMPO
-            dropLeaf();
+            combo++;
             lastClickTime = now;
-            alertBox.style.opacity = "0";
+            addObject();
+            updateComboUI();
         }
     });
 
-    function dropLeaf() {
-        leaves.push({
-            x: 350 + (Math.random() - 0.5) * 200,
-            y: 100 + Math.random() * 150,
+    function updateComboUI() {
+        if (combo < 5) comboText.innerText = "Dobry rytm...";
+        else if (combo < 10) comboText.innerText = "Pojawiają się kwiaty! ✨";
+        else comboText.innerText = "Magia! Papierowe łódki płyną ⛵";
+    }
+
+    function addObject() {
+        let type = 'leaf';
+        if (combo >= 10 && Math.random() > 0.5) type = 'boat';
+        else if (combo >= 5) type = 'petal';
+
+        floatingObjects.push({
+            type: type,
+            x: 400 + (Math.random() - 0.5) * 150,
+            y: 150 + Math.random() * 100,
             angle: Math.random() * Math.PI,
-            speedY: 0.8 + Math.random() * 1,
-            swing: 0.02 + Math.random() * 0.03,
-            offset: Math.random() * 100,
-            rotation: (Math.random() - 0.5) * 0.04,
-            color: `hsl(${80 + Math.random() * 60}, 60%, ${30 + Math.random() * 20}%)`,
+            speedY: 0.7 + Math.random(),
+            rotation: (Math.random() - 0.5) * 0.03,
+            color: type === 'petal' ? '#ff80ab' : (type === 'boat' ? '#fff' : '#388e3c'),
             inRiver: false
         });
     }
 
-    // Rysowanie realistycznego drzewa (fraktalne gałęzie)
-    function drawBranch(x, y, len, angle, thickness) {
+    function drawBoat(ctx) {
         ctx.beginPath();
-        ctx.save();
-        ctx.strokeStyle = "#4b3621";
-        ctx.lineWidth = thickness;
-        ctx.lineCap = "round";
-        ctx.translate(x, y);
-        ctx.rotate(angle * Math.PI / 180);
+        ctx.moveTo(-15, 0);
+        ctx.lineTo(15, 0);
+        ctx.lineTo(10, 8);
+        ctx.lineTo(-10, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(0, -len);
-        ctx.stroke();
-
-        if (len < 15) {
-            // Rysowanie kępek liści na końcach gałęzi
-            ctx.beginPath();
-            ctx.fillStyle = "rgba(46, 125, 50, 0.8)";
-            ctx.arc(0, -len, 15 + Math.random() * 10, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-            return;
-        }
-
-        drawBranch(0, -len, len * 0.75, angle + 25, thickness * 0.7);
-        drawBranch(0, -len, len * 0.75, angle - 25, thickness * 0.7);
-
-        ctx.restore();
+        ctx.lineTo(0, -15);
+        ctx.lineTo(10, 0);
+        ctx.fill();
     }
 
     function drawRiver() {
         const time = Date.now() * 0.001;
-        let grad = ctx.createLinearGradient(0, 450, 0, 550);
-        grad.addColorStop(0, "#4fc3f7");
-        grad.addColorStop(1, "#0277bd");
-        
-        ctx.fillStyle = grad;
+        ctx.fillStyle = "#0277bd";
         ctx.beginPath();
-        ctx.moveTo(0, 460);
+        ctx.moveTo(0, 465);
         for (let x = 0; x <= canvas.width; x += 20) {
-            ctx.lineTo(x, 465 + Math.sin(x * 0.01 + time) * 12);
+            ctx.lineTo(x, 465 + Math.sin(x * 0.015 + time) * 10);
         }
         ctx.lineTo(canvas.width, canvas.height);
         ctx.lineTo(0, canvas.height);
         ctx.fill();
-        
-        // Odblaski na wodzie
-        ctx.strokeStyle = "rgba(255,255,255,0.2)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, 480);
-        for (let x = 0; x <= canvas.width; x += 40) {
-            ctx.lineTo(x + 20, 480 + Math.sin(x * 0.01 + time) * 5);
-        }
-        ctx.stroke();
     }
 
     function update() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
         drawRiver();
 
-        // Rysowanie drzewa z efektem drżenia
         ctx.save();
         if (treeShake > 0) {
-            ctx.translate(Math.sin(Date.now() * 0.6) * treeShake, 0);
-            treeShake *= 0.92;
+            ctx.translate(Math.sin(Date.now() * 0.5) * treeShake, 0);
+            treeShake *= 0.9;
         }
-        drawBranch(400, 465, 100, 0, 15);
+        ctx.drawImage(treeCanvas, 0, 0);
         ctx.restore();
 
-        // Logika liści
-        leaves.forEach((leaf, index) => {
-            if (!leaf.inRiver) {
-                leaf.y += leaf.speedY;
-                leaf.x += Math.sin(leaf.y * leaf.swing + leaf.offset) * 2.5;
-                leaf.angle += leaf.rotation;
-                if (leaf.y >= 465) leaf.inRiver = true;
+        floatingObjects.forEach((obj, i) => {
+            if (!obj.inRiver) {
+                obj.y += obj.speedY;
+                obj.x += Math.sin(obj.y * 0.03) * 1.5;
+                if (obj.y >= 465) obj.inRiver = true;
             } else {
-                leaf.x += 1.2; // Prąd rzeki
-                leaf.y = 470 + Math.sin(leaf.x * 0.01 + Date.now() * 0.001) * 12;
+                obj.x += 1.2;
+                obj.y = 470 + Math.sin(obj.x * 0.015 + Date.now() * 0.001) * 10;
             }
 
             ctx.save();
-            ctx.translate(leaf.x, leaf.y);
-            ctx.rotate(leaf.angle);
-            ctx.fillStyle = leaf.color;
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.quadraticCurveTo(8, -12, 16, 0);
-            ctx.quadraticCurveTo(8, 12, 0, 0);
-            ctx.fill();
+            ctx.translate(obj.x, obj.y);
+            ctx.rotate(obj.angle);
+            ctx.fillStyle = obj.color;
+            
+            if (obj.type === 'boat') drawBoat(ctx);
+            else if (obj.type === 'petal') {
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 8, 5, 0, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 12, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
             ctx.restore();
-
-            if (leaf.x > canvas.width + 50) leaves.splice(index, 1);
+            
+            obj.angle += obj.rotation;
+            if (obj.x > canvas.width + 50) floatingObjects.splice(i, 1);
         });
 
         requestAnimationFrame(update);

@@ -3,75 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Akwarium Foto-Realistyczne</title>
+    <title>Akwarium Zen - Majestatyczny Skalar</title>
     <style>
-        body { background: #000; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
+        body { background: #010305; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
         canvas { 
-            background: #050a14; 
-            box-shadow: 0 0 100px rgba(0,0,0,1);
-            border: 5px solid #111;
+            background: linear-gradient(180deg, #0d1b2a 0%, #020508 100%);
+            box-shadow: 0 0 100px rgba(0,0,0,0.9);
+            border: 8px solid #1a1a1a;
+            border-radius: 20px;
             max-width: 98vw;
             max-height: 90vh;
         }
-        #loader { position: absolute; color: white; font-family: sans-serif; }
     </style>
 </head>
 <body>
 
-<div id="loader">Ładowanie rybek...</div>
-<canvas id="aquariumCanvas" width="1200" height="700" style="display:none;"></canvas>
+<canvas id="aquariumCanvas" width="1000" height="600"></canvas>
 
 <script>
     const canvas = document.getElementById("aquariumCanvas");
     const ctx = canvas.getContext("2d");
-    const loader = document.getElementById("loader");
 
-    // --- KONFIGURACJA ZDJĘĆ ---
-    // Tutaj wpisz ścieżki do swoich plików PNG (lokalne lub linki)
-    const fishConfigs = [
-        { id: 'skalar', src: 'skalar.png', width: 140, height: 160, speed: 0.4 },
-        { id: 'mieczyk', src: 'mieczyk.png', width: 100, height: 40, speed: 0.8 },
-        { id: 'molinezja', src: 'molinezja.png', width: 80, height: 50, speed: 0.6 },
-        { id: 'gupik', src: 'gupik.png', width: 60, height: 40, speed: 1.0 }
+    let mouse = { x: -100, y: -100, active: false };
+    let fishes = [];
+    let bubbles = [];
+    let plants = [];
+
+    // Skalar jest teraz znacznie większy (size: 85), inne ryby mniejsze. Speed obniżony.
+    const types = [
+        { name: 'skalar', color: '#f8f9fa', accent: '#444', size: 85, speed: 0.35 },
+        { name: 'mieczyk', color: '#ff4500', accent: '#8b0000', size: 38, speed: 0.6 },
+        { name: 'molinezja', color: '#1a1a1a', accent: '#333', size: 32, speed: 0.5 },
+        { name: 'gupik', color: '#00d2ff', accent: '#ff007f', size: 22, speed: 0.7 }
     ];
 
-    let images = {};
-    let loadedCount = 0;
-    let fishes = [];
-    let mouse = { x: -1000, y: -1000, active: false };
-
-    // Ładowanie obrazów
-    fishConfigs.forEach(config => {
-        const img = new Image();
-        img.src = config.src;
-        img.onload = () => {
-            loadedCount++;
-            if (loadedCount === fishConfigs.length) startApp();
-        };
-        img.onerror = () => {
-            console.error("Nie znaleziono pliku: " + config.src);
-            // Jeśli obrazka brak, tworzymy kolorowy prostokąt zastępczy
-            loadedCount++;
-            if (loadedCount === fishConfigs.length) startApp();
-        };
-        images[config.id] = img;
-    });
-
-    function startApp() {
-        loader.style.display = "none";
-        canvas.style.display = "block";
-        
-        // Tworzenie rybek
-        for (let i = 0; i < 15; i++) {
-            const config = fishConfigs[Math.floor(Math.random() * fishConfigs.length)];
-            fishes.push(new Fish(config));
-        }
-        animate();
+    for(let i=0; i<12; i++) {
+        plants.push({
+            x: Math.random() * canvas.width,
+            h: 180 + Math.random() * 220,
+            thickness: 10 + Math.random() * 5,
+            phase: Math.random() * Math.PI * 2
+        });
     }
 
     class Fish {
-        constructor(config) {
-            this.config = config;
+        constructor() {
+            this.type = types[Math.floor(Math.random() * types.length)];
+            // Jeśli skalar, dajemy ich mniej, by nie tłoczyły akwarium
+            if(this.type.name === 'skalar' && Math.random() > 0.4) {
+                 this.type = types[1 + Math.floor(Math.random() * 3)];
+            }
             this.x = Math.random() * canvas.width;
             this.y = Math.random() * canvas.height;
             this.targetX = Math.random() * canvas.width;
@@ -79,7 +60,7 @@
             this.velX = 0;
             this.velY = 0;
             this.flip = 1;
-            this.timer = Math.random() * 500;
+            this.changeTargetIn = Math.random() * 300;
         }
 
         update() {
@@ -87,11 +68,11 @@
                 this.targetX = mouse.x;
                 this.targetY = mouse.y;
             } else {
-                this.timer--;
-                if (this.timer <= 0) {
+                this.changeTargetIn--;
+                if (this.changeTargetIn <= 0) {
                     this.targetX = Math.random() * canvas.width;
                     this.targetY = Math.random() * canvas.height;
-                    this.timer = 300 + Math.random() * 600;
+                    this.changeTargetIn = 300 + Math.random() * 500;
                 }
             }
 
@@ -99,64 +80,149 @@
             let dy = this.targetY - this.y;
             let dist = Math.sqrt(dx*dx + dy*dy);
 
-            if (dist > 20) {
-                this.velX += (dx / dist) * 0.005 * this.config.speed;
-                this.velY += (dy / dist) * 0.005 * this.config.speed;
+            if (dist > 10) {
+                // Znacznie mniejsza siła napędowa (0.008 zamiast 0.02) - ryby płyną leniwie
+                this.velX += (dx / dist) * 0.008 * this.type.speed;
+                this.velY += (dy / dist) * 0.008 * this.type.speed;
             }
 
-            this.velX *= 0.99;
+            this.velX *= 0.99; // Większy opór wody, by ruch był płynniejszy
             this.velY *= 0.99;
+
             this.x += this.velX;
             this.y += this.velY;
 
-            if (this.velX > 0.1) this.flip = 1;
-            if (this.velX < -0.1) this.flip = -1;
+            if (this.velX > 0.05) this.flip = 1;
+            if (this.velX < -0.05) this.flip = -1;
         }
 
         draw() {
             ctx.save();
             ctx.translate(this.x, this.y);
-            // Odbicie lustrzane obrazka w zależności od kierunku
             ctx.scale(this.flip, 1);
             
-            const img = images[this.config.id];
-            if (img.complete && img.naturalWidth !== 0) {
-                ctx.drawImage(img, -this.config.width/2, -this.config.height/2, this.config.width, this.config.height);
-            } else {
-                // Rysunek zastępczy jeśli brak pliku
-                ctx.fillStyle = "red";
-                ctx.fillRect(-20, -10, 40, 20);
+            const s = this.type.size;
+            ctx.fillStyle = this.type.color;
+            ctx.strokeStyle = this.type.accent;
+
+            if (this.type.name === 'skalar') {
+                ctx.beginPath();
+                ctx.moveTo(s*0.4, 0); 
+                ctx.lineTo(-s*0.4, -s*0.9); // Górna płetwa wysoka
+                ctx.lineTo(-s*0.2, 0);      // Środek ogona
+                ctx.lineTo(-s*0.4, s*0.9);  // Dolna płetwa długa
+                ctx.closePath();
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                // Dodatkowe paski skalara
+                ctx.fillStyle = "rgba(0,0,0,0.1)";
+                ctx.fillRect(-2, -s*0.5, 4, s);
+            } else if (this.type.name === 'mieczyk') {
+                ctx.beginPath();
+                ctx.ellipse(0, 0, s*0.8, s*0.3, 0, 0, Math.PI*2);
+                ctx.fill();
+                ctx.lineWidth = 1; ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*0.6, 0);
+                ctx.lineTo(-s*2, s*0.4); 
+                ctx.lineTo(-s*0.7, s*0.1);
+                ctx.fillStyle = this.type.accent;
+                ctx.fill();
+            } else if (this.type.name === 'molinezja') {
+                ctx.beginPath();
+                ctx.ellipse(0, 0, s*0.8, s*0.45, 0, 0, Math.PI*2);
+                ctx.fill();
+                ctx.lineWidth = 1; ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(-s*0.7, 0);
+                ctx.lineTo(-s*1.3, -s*0.4);
+                ctx.lineTo(-s*1.3, s*0.4);
+                ctx.fill();
+            } else { // Gupik
+                ctx.beginPath();
+                ctx.ellipse(0, 0, s*0.6, s*0.3, 0, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = this.type.accent;
+                ctx.beginPath();
+                ctx.moveTo(-s*0.4, 0);
+                ctx.quadraticCurveTo(-s*2, -s, -s*2, 0);
+                ctx.quadraticCurveTo(-s*2, s, -s*0.4, 0);
+                ctx.fill();
             }
+
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(s*0.3, -s*0.1, s > 50 ? 3 : 2, 0, Math.PI*2);
+            ctx.fill();
             ctx.restore();
         }
     }
 
-    function drawEnvironment() {
-        // Tło wody z lekkim gradientem i bąbelkami
-        let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        grad.addColorStop(0, "#0a1e32");
-        grad.addColorStop(1, "#02050a");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    class Bubble {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + 20;
+            this.r = 1.5 + Math.random() * 4;
+            this.speed = 0.4 + Math.random() * 0.8;
+            this.osc = Math.random() * 100;
+        }
+        update() {
+            this.y -= this.speed;
+            this.x += Math.sin(this.y * 0.03 + this.osc) * 0.4;
+        }
+        draw() {
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+            ctx.lineWidth = 1;
+            ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+            ctx.stroke();
+        }
+    }
 
-        // Subtelne światło z góry
-        ctx.fillStyle = "rgba(255,255,255,0.02)";
-        ctx.beginPath();
-        ctx.moveTo(0,0); ctx.lineTo(canvas.width, 0); ctx.lineTo(canvas.width*0.8, canvas.height); ctx.lineTo(canvas.width*0.2, canvas.height);
-        ctx.fill();
+    // Dodajemy 12 ryb
+    for(let i=0; i<12; i++) fishes.push(new Fish());
+
+    function drawWorld() {
+        const time = Date.now() * 0.0008; // Wolniejsze falowanie roślin
+        
+        ctx.strokeStyle = "rgba(20, 45, 30, 0.8)";
+        ctx.lineCap = "round";
+        plants.forEach(p => {
+            ctx.lineWidth = p.thickness;
+            ctx.beginPath();
+            ctx.moveTo(p.x, canvas.height);
+            let sway = Math.sin(time + p.phase) * 25;
+            ctx.bezierCurveTo(p.x + sway, canvas.height - p.h/3, p.x - sway, canvas.height - p.h*0.6, p.x + sway/2, canvas.height - p.h);
+            ctx.stroke();
+        });
+
+        if (Math.random() < 0.06) bubbles.push(new Bubble());
+        for (let i = bubbles.length - 1; i >= 0; i--) {
+            bubbles[i].update();
+            bubbles[i].draw();
+            if (bubbles[i].y < -20) bubbles.splice(i, 1);
+        }
     }
 
     function animate() {
-        drawEnvironment();
+        // Tło - bardzo ciemny granat, efekt wody
+        ctx.fillStyle = "rgba(5, 12, 20, 0.3)"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        drawWorld();
+
         fishes.forEach(f => {
             f.update();
             f.draw();
         });
+
         requestAnimationFrame(animate);
     }
 
-    // Obsługa myszy/dotyku
-    const updateMouse = (e) => {
+    const inputStart = (e) => { mouse.active = true; inputMove(e); };
+    const inputEnd = () => { mouse.active = false; };
+    const inputMove = (e) => {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -164,13 +230,15 @@
         mouse.y = (clientY - rect.top) * (canvas.height / rect.height);
     };
 
-    canvas.addEventListener('mousedown', (e) => { mouse.active = true; updateMouse(e); });
-    canvas.addEventListener('touchstart', (e) => { mouse.active = true; updateMouse(e); });
-    window.addEventListener('mouseup', () => mouse.active = false);
-    window.addEventListener('touchend', () => mouse.active = false);
-    canvas.addEventListener('mousemove', updateMouse);
-    canvas.addEventListener('touchmove', updateMouse);
+    canvas.addEventListener('mousedown', inputStart);
+    canvas.addEventListener('mousemove', inputMove);
+    window.addEventListener('mouseup', inputEnd);
+    canvas.addEventListener('touchstart', inputStart);
+    canvas.addEventListener('touchmove', inputMove);
+    window.addEventListener('touchend', inputEnd);
 
+    animate();
 </script>
+
 </body>
 </html>

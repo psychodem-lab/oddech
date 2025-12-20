@@ -106,9 +106,9 @@
 
     function updateUI() {
         if (combo === 0) comboText.innerText = "Spokojnie...";
-        else if (combo < 5) comboText.innerText = "Dobry rytm...";
-        else if (combo < 12) comboText.innerText = "Kwiaty opadają... ✨";
-        else if (combo < 20) comboText.innerText = "Łódki płyną z nurtem ⛵";
+        else if (combo < 10) comboText.innerText = "Dobry rytm...";
+        else if (combo < 17) comboText.innerText = "Kwiaty opadają... ✨";
+        else if (combo < 30) comboText.innerText = "Łódki płyną z nurtem ⛵";
         else {
             comboText.innerText = "Wieczorna cisza... 🌙";
             comboText.style.color = "#5c6bc0";
@@ -118,8 +118,8 @@
 
     function addObject() {
         let type = 'leaf';
-        if (combo >= 15) type = Math.random() > 0.4 ? 'boat' : 'petal';
-        else if (combo >= 6) type = Math.random() > 0.3 ? 'petal' : 'leaf';
+        if (combo >= 20) type = Math.random() > 0.4 ? 'boat' : 'petal';
+        else if (combo >= 10) type = Math.random() > 0.3 ? 'petal' : 'leaf';
 
         floatingObjects.push({
             type: type,

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Akwarium Foto-Realistyczne</title>
+    <style>
+        body { background: #000; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
+        canvas { 
+            background: #050a14; 
+            box-shadow: 0 0 100px rgba(0,0,0,1);
+            border: 5px solid #111;
+            max-width: 98vw;
+            max-height: 90vh;
+        }
+        #loader { position: absolute; color: white; font-family: sans-serif; }
+    </style>
+</head>
+<body>
+
+<div id="loader">Ładowanie rybek...</div>
+<canvas id="aquariumCanvas" width="1200" height="700" style="display:none;"></canvas>
+
+<script>
+    const canvas = document.getElementById("aquariumCanvas");
+    const ctx = canvas.getContext("2d");
+    const loader = document.getElementById("loader");
+
+    // --- KONFIGURACJA ZDJĘĆ ---
+    // Tutaj wpisz ścieżki do swoich plików PNG (lokalne lub linki)
+    const fishConfigs = [
+        { id: 'skalar', src: 'skalar.png', width: 140, height: 160, speed: 0.4 },
+        { id: 'mieczyk', src: 'mieczyk.png', width: 100, height: 40, speed: 0.8 },
+        { id: 'molinezja', src: 'molinezja.png', width: 80, height: 50, speed: 0.6 },
+        { id: 'gupik', src: 'gupik.png', width: 60, height: 40, speed: 1.0 }
+    ];
+
+    let images = {};
+    let loadedCount = 0;
+    let fishes = [];
+    let mouse = { x: -1000, y: -1000, active: false };
+
+    // Ładowanie obrazów
+    fishConfigs.forEach(config => {
+        const img = new Image();
+        img.src = config.src;
+        img.onload = () => {
+            loadedCount++;
+            if (loadedCount === fishConfigs.length) startApp();
+        };
+        img.onerror = () => {
+            console.error("Nie znaleziono pliku: " + config.src);
+            // Jeśli obrazka brak, tworzymy kolorowy prostokąt zastępczy
+            loadedCount++;
+            if (loadedCount === fishConfigs.length) startApp();
+        };
+        images[config.id] = img;
+    });
+
+    function startApp() {
+        loader.style.display = "none";
+        canvas.style.display = "block";
+        
+        // Tworzenie rybek
+        for (let i = 0; i < 15; i++) {
+            const config = fishConfigs[Math.floor(Math.random() * fishConfigs.length)];
+            fishes.push(new Fish(config));
+        }
+        animate();
+    }
+
+    class Fish {
+        constructor(config) {
+            this.config = config;
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.targetX = Math.random() * canvas.width;
+            this.targetY = Math.random() * canvas.height;
+            this.velX = 0;
+            this.velY = 0;
+            this.flip = 1;
+            this.timer = Math.random() * 500;
+        }
+
+        update() {
+            if (mouse.active) {
+                this.targetX = mouse.x;
+                this.targetY = mouse.y;
+            } else {
+                this.timer--;
+                if (this.timer <= 0) {
+                    this.targetX = Math.random() * canvas.width;
+                    this.targetY = Math.random() * canvas.height;
+                    this.timer = 300 + Math.random() * 600;
+                }
+            }
+
+            let dx = this.targetX - this.x;
+            let dy = this.targetY - this.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (dist > 20) {
+                this.velX += (dx / dist) * 0.005 * this.config.speed;
+                this.velY += (dy / dist) * 0.005 * this.config.speed;
+            }
+
+            this.velX *= 0.99;
+            this.velY *= 0.99;
+            this.x += this.velX;
+            this.y += this.velY;
+
+            if (this.velX > 0.1) this.flip = 1;
+            if (this.velX < -0.1) this.flip = -1;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            // Odbicie lustrzane obrazka w zależności od kierunku
+            ctx.scale(this.flip, 1);
+            
+            const img = images[this.config.id];
+            if (img.complete && img.naturalWidth !== 0) {
+                ctx.drawImage(img, -this.config.width/2, -this.config.height/2, this.config.width, this.config.height);
+            } else {
+                // Rysunek zastępczy jeśli brak pliku
+                ctx.fillStyle = "red";
+                ctx.fillRect(-20, -10, 40, 20);
+            }
+            ctx.restore();
+        }
+    }
+
+    function drawEnvironment() {
+        // Tło wody z lekkim gradientem i bąbelkami
+        let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grad.addColorStop(0, "#0a1e32");
+        grad.addColorStop(1, "#02050a");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Subtelne światło z góry
+        ctx.fillStyle = "rgba(255,255,255,0.02)";
+        ctx.beginPath();
+        ctx.moveTo(0,0); ctx.lineTo(canvas.width, 0); ctx.lineTo(canvas.width*0.8, canvas.height); ctx.lineTo(canvas.width*0.2, canvas.height);
+        ctx.fill();
+    }
+
+    function animate() {
+        drawEnvironment();
+        fishes.forEach(f => {
+            f.update();
+            f.draw();
+        });
+        requestAnimationFrame(animate);
+    }
+
+    // Obsługa myszy/dotyku
+    const updateMouse = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        mouse.x = (clientX - rect.left) * (canvas.width / rect.width);
+        mouse.y = (clientY - rect.top) * (canvas.height / rect.height);
+    };
+
+    canvas.addEventListener('mousedown', (e) => { mouse.active = true; updateMouse(e); });
+    canvas.addEventListener('touchstart', (e) => { mouse.active = true; updateMouse(e); });
+    window.addEventListener('mouseup', () => mouse.active = false);
+    window.addEventListener('touchend', () => mouse.active = false);
+    canvas.addEventListener('mousemove', updateMouse);
+    canvas.addEventListener('touchmove', updateMouse);
+
+</script>
+</body>
+</html>

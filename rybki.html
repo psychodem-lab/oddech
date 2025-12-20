@@ -3,229 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Akwarium Spokoju</title>
+    <title>Akwarium Zen - Widok z boku</title>
     <style>
         body { 
-            background: #102a43; /* Bardzo ciemny granat */
+            background: #050a0f; 
             margin: 0; 
             overflow: hidden; 
             display: flex; 
-            flex-direction: column; 
+            justify-content: center; 
             align-items: center; 
-            font-family: 'Segoe UI', sans-serif;
-            touch-action: none; /* Zapobiega przewijaniu na dotyku */
+            height: 100vh;
+            font-family: sans-serif;
+            touch-action: none;
         }
-        .ui { padding: 20px; text-align: center; color: #829ab1; }
         canvas { 
-            background: linear-gradient(to bottom, #2b455b, #102a43); /* Gradient głębokiej wody */
-            display: block;
-            box-shadow: 0 0 80px rgba(0,0,0,0.8);
-            border-radius: 30px;
-            cursor: pointer;
-            border: 8px solid #336699;
+            background: linear-gradient(to bottom, #1a364d 0%, #0a141d 100%);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.5), 0 20px 50px rgba(0,0,0,0.8);
+            border: 12px solid #2c3e50;
+            border-radius: 10px;
+            cursor: crosshair;
             max-width: 95vw;
-            max-height: 80vh;
+            max-height: 85vh;
         }
+        .instr { position: absolute; top: 20px; color: #5dade2; opacity: 0.6; pointer-events: none; }
     </style>
 </head>
 <body>
 
-<div class="ui">
-    <h2 style="margin:0; font-weight: 300; color: #ccd6e1;">Akwarium Spokoju</h2>
-    <p style="margin:5px; opacity: 0.8;">Trzymaj kursor lub palec, a rybki powoli przypłyną.</p>
-</div>
-
-<canvas id="aquariumCanvas" width="1000" height="600"></canvas>
+<div class="instr">Trzymaj palec, aby rybki do Ciebie podpłynęły</div>
+<canvas id="fishCanvas" width="1000" height="600"></canvas>
 
 <script>
-    const canvas = document.getElementById("aquariumCanvas");
+    const canvas = document.getElementById("fishCanvas");
     const ctx = canvas.getContext("2d");
 
+    let mouse = { x: -1000, y: -1000, down: false };
     let fishes = [];
-    const fishTypes = [
-        { name: "Skalar", size: 50, color: '#f0f0f0', finColor: '#c0c0c0', shape: 'skalar', speed: 0.8 },
-        { name: "Molinezja", size: 35, color: '#ffd700', finColor: '#cc0000', shape: 'molinezja', speed: 1.0 },
-        { name: "Gupik", size: 25, color: '#ff6347', finColor: '#ffa07a', shape: 'gupik', speed: 1.2 },
-        { name: "Mieczyk", size: 45, color: '#ff4500', finColor: '#ff8c00', shape: 'mieczyk', speed: 1.1 }
+    let plants = [];
+
+    // Definicje gatunków
+    const types = [
+        { name: 'skalar', color: '#ecf0f1', accent: '#bdc3c7', size: 40 },
+        { name: 'mieczyk', color: '#e67e22', accent: '#d35400', size: 35 },
+        { name: 'molinezja', color: '#2c3e50', accent: '#000000', size: 30 },
+        { name: 'gupik', color: '#9b59b6', accent: '#f1c40f', size: 20 }
     ];
 
-    let targetX = -100, targetY = -100; // Pozycja "palca" lub kursora
-    let isTouching = false;
-
-    // Inicjalizacja ryb
-    for (let i = 0; i < 15; i++) {
-        createFish();
-    }
-
-    function createFish() {
-        const type = fishTypes[Math.floor(Math.random() * fishTypes.length)];
-        fishes.push({
+    // Inicjalizacja roślin (wodorostów)
+    for(let i=0; i<15; i++) {
+        plants.push({
             x: Math.random() * canvas.width,
-            y: Math.random() * canvas.height,
-            vx: (Math.random() - 0.5) * type.speed,
-            vy: (Math.random() - 0.5) * type.speed,
-            rotation: Math.random() * Math.PI * 2,
-            type: type,
-            age: 0, // Dla animacji płetw
-            targetRotation: 0 // Dla płynnego obracania
+            h: 100 + Math.random() * 200,
+            off: Math.random() * Math.PI * 2,
+            speed: 0.02 + Math.random() * 0.03
         });
     }
 
-    // Obsługa dotyku/myszki
-    canvas.addEventListener('pointerdown', (e) => {
-        isTouching = true;
-        updateTargetPosition(e);
-    });
-    canvas.addEventListener('pointermove', (e) => {
-        if (isTouching) {
-            updateTargetPosition(e);
+    class Fish {
+        constructor() {
+            this.type = types[Math.floor(Math.random() * types.length)];
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.velX = (Math.random() - 0.5) * 2;
+            this.velY = (Math.random() - 0.5) * 1;
+            this.angle = 0;
+            this.flip = 1; // 1 w prawo, -1 w lewo
         }
-    });
-    canvas.addEventListener('pointerup', () => {
-        isTouching = false;
-        targetX = -100; targetY = -100; // Ukryj cel
-    });
-    canvas.addEventListener('pointerleave', () => { // Kursor opuszcza canvas
-        isTouching = false;
-        targetX = -100; targetY = -100;
-    });
 
-    function updateTargetPosition(e) {
+        update() {
+            let tx = mouse.down ? mouse.x : this.x + this.velX * 100;
+            let ty = mouse.down ? mouse.y : this.y + this.velY * 100;
+
+            let dx = tx - this.x;
+            let dy = ty - this.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (mouse.down && dist > 20) {
+                this.velX += (dx / dist) * 0.05;
+                this.velY += (dy / dist) * 0.05;
+            } else {
+                this.velX += (Math.random() - 0.5) * 0.02;
+                this.velY += (Math.random() - 0.5) * 0.02;
+            }
+
+            // Opór wody
+            this.velX *= 0.98;
+            this.velY *= 0.98;
+
+            this.x += this.velX;
+            this.y += this.velY;
+
+            // Odbijanie od ścian
+            if (this.x < 50 || this.x > canvas.width - 50) this.velX *= -0.5;
+            if (this.y < 50 || this.y > canvas.height - 50) this.velY *= -0.5;
+
+            // Kierunek patrzenia
+            if (this.velX > 0.1) this.flip = 1;
+            if (this.velX < -0.1) this.flip = -1;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.scale(this.flip, 1);
+            
+            const s = this.type.size;
+            ctx.fillStyle = this.type.color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "rgba(0,0,0,0.3)";
+
+            if (this.type.name === 'skalar') {
+                // Kształt trójkątny skalara
+                ctx.beginPath();
+                ctx.moveTo(s, 0); // Pysk
+                ctx.lineTo(-s, -s * 1.5); // Góra
+                ctx.lineTo(-s * 0.5, 0); // Wcięcie
+                ctx.lineTo(-s, s * 1.5); // Dół
+                ctx.closePath();
+                ctx.fill();
+                // Płetwa boczna
+                ctx.strokeStyle = this.type.accent;
+                ctx.stroke();
+            } else if (this.type.name === 'mieczyk') {
+                // Smukłe ciało i miecz
+                ctx.beginPath();
+                ctx.ellipse(0, 0, s, s * 0.4, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(-s, 0);
+                ctx.lineTo(-s * 2.5, s * 0.6); // Miecz
+                ctx.lineTo(-s * 0.8, s * 0.2);
+                ctx.fillStyle = this.type.accent;
+                ctx.fill();
+            } else if (this.type.name === 'molinezja') {
+                // Bardziej zaokrąglona
+                ctx.beginPath();
+                ctx.ellipse(0, 0, s, s * 0.6, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(-s, 0);
+                ctx.quadraticCurveTo(-s * 1.8, -s, -s * 1.8, s);
+                ctx.closePath();
+                ctx.fill();
+            } else { // gupik
+                ctx.beginPath();
+                ctx.ellipse(0, 0, s, s * 0.4, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // Wielki kolorowy ogon
+                ctx.fillStyle = this.type.accent;
+                ctx.beginPath();
+                ctx.moveTo(-s * 0.8, 0);
+                ctx.bezierCurveTo(-s*2, -s*1.5, -s*2, s*1.5, -s*0.8, 0);
+                ctx.fill();
+            }
+
+            // Oko
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(s * 0.6, -s * 0.1, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+    }
+
+    // Tworzenie rybek
+    for(let i=0; i<12; i++) fishes.push(new Fish());
+
+    function drawPlants() {
+        const time = Date.now();
+        ctx.strokeStyle = "#1e8449";
+        ctx.lineWidth = 8;
+        ctx.lineCap = "round";
+        
+        plants.forEach(p => {
+            ctx.beginPath();
+            ctx.moveTo(p.x, canvas.height);
+            let sway = Math.sin(time * p.speed + p.off) * 20;
+            ctx.bezierCurveTo(p.x + sway, canvas.height - p.h/2, p.x - sway, canvas.height - p.h, p.x, canvas.height - p.h);
+            ctx.stroke();
+        });
+    }
+
+    function animate() {
+        // Tło - czyszczenie z lekkim smużeniem
+        ctx.fillStyle = "rgba(26, 54, 77, 0.4)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        drawPlants();
+
+        fishes.forEach(f => {
+            f.update();
+            f.draw();
+        });
+
+        // Bąbelki powietrza
+        if (Math.random() < 0.05) {
+            ctx.fillStyle = "rgba(255,255,255,0.2)";
+            ctx.beginPath();
+            ctx.arc(Math.random() * canvas.width, canvas.height, Math.random() * 5, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    // Obsługa myszy i dotyku
+    const setMouse = (e) => {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        targetX = (clientX - rect.left) * scaleX;
-        targetY = (clientY - rect.top) * scaleY;
-    }
+        mouse.x = (clientX - rect.left) * (canvas.width / rect.width);
+        mouse.y = (clientY - rect.top) * (canvas.height / rect.height);
+    };
 
-    // --- Rysowanie Ryb (szczegółowe kształty) ---
-    function drawSkalar(ctx, size, color, finColor) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, size * 0.7, size, 0, 0, Math.PI * 2); // Ciało
-        ctx.fill();
+    canvas.addEventListener('mousedown', (e) => { mouse.down = true; setMouse(e); });
+    canvas.addEventListener('touchstart', (e) => { mouse.down = true; setMouse(e); });
+    window.addEventListener('mouseup', () => mouse.down = false);
+    window.addEventListener('touchend', () => mouse.down = false);
+    canvas.addEventListener('mousemove', setMouse);
+    canvas.addEventListener('touchmove', setMouse);
 
-        ctx.fillStyle = finColor; // Płetwy
-        ctx.beginPath(); ctx.moveTo(0, -size); ctx.lineTo(-size*0.4, -size*1.3); ctx.lineTo(-size*0.3, size*1.3); ctx.lineTo(0, size); ctx.fill(); // Górna
-        ctx.beginPath(); ctx.moveTo(0, size); ctx.lineTo(size*0.4, size*1.3); ctx.lineTo(size*0.3, -size*1.3); ctx.lineTo(0, -size); ctx.fill(); // Dolna
-        ctx.beginPath(); ctx.moveTo(size*0.7, 0); ctx.quadraticCurveTo(size*1.2, size*0.3, size*0.7, size*0.6); ctx.fill(); // Ogon
-    }
-
-    function drawMolinezja(ctx, size, color, finColor) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, size * 0.8, size * 0.5, 0, 0, Math.PI * 2); // Ciało
-        ctx.fill();
-
-        ctx.fillStyle = finColor;
-        ctx.beginPath(); ctx.moveTo(-size*0.8, 0); ctx.quadraticCurveTo(-size*1.2, size*0.3, -size*0.8, size*0.6); ctx.fill(); // Ogon
-        ctx.beginPath(); ctx.ellipse(size*0.4, size*0.4, size*0.2, size*0.1, Math.PI/4, 0, Math.PI*2); ctx.fill(); // Górna
-        ctx.beginPath(); ctx.ellipse(size*0.4, -size*0.4, size*0.2, size*0.1, -Math.PI/4, 0, Math.PI*2); ctx.fill(); // Dolna
-    }
-
-    function drawGupik(ctx, size, color, finColor) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, size * 0.7, size * 0.4, 0, 0, Math.PI * 2); // Ciało
-        ctx.fill();
-
-        ctx.fillStyle = finColor;
-        ctx.beginPath(); ctx.moveTo(-size*0.7, 0); ctx.quadraticCurveTo(-size*1.2, size*0.5, -size*0.7, size*1.0); ctx.fill(); // Duży ogon
-    }
-
-    function drawMieczyk(ctx, size, color, finColor) {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, size * 0.9, size * 0.4, 0, 0, Math.PI * 2); // Ciało
-        ctx.fill();
-
-        ctx.fillStyle = finColor;
-        ctx.beginPath(); ctx.moveTo(-size*0.9, 0); ctx.lineTo(-size*1.4, size*0.2); ctx.lineTo(-size*1.1, 0); ctx.lineTo(-size*1.4, -size*0.2); ctx.closePath(); ctx.fill(); // Miecz (ogon)
-    }
-
-    // --- Główna pętla gry ---
-    function loop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Delikatne bąbelki w tle
-        if (Math.random() < 0.05) { // Rzadsze bąbelki
-            fishes.push({
-                x: Math.random() * canvas.width,
-                y: canvas.height + 20,
-                radius: Math.random() * 8 + 5,
-                speed: Math.random() * 0.3 + 0.1,
-                opacity: 0.5 + Math.random() * 0.3,
-                type: { name: 'bubble' }
-            });
-        }
-
-        for (let i = fishes.length - 1; i >= 0; i--) {
-            let f = fishes[i];
-
-            if (f.type.name === 'bubble') {
-                f.y -= f.speed;
-                ctx.beginPath();
-                ctx.fillStyle = `rgba(255,255,255,${f.opacity})`;
-                ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-                ctx.fill();
-                if (f.y < -f.radius) fishes.splice(i, 1);
-                continue;
-            }
-
-            // Zachowanie ryb
-            let targetAngle;
-            if (isTouching) {
-                // Powolne płynięcie do palca
-                const dx = targetX - f.x;
-                const dy = targetY - f.y;
-                targetAngle = Math.atan2(dy, dx);
-                f.vx += Math.cos(targetAngle) * 0.02;
-                f.vy += Math.sin(targetAngle) * 0.02;
-            } else {
-                // Swobodne pływanie, odbijanie od brzegów
-                if (f.x < 50 || f.x > canvas.width - 50) f.vx *= -1;
-                if (f.y < 50 || f.y > canvas.height - 50) f.vy *= -1;
-                targetAngle = Math.atan2(f.vy, f.vx);
-            }
-
-            // Płynne obracanie
-            let angleDiff = targetAngle - f.rotation;
-            if (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-            if (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-            f.rotation += angleDiff * 0.05; // Powolne dostosowanie kierunku
-
-            // Ograniczenie prędkości
-            const speedMagnitude = Math.sqrt(f.vx * f.vx + f.vy * f.vy);
-            if (speedMagnitude > f.type.speed * 1.5) {
-                f.vx = (f.vx / speedMagnitude) * f.type.speed * 1.5;
-                f.vy = (f.vy / speedMagnitude) * f.type.speed * 1.5;
-            }
-
-            f.x += f.vx;
-            f.y += f.vy;
-            f.age += 0.1;
-
-            ctx.save();
-            ctx.translate(f.x, f.y);
-            ctx.rotate(f.rotation);
-            
-            // Rysowanie konkretnego typu ryby
-            switch(f.type.shape) {
-                case 'skalar': drawSkalar(ctx, f.type.size, f.type.color, f.type.finColor); break;
-                case 'molinezja': drawMolinezja(ctx, f.type.size, f.type.color, f.type.finColor); break;
-                case 'gupik': drawGupik(ctx, f.type.size, f.type.color, f.type.finColor); break;
-                case 'mieczyk': drawMieczyk(ctx, f.type.size, f.type.color, f.type.finColor); break;
-            }
-            
-            ctx.restore();
-        }
-
-        requestAnimationFrame(loop);
-    }
-
-    loop();
+    animate();
 </script>
 
 </body>

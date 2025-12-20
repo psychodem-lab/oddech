@@ -3,40 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relaksacyjny Oddech - Tryb Nocny</title>
+    <title>Oddech - Minimalistyczny Owal</title>
     <style>
         :root {
-            --bg-color: #0b1120; /* Głęboki granat nocny */
-            --balloon-color: #a78bfa; /* Delikatny fiolet */
-            --glow-color: rgba(167, 139, 250, 0.4);
-            --text-color: #94a3b8;
+            --bg-color: #05070a;
+            --oval-color: #8b5cf6;
+            --glow-color: rgba(139, 92, 246, 0.5);
             --inhale-time: 4s;
             --exhale-time: 8s;
         }
 
         body {
             margin: 0;
-            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
             background-color: var(--bg-color);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #475569;
+            font-family: sans-serif;
             overflow: hidden;
             touch-action: none;
-            transition: background-color 3s ease;
-            color: var(--text-color);
         }
 
         #instruction {
-            margin-bottom: 60px;
-            font-size: 1.4rem;
-            font-weight: 300;
-            text-align: center;
-            letter-spacing: 1px;
-            min-height: 1.5em;
+            margin-bottom: 80px;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: color 0.5s;
         }
 
         .container {
@@ -48,103 +44,61 @@
         }
 
         #balloon {
-            width: 80px;
-            height: 100px;
-            background: radial-gradient(circle at 30% 30%, var(--balloon-color), #7c3aed);
-            border-radius: 50% 50% 50% 50% / 45% 45% 55% 55%;
-            position: relative;
+            width: 100px;
+            height: 130px;
+            background: radial-gradient(circle at 35% 35%, var(--oval-color), #4c1d95);
+            border-radius: 50%; /* Idealny owal */
             transition: transform var(--exhale-time) ease-out, box-shadow var(--exhale-time) ease-out;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5), 0 0 10px var(--glow-color);
+            box-shadow: 0 0 30px var(--glow-color);
         }
 
-        /* Sznurek balonu */
-        #balloon::after {
-            content: '';
-            position: absolute;
-            bottom: -50px;
-            left: 50%;
-            width: 2px;
-            height: 50px;
-            background: linear-gradient(to bottom, var(--balloon-color), transparent);
-            transform: translateX(-50%);
-        }
-
-        /* Efekt podczas wdechu */
         body.inhaling #balloon {
-            transform: scale(3);
+            transform: scale(2.2);
             transition: transform var(--inhale-time) linear, box-shadow var(--inhale-time) linear;
-            box-shadow: 0 0 50px var(--glow-color), 0 0 100px rgba(124, 58, 237, 0.2);
+            box-shadow: 0 0 60px var(--glow-color);
         }
 
-        body.inhaling {
-            background-color: #0f172a; /* Nieco jaśniejszy granat przy wdechu */
+        body.inhaling #instruction {
+            color: #ddd;
         }
 
-        .hint {
+        .footer {
             margin-top: 80px;
-            font-size: 0.9rem;
-            opacity: 0.6;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        /* Gwiazdy w tle dla klimatu */
-        .star {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            opacity: 0.3;
+            font-size: 0.8rem;
+            opacity: 0.4;
         }
     </style>
 </head>
 <body>
 
-    <div id="instruction">Dotknij i przytrzymaj, by zacząć</div>
+    <div id="instruction">Przytrzymaj (wdech)</div>
 
     <div class="container">
         <div id="balloon"></div>
     </div>
 
-    <div class="hint">Wdech 4s • Wydech 8s</div>
+    <div class="footer">4s wdech / 8s wydech</div>
 
     <script>
         const body = document.body;
         const instruction = document.getElementById('instruction');
 
-        // Generowanie prostych gwiazd w tle
-        function createStars() {
-            for (let i = 0; i < 50; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                const size = Math.random() * 2 + 'px';
-                star.style.width = size;
-                star.style.height = size;
-                star.style.top = Math.random() * 100 + 'vh';
-                star.style.left = Math.random() * 100 + 'vw';
-                document.body.appendChild(star);
-            }
-        }
-        createStars();
-
-        function startInhale(e) {
+        const start = (e) => {
             e.preventDefault();
             body.classList.add('inhaling');
-            instruction.style.color = "#fff";
             instruction.innerText = "Wdech...";
-        }
+        };
 
-        function startExhale(e) {
+        const stop = (e) => {
             e.preventDefault();
             body.classList.remove('inhaling');
-            instruction.style.color = "var(--text-color)";
-            instruction.innerText = "Spokojny wydech...";
-        }
+            instruction.innerText = "Wydech...";
+        };
 
-        // Eventy dla myszy i dotyku
-        window.addEventListener('mousedown', startInhale);
-        window.addEventListener('mouseup', startExhale);
-        window.addEventListener('touchstart', startInhale);
-        window.addEventListener('touchend', startExhale);
+        window.addEventListener('mousedown', start);
+        window.addEventListener('mouseup', stop);
+        window.addEventListener('touchstart', start);
+        window.addEventListener('touchend', stop);
     </script>
 </body>
 </html>

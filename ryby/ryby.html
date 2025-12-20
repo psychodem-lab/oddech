@@ -36,7 +36,7 @@
 
 <div id="loader">
     <div>Ładowanie ekosystemu...</div>
-    <div class="instructions">Kliknij i przytrzymaj, aby zwabić rybki. <br> Kliknij krótko, aby rzucić karmę!</div>
+    <div class="instructions">Kliknij i przytrzymaj, aby zwabić rybki</div>
 </div>
 <canvas id="aquariumCanvas"></canvas>
 
@@ -53,28 +53,16 @@
         { id: 'gupik', src: 'gupik.png', width: 60, height: 40, speed: 1.2 }
     ];
 
-    const numFishes = 15;
-    const numBubbles = 40;
-    const numPlants = 10; // Liczba roślin na dnie
-    const maxFoodParticles = 50; // Maksymalna liczba cząstek karmy
-
     let images = {};
     let loadedCount = 0;
     let fishes = [];
     let bubbles = [];
-    let plants = [];
-    let foodParticles = [];
-    let mouse = { x: -1000, y: -1000, active: false, clickTime: 0 };
+    let mouse = { x: -1000, y: -1000, active: false };
 
     // --- DOPASOWANIE ROZMIARU ---
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        // Ponowne rozmieszczenie roślin po zmianie rozmiaru
-        plants = [];
-        for (let i = 0; i < numPlants; i++) {
-            plants.push(new Plant());
-        }
     }
     window.addEventListener('resize', resize);
     resize();
@@ -99,7 +87,7 @@
     class Bubble {
         constructor() {
             this.reset();
-            this.y = Math.random() * canvas.height; 
+            this.y = Math.random() * canvas.height; // Rozmieść na starcie w całym pionie
         }
         reset() {
             this.x = Math.random() * canvas.width;
@@ -107,6 +95,7 @@
             this.speed = 0.4 + Math.random() * 1.2;
             this.size = 1 + Math.random() * 3;
             this.opacity = 0.1 + Math.random() * 0.3;
+            this.swing = Math.random() * 0.02;
         }
         update() {
             this.y -= this.speed;
@@ -115,59 +104,6 @@
         }
         draw() {
             ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-
-    // --- KLASA ROŚLINA (NOWA) ---
-    class Plant {
-        constructor() {
-            this.x = Math.random() * canvas.width;
-            this.height = 50 + Math.random() * 150;
-            this.width = 10 + Math.random() * 20;
-            this.sway = Math.random() * Math.PI * 2;
-            this.color = `hsl(${80 + Math.random() * 40}, 70%, ${30 + Math.random() * 20}%)`;
-        }
-        draw() {
-            ctx.save();
-            ctx.translate(this.x, canvas.height);
-            ctx.rotate(Math.sin(this.sway + Date.now() * 0.001) * 0.05); // Delikatne kołysanie
-            ctx.fillStyle = this.color;
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.bezierCurveTo(this.width/2, -this.height/3, this.width/2, -this.height*2/3, 0, -this.height);
-            ctx.bezierCurveTo(-this.width/2, -this.height*2/3, -this.width/2, -this.height/3, 0, 0);
-            ctx.fill();
-            ctx.restore();
-        }
-    }
-
-    // --- KLASA KARMA (NOWA) ---
-    class FoodParticle {
-        constructor(x, y) {
-            this.x = x + (Math.random() - 0.5) * 20; // Rozrzut początkowy
-            this.y = y;
-            this.size = 2 + Math.random() * 2;
-            this.opacity = 0.8;
-            this.velY = 0.5 + Math.random() * 1;
-            this.gravity = 0.05;
-            this.life = 100 + Math.random() * 100; // Czas życia
-        }
-        update() {
-            this.velY += this.gravity;
-            this.y += this.velY;
-            this.life--;
-            this.opacity = Math.max(0, this.life / 100); // Stopniowe zanikanie
-
-            if (this.y > canvas.height - this.size) { // Odbicie od dna
-                this.y = canvas.height - this.size;
-                this.velY *= -0.3; // Tłumienie
-            }
-        }
-        draw() {
-            ctx.fillStyle = `rgba(220, 150, 50, ${this.opacity})`;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
             ctx.fill();
@@ -190,23 +126,7 @@
         }
 
         update() {
-            // Rybki gonią karmę, jeśli jest w pobliżu
-            let closestFood = null;
-            let minDistToFood = Infinity;
-            if (!mouse.active && foodParticles.length > 0) {
-                for (const food of foodParticles) {
-                    let dist = Math.sqrt(Math.pow(food.x - this.x, 2) + Math.pow(food.y - this.y, 2));
-                    if (dist < minDistToFood && dist < 200) { // Tylko karma w zasięgu
-                        minDistToFood = dist;
-                        closestFood = food;
-                    }
-                }
-            }
-            
-            if (closestFood) {
-                this.targetX = closestFood.x;
-                this.targetY = closestFood.y;
-            } else if (mouse.active) {
+            if (mouse.active) {
                 this.targetX = mouse.x;
                 this.targetY = mouse.y;
             } else {
@@ -232,18 +152,15 @@
             this.x += this.velX;
             this.y += this.velY;
 
-            // Upewnienie się, że ryby nie wychodzą poza obszar canvas
-            this.x = Math.max(0, Math.min(canvas.width, this.x));
-            this.y = Math.max(0, Math.min(canvas.height, this.y));
-
             if (this.velX > 0.2) this.flip = 1;
             if (this.velX < -0.2) this.flip = -1;
             
-            this.oscillation += 0.05 * this.config.speed;
+            this.oscillation += 0.05;
         }
 
         draw() {
             ctx.save();
+            // Efekt lekkiego kołysania góra-dół
             let bob = Math.sin(this.oscillation) * 3;
             ctx.translate(this.x, this.y + bob);
             ctx.scale(this.flip, 1);
@@ -262,28 +179,27 @@
     function startApp() {
         loader.style.display = "none";
         
-        for (let i = 0; i < numFishes; i++) {
+        // Inicjalizacja obiektów
+        for (let i = 0; i < 15; i++) {
             const config = fishConfigs[Math.floor(Math.random() * fishConfigs.length)];
             fishes.push(new Fish(config));
         }
-        for (let i = 0; i < numBubbles; i++) {
+        for (let i = 0; i < 40; i++) {
             bubbles.push(new Bubble());
-        }
-        for (let i = 0; i < numPlants; i++) {
-            plants.push(new Plant());
         }
         
         animate();
     }
 
     function drawEnvironment() {
+        // Tło - głęboki błękit
         let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
         grad.addColorStop(0, "#0a2a4a");
         grad.addColorStop(1, "#020810");
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // God Rays (promienie światła) - rysowane pod rybami, ale nad tłem
+        // God Rays (promienie światła)
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
         let lightGrad = ctx.createRadialGradient(canvas.width/2, -100, 100, canvas.width/2, 0, canvas.height * 1.2);
@@ -302,19 +218,9 @@
     function animate() {
         drawEnvironment();
         
-        plants.forEach(p => p.draw());
-
         bubbles.forEach(b => {
             b.update();
             b.draw();
-        });
-
-        foodParticles.forEach((food, index) => {
-            food.update();
-            food.draw();
-            if (food.life <= 0) {
-                foodParticles.splice(index, 1); // Usuń starą karmę
-            }
         });
 
         fishes.forEach(f => {
@@ -334,60 +240,12 @@
         mouse.y = (clientY - rect.top) * (canvas.height / rect.height);
     };
 
-    canvas.addEventListener('mousedown', (e) => { 
-        mouse.active = true; 
-        mouse.clickTime = Date.now();
-        updateMouse(e); 
-    });
-    canvas.addEventListener('touchstart', (e) => { 
-        mouse.active = true; 
-        mouse.clickTime = Date.now();
-        updateMouse(e); 
-    });
-
-    window.addEventListener('mouseup', (e) => { 
-        mouse.active = false;
-        if (Date.now() - mouse.clickTime < 200) { // Krótkie kliknięcie = karma
-            for (let i = 0; i < 5 + Math.random() * 5; i++) { // Wyrzuć kilka cząstek
-                if (foodParticles.length < maxFoodParticles) {
-                    foodParticles.push(new FoodParticle(mouse.x, mouse.y));
-                }
-            }
-        }
-    });
-    window.addEventListener('touchend', (e) => { 
-        mouse.active = false;
-        if (Date.now() - mouse.clickTime < 200) { // Krótkie dotknięcie = karma
-            for (let i = 0; i < 5 + Math.random() * 5; i++) {
-                if (foodParticles.length < maxFoodParticles) {
-                    foodParticles.push(new FoodParticle(mouse.x, mouse.y));
-                }
-            }
-        }
-    });
-
+    canvas.addEventListener('mousedown', (e) => { mouse.active = true; updateMouse(e); });
+    canvas.addEventListener('touchstart', (e) => { mouse.active = true; updateMouse(e); });
+    window.addEventListener('mouseup', () => mouse.active = false);
+    window.addEventListener('touchend', () => mouse.active = false);
     canvas.addEventListener('mousemove', updateMouse);
     canvas.addEventListener('touchmove', (e) => { e.preventDefault(); updateMouse(e); }, {passive: false});
-    // --- POPRAWIONE ŁADOWANIE ZASOBÓW ---
-    fishConfigs.forEach(config => {
-        const img = new Image();
-        img.src = config.src;
-        
-        img.onload = () => {
-            console.log("Wczytano: " + config.id);
-            loadedCount++;
-            if (loadedCount === fishConfigs.length) startApp();
-        };
-        
-        img.onerror = () => {
-            console.warn("Nie znaleziono pliku: " + config.src + ". Użyję zastępczego kształtu.");
-            // Tworzymy pusty obrazek, aby nie blokować aplikacji
-            images[config.id] = new Image(); 
-            loadedCount++;
-            if (loadedCount === fishConfigs.length) startApp();
-        };
-        images[config.id] = img;
-    });
 
 </script>
 </body>

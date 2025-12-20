@@ -3,44 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Akwarium Foto-Realistyczne</title>
+    <title>Akwarium Foto-Realistyczne Pro</title>
     <style>
-        body { background: #000; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
-        canvas { 
-            background: #050a14; 
-            box-shadow: 0 0 100px rgba(0,0,0,1);
-            border: 5px solid #111;
-            max-width: 98vw;
-            max-height: 90vh;
+        body { 
+            background: #000; 
+            margin: 0; 
+            overflow: hidden; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            touch-action: none; 
         }
-        #loader { position: absolute; color: white; font-family: sans-serif; }
+        canvas { 
+            display: block;
+            background: #050a14; 
+        }
+        #loader { 
+            position: absolute; 
+            color: white; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center;
+        }
+        .instructions {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
-<div id="loader">Ładowanie rybek...</div>
-<canvas id="aquariumCanvas" width="1200" height="700" style="display:none;"></canvas>
+<div id="loader">
+    <div>Ładowanie ekosystemu...</div>
+    <div class="instructions">Kliknij i przytrzymaj, aby zwabić rybki</div>
+</div>
+<canvas id="aquariumCanvas"></canvas>
 
 <script>
     const canvas = document.getElementById("aquariumCanvas");
     const ctx = canvas.getContext("2d");
     const loader = document.getElementById("loader");
 
-    // --- KONFIGURACJA ZDJĘĆ ---
-    // Tutaj wpisz ścieżki do swoich plików PNG (lokalne lub linki)
+    // --- KONFIGURACJA ---
     const fishConfigs = [
-        { id: 'skalar', src: 'skalar.png', width: 140, height: 160, speed: 0.4 },
-        { id: 'mieczyk', src: 'mieczyk.png', width: 100, height: 40, speed: 0.8 },
-        { id: 'molinezja', src: 'molinezja.png', width: 80, height: 50, speed: 0.6 },
-        { id: 'gupik', src: 'gupik.png', width: 60, height: 40, speed: 1.0 }
+        { id: 'skalar', src: 'skalar.png', width: 140, height: 160, speed: 0.5 },
+        { id: 'mieczyk', src: 'mieczyk.png', width: 100, height: 40, speed: 0.9 },
+        { id: 'molinezja', src: 'molinezja.png', width: 80, height: 50, speed: 0.7 },
+        { id: 'gupik', src: 'gupik.png', width: 60, height: 40, speed: 1.2 }
     ];
 
     let images = {};
     let loadedCount = 0;
     let fishes = [];
+    let bubbles = [];
     let mouse = { x: -1000, y: -1000, active: false };
 
-    // Ładowanie obrazów
+    // --- DOPASOWANIE ROZMIARU ---
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // --- ŁADOWANIE ZASOBÓW ---
     fishConfigs.forEach(config => {
         const img = new Image();
         img.src = config.src;
@@ -49,26 +76,41 @@
             if (loadedCount === fishConfigs.length) startApp();
         };
         img.onerror = () => {
-            console.error("Nie znaleziono pliku: " + config.src);
-            // Jeśli obrazka brak, tworzymy kolorowy prostokąt zastępczy
+            console.warn("Brak pliku: " + config.src + " - używam zamiennika.");
             loadedCount++;
             if (loadedCount === fishConfigs.length) startApp();
         };
         images[config.id] = img;
     });
 
-    function startApp() {
-        loader.style.display = "none";
-        canvas.style.display = "block";
-        
-        // Tworzenie rybek
-        for (let i = 0; i < 15; i++) {
-            const config = fishConfigs[Math.floor(Math.random() * fishConfigs.length)];
-            fishes.push(new Fish(config));
+    // --- KLASA BĄBELKI ---
+    class Bubble {
+        constructor() {
+            this.reset();
+            this.y = Math.random() * canvas.height; // Rozmieść na starcie w całym pionie
         }
-        animate();
+        reset() {
+            this.x = Math.random() * canvas.width;
+            this.y = canvas.height + 20;
+            this.speed = 0.4 + Math.random() * 1.2;
+            this.size = 1 + Math.random() * 3;
+            this.opacity = 0.1 + Math.random() * 0.3;
+            this.swing = Math.random() * 0.02;
+        }
+        update() {
+            this.y -= this.speed;
+            this.x += Math.sin(this.y * 0.05) * 0.5;
+            if (this.y < -20) this.reset();
+        }
+        draw() {
+            ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 
+    // --- KLASA RYBA ---
     class Fish {
         constructor(config) {
             this.config = config;
@@ -80,6 +122,7 @@
             this.velY = 0;
             this.flip = 1;
             this.timer = Math.random() * 500;
+            this.oscillation = Math.random() * Math.PI * 2;
         }
 
         update() {
@@ -91,7 +134,7 @@
                 if (this.timer <= 0) {
                     this.targetX = Math.random() * canvas.width;
                     this.targetY = Math.random() * canvas.height;
-                    this.timer = 300 + Math.random() * 600;
+                    this.timer = 200 + Math.random() * 500;
                 }
             }
 
@@ -99,63 +142,96 @@
             let dy = this.targetY - this.y;
             let dist = Math.sqrt(dx*dx + dy*dy);
 
-            if (dist > 20) {
-                this.velX += (dx / dist) * 0.005 * this.config.speed;
-                this.velY += (dy / dist) * 0.005 * this.config.speed;
+            if (dist > 30) {
+                this.velX += (dx / dist) * 0.015 * this.config.speed;
+                this.velY += (dy / dist) * 0.015 * this.config.speed;
             }
 
-            this.velX *= 0.99;
-            this.velY *= 0.99;
+            this.velX *= 0.985;
+            this.velY *= 0.985;
             this.x += this.velX;
             this.y += this.velY;
 
-            if (this.velX > 0.1) this.flip = 1;
-            if (this.velX < -0.1) this.flip = -1;
+            if (this.velX > 0.2) this.flip = 1;
+            if (this.velX < -0.2) this.flip = -1;
+            
+            this.oscillation += 0.05;
         }
 
         draw() {
             ctx.save();
-            ctx.translate(this.x, this.y);
-            // Odbicie lustrzane obrazka w zależności od kierunku
+            // Efekt lekkiego kołysania góra-dół
+            let bob = Math.sin(this.oscillation) * 3;
+            ctx.translate(this.x, this.y + bob);
             ctx.scale(this.flip, 1);
             
             const img = images[this.config.id];
             if (img.complete && img.naturalWidth !== 0) {
                 ctx.drawImage(img, -this.config.width/2, -this.config.height/2, this.config.width, this.config.height);
             } else {
-                // Rysunek zastępczy jeśli brak pliku
-                ctx.fillStyle = "red";
+                ctx.fillStyle = "rgba(200, 100, 100, 0.8)";
                 ctx.fillRect(-20, -10, 40, 20);
             }
             ctx.restore();
         }
     }
 
+    function startApp() {
+        loader.style.display = "none";
+        
+        // Inicjalizacja obiektów
+        for (let i = 0; i < 15; i++) {
+            const config = fishConfigs[Math.floor(Math.random() * fishConfigs.length)];
+            fishes.push(new Fish(config));
+        }
+        for (let i = 0; i < 40; i++) {
+            bubbles.push(new Bubble());
+        }
+        
+        animate();
+    }
+
     function drawEnvironment() {
-        // Tło wody z lekkim gradientem i bąbelkami
+        // Tło - głęboki błękit
         let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        grad.addColorStop(0, "#0a1e32");
-        grad.addColorStop(1, "#02050a");
+        grad.addColorStop(0, "#0a2a4a");
+        grad.addColorStop(1, "#020810");
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Subtelne światło z góry
-        ctx.fillStyle = "rgba(255,255,255,0.02)";
+        // God Rays (promienie światła)
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        let lightGrad = ctx.createRadialGradient(canvas.width/2, -100, 100, canvas.width/2, 0, canvas.height * 1.2);
+        lightGrad.addColorStop(0, 'rgba(100, 200, 255, 0.15)');
+        lightGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = lightGrad;
         ctx.beginPath();
-        ctx.moveTo(0,0); ctx.lineTo(canvas.width, 0); ctx.lineTo(canvas.width*0.8, canvas.height); ctx.lineTo(canvas.width*0.2, canvas.height);
+        ctx.moveTo(0,0);
+        ctx.lineTo(canvas.width, 0);
+        ctx.lineTo(canvas.width * 0.9, canvas.height);
+        ctx.lineTo(canvas.width * 0.1, canvas.height);
         ctx.fill();
+        ctx.restore();
     }
 
     function animate() {
         drawEnvironment();
+        
+        bubbles.forEach(b => {
+            b.update();
+            b.draw();
+        });
+
         fishes.forEach(f => {
             f.update();
             f.draw();
         });
+
         requestAnimationFrame(animate);
     }
 
-    // Obsługa myszy/dotyku
+    // --- OBSŁUGA INTERAKCJI ---
     const updateMouse = (e) => {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -169,7 +245,7 @@
     window.addEventListener('mouseup', () => mouse.active = false);
     window.addEventListener('touchend', () => mouse.active = false);
     canvas.addEventListener('mousemove', updateMouse);
-    canvas.addEventListener('touchmove', updateMouse);
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); updateMouse(e); }, {passive: false});
 
 </script>
 </body>

@@ -368,6 +368,26 @@
 
     canvas.addEventListener('mousemove', updateMouse);
     canvas.addEventListener('touchmove', (e) => { e.preventDefault(); updateMouse(e); }, {passive: false});
+    // --- POPRAWIONE ŁADOWANIE ZASOBÓW ---
+    fishConfigs.forEach(config => {
+        const img = new Image();
+        img.src = config.src;
+        
+        img.onload = () => {
+            console.log("Wczytano: " + config.id);
+            loadedCount++;
+            if (loadedCount === fishConfigs.length) startApp();
+        };
+        
+        img.onerror = () => {
+            console.warn("Nie znaleziono pliku: " + config.src + ". Użyję zastępczego kształtu.");
+            // Tworzymy pusty obrazek, aby nie blokować aplikacji
+            images[config.id] = new Image(); 
+            loadedCount++;
+            if (loadedCount === fishConfigs.length) startApp();
+        };
+        images[config.id] = img;
+    });
 
 </script>
 </body>

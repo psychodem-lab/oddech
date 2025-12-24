@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Literaki</title>
+    <title>Słowne Wyzwanie - Kompaktowy Układ</title>
     <style>
         :root {
             --primary: #4a90e2;
@@ -32,21 +32,21 @@
             background: white;
             width: 100%;
             max-width: 500px;
-            height: 100%;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 15px;
+            padding: 10px; /* Zmniejszony padding */
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
-        header { text-align: center; padding-bottom: 10px; }
-        h1 { font-size: 1.4rem; margin: 5px 0; }
+        header { text-align: center; padding-bottom: 5px; flex-shrink: 0; }
+        h1 { font-size: 1.2rem; margin: 5px 0; } /* Mniejszy nagłówek */
 
         .letters-pills {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 6px;
+            margin-bottom: 10px;
             flex-shrink: 0;
         }
 
@@ -57,34 +57,33 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 10px;
-            font-size: 1.4rem;
+            border-radius: 8px;
+            font-size: 1.3rem;
             font-weight: bold;
-            box-shadow: 0 4px 0 #357abd;
+            box-shadow: 0 3px 0 #357abd;
             cursor: pointer;
-            user-select: none;
         }
 
         .letter.used {
             background: var(--disabled);
-            box-shadow: 0 4px 0 #95a5a6;
+            box-shadow: 0 3px 0 #95a5a6;
             opacity: 0.5;
             transform: translateY(2px);
         }
 
         .input-area {
             display: flex;
-            gap: 8px;
-            height: 55px;
-            margin-bottom: 10px;
+            gap: 6px;
+            height: 50px;
+            margin-bottom: 8px;
             flex-shrink: 0;
         }
 
         input {
             flex: 2;
             border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 1.3rem;
+            border-radius: 8px;
+            font-size: 1.2rem;
             text-transform: uppercase;
             outline: none;
             text-align: center;
@@ -93,31 +92,31 @@
 
         button {
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
-        .btn-add { background: var(--success); color: white; flex: 1; font-size: 1.1rem; }
-        .btn-back { background: #e67e22; color: white; width: 55px; font-size: 1.3rem; }
+        .btn-add { background: var(--success); color: white; flex: 1; font-size: 1rem; }
+        .btn-back { background: #e67e22; color: white; width: 50px; font-size: 1.2rem; }
 
         #msg { 
-            height: 20px; 
+            height: 18px; 
             text-align: center; 
             font-weight: 600; 
-            font-size: 0.85rem;
-            margin-bottom: 5px;
+            font-size: 0.8rem;
+            margin-bottom: 3px;
         }
 
+        /* KLUCZOWA ZMIANA: Zmniejszony kontener wyników */
         .results {
             flex-grow: 1;
+            min-height: 100px; /* Gwarantuje miejsce, ale pozwala się kurczyć */
+            max-height: 30%;   /* Ogranicza wysokość, by nie wypychać przycisku */
             border: 1px solid #eee;
-            border-radius: 10px;
+            border-radius: 8px;
             background: #fafafa;
-            padding: 10px;
+            padding: 8px;
             overflow-y: auto;
             margin-bottom: 10px;
         }
@@ -126,10 +125,10 @@
             display: inline-block;
             background: #e1f5fe;
             color: #0277bd;
-            padding: 5px 12px;
-            border-radius: 15px;
-            margin: 3px;
-            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            margin: 2px;
+            font-size: 0.8rem;
             border: 1px solid #b3e5fc;
         }
 
@@ -144,11 +143,12 @@
             background: #95a5a6;
             color: white;
             width: 100%;
-            height: 45px;
+            height: 40px;
             flex-shrink: 0;
+            font-size: 0.9rem;
         }
 
-        .loader { display: none; color: var(--primary); text-align: center; font-style: italic; font-size: 0.8rem; }
+        .loader { display: none; color: var(--primary); text-align: center; font-style: italic; font-size: 0.75rem; }
         .particle { position: absolute; pointer-events: none; border-radius: 50%; z-index: 100; }
     </style>
 </head>
@@ -170,7 +170,7 @@
     </div>
 
     <div class="results">
-        <div style="margin-bottom: 8px;"><strong>Słowa (<span id="count">0</span>):</strong></div>
+        <div style="margin-bottom: 5px; font-size: 0.85rem;"><strong>Słowa (<span id="count">0</span>):</strong></div>
         <div id="foundList"></div>
     </div>
 
@@ -178,10 +178,10 @@
 </div>
 
 <script>
-    const alphabetRaw = "BCDFGHJKLMNPRSTWZ"; // Litery standardowe
-    const specialChars = "ĄĆĘŁŃÓŚŹŻ"; // Litery polskie (unikalne)
-    const vowelsRaw = "AEIOUY"; // Samogłoski standardowe
-    const specialVowels = "ĄĘÓ"; // Samogłoski polskie (unikalne)
+    const alphabetRaw = "BCDFGHJKLMNPRSTWZ";
+    const specialChars = "ĄĆĘŁŃÓŚŹŻ";
+    const vowelsRaw = "AEIOUY";
+    const specialVowels = "ĄĘÓ";
 
     let pool = [];
     let found = [];
@@ -196,42 +196,18 @@
         document.getElementById('msg').innerText = "";
         document.getElementById('wordInput').value = "";
         
-        // Pule robocze dla tej konkretnej gry
-        let currentSpecialChars = (specialChars + specialVowels).split('');
+        const numVowels = Math.floor(Math.random() * 2) + 3; 
         
-        // Funkcja losująca z zachowaniem unikalności specjalnych znaków
-        const getRandomLetter = (sourceString, canBeSpecial = true) => {
-            let letter = sourceString[Math.floor(Math.random() * sourceString.length)];
-            
-            // Jeśli wylosowano polski znak specjalny
-            if (specialChars.includes(letter) || specialVowels.includes(letter)) {
-                // Usuń go z puli dostępnych znaków specjalnych
-                const idx = currentSpecialChars.indexOf(letter);
-                if (idx > -1) {
-                    currentSpecialChars.splice(idx, 1);
-                }
-                // Zaktualizuj bazę losowania tak, aby ten znak już nie wypadł
-                // (w tej wersji po prostu sprawdzamy unikalność przy generowaniu puli)
-            }
-            return letter;
-        };
-
-        const numVowels = Math.floor(Math.random() * 2) + 3; // 3 lub 4 samogłoski
-        const fullVowelsPool = vowelsRaw + specialVowels;
-        const fullConsonantsPool = alphabetRaw + specialChars;
-
-        // Losujemy samogłoski
+        // Losowanie samogłosek (unikalne polskie)
         while(pool.length < numVowels) {
-            let l = fullVowelsPool[Math.floor(Math.random() * fullVowelsPool.length)];
-            // Jeśli specjalna i już jest w puli - losuj ponownie
+            let l = (vowelsRaw + specialVowels)[Math.floor(Math.random() * (vowelsRaw.length + specialVowels.length))];
             if (specialVowels.includes(l) && pool.includes(l)) continue;
             pool.push(l);
         }
 
-        // Losujemy spółgłoski (dopełnienie do 10)
+        // Losowanie spółgłosek (unikalne polskie)
         while(pool.length < 10) {
-            let l = fullConsonantsPool[Math.floor(Math.random() * fullConsonantsPool.length)];
-            // Jeśli specjalna i już jest w puli - losuj ponownie
+            let l = (alphabetRaw + specialChars)[Math.floor(Math.random() * (alphabetRaw.length + specialChars.length))];
             if (specialChars.includes(l) && pool.includes(l)) continue;
             pool.push(l);
         }
@@ -279,20 +255,19 @@
         for (let i = 0; i < particleCount; i++) {
             const particle = document.createElement('div');
             particle.className = 'particle';
-            particle.style.width = '8px';
-            particle.style.height = '8px';
+            particle.style.width = '6px';
+            particle.style.height = '6px';
             particle.style.backgroundColor = color;
             document.body.appendChild(particle);
 
             const angle = (i / particleCount) * Math.PI * 2;
-            const dist = isGold ? 100 : 60;
-            const destX = Math.cos(angle) * dist;
-            const destY = Math.sin(angle) * dist;
+            const destX = Math.cos(angle) * (isGold ? 80 : 50);
+            const destY = Math.sin(angle) * (isGold ? 80 : 50);
 
             particle.animate([
                 { transform: `translate(${centerX}px, ${centerY}px) scale(1)`, opacity: 1 },
                 { transform: `translate(${centerX + destX}px, ${centerY + destY}px) scale(0)`, opacity: 0 }
-            ], { duration: 600, easing: 'ease-out' }).onfinish = () => particle.remove();
+            ], { duration: 500, easing: 'ease-out' }).onfinish = () => particle.remove();
         }
     }
 

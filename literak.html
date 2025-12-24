@@ -2,8 +2,8 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Słowne Wyzwanie - Złota Edycja</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Słowne Wyzwanie Mobile</title>
     <style>
         :root {
             --primary: #4a90e2;
@@ -15,104 +15,111 @@
             --disabled: #bdc3c7;
         }
 
+        /* Reset i ustawienia bazowe pod mobile */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
             font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start; /* Lepiej na mobile przy długich listach */
             min-height: 100vh;
             margin: 0;
-            overflow: hidden;
+            padding: 10px;
+            overflow-x: hidden;
         }
 
         .game-box {
             background: white;
-            padding: 30px;
+            padding: 20px;
             border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             width: 100%;
             max-width: 550px;
             text-align: center;
             position: relative;
             z-index: 10;
+            margin-top: 10px;
         }
 
+        h1 { font-size: 1.8rem; margin: 10px 0; }
+        p { font-size: 0.9rem; color: #666; }
+
+        /* Ulepszony układ liter na mobile */
         .letters-pills {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 25px 0;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* 2 rzędy po 5 liter */
+            gap: 8px;
+            margin: 20px 0;
         }
 
         .letter {
             background: var(--primary);
             color: white;
-            width: 45px;
-            height: 45px;
-            line-height: 45px;
-            border-radius: 10px;
-            font-size: 1.5rem;
+            aspect-ratio: 1 / 1; /* Idealne kwadraty */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 1.6rem;
             font-weight: bold;
             box-shadow: 0 4px 0 #357abd;
             cursor: pointer;
             user-select: none;
             transition: all 0.1s;
-            position: relative;
         }
 
-        .letter:hover:not(.used) { transform: translateY(-2px); }
-        .letter:active:not(.used) { transform: translateY(2px); box-shadow: 0 0 0 #357abd; }
-        
         .letter.used {
             background: var(--disabled);
             box-shadow: 0 4px 0 #95a5a6;
-            cursor: default;
             opacity: 0.5;
             transform: translateY(2px);
         }
 
+        /* Większe pole wpisywania dla palców */
         .input-area {
             display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 8px;
+            margin-bottom: 15px;
+            height: 60px;
         }
 
         input {
-            flex: 1;
-            padding: 12px;
+            flex: 2;
+            padding: 0;
             border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 1.4rem;
+            border-radius: 12px;
+            font-size: 1.5rem;
             text-transform: uppercase;
             outline: none;
             text-align: center;
-            letter-spacing: 2px;
             background: #fff;
             color: var(--dark);
         }
 
         button {
-            padding: 10px 20px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: bold;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .btn-add { background: var(--success); color: white; font-size: 1.1rem; }
-        .btn-back { background: #e67e22; color: white; }
-        .btn-new { background: #95a5a6; color: white; width: 100%; margin-top: 20px; }
+        .btn-add { background: var(--success); color: white; flex: 1; font-size: 1.2rem; }
+        .btn-back { background: #e67e22; color: white; width: 60px; font-size: 1.4rem; }
+        .btn-new { background: #95a5a6; color: white; width: 100%; height: 50px; margin-top: 15px; font-size: 1rem; }
 
-        #msg { height: 20px; margin-bottom: 15px; font-weight: 600; }
+        #msg { height: 24px; margin-bottom: 10px; font-weight: 600; font-size: 0.9rem; }
         .loader { display: none; color: var(--primary); font-style: italic; margin-bottom: 10px; }
         
         .results {
             border-top: 2px solid #eee;
             margin-top: 10px;
             padding-top: 15px;
-            max-height: 180px;
+            max-height: 25vh; /* Procentowa wysokość ekranu */
             overflow-y: auto;
         }
 
@@ -120,7 +127,7 @@
             display: inline-block;
             background: #e1f5fe;
             color: #0277bd;
-            padding: 5px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
             margin: 4px;
             font-size: 0.9rem;
@@ -135,16 +142,13 @@
             font-weight: bold;
         }
 
-        @keyframes bounceIn {
-            0% { transform: scale(0); }
-            100% { transform: scale(1); }
-        }
+        .particle { position: absolute; pointer-events: none; border-radius: 50%; z-index: 100; }
 
-        .particle {
-            position: absolute;
-            pointer-events: none;
-            border-radius: 50%;
-            z-index: 100;
+        /* Dostosowanie dla bardzo małych ekranów */
+        @media (max-width: 380px) {
+            .letter { font-size: 1.3rem; }
+            h1 { font-size: 1.5rem; }
+            .input-area { height: 50px; }
         }
     </style>
 </head>
@@ -152,7 +156,7 @@
 
 <div class="game-box">
     <h1>Słowne Wyzwanie</h1>
-    <p>Ułóż słowa z podanych liter:</p>
+    <p>Ułóż słowa (10 liter, 3-4 samogłoski)</p>
 
     <div class="letters-pills" id="lettersGroup"></div>
 
@@ -170,7 +174,7 @@
         <div id="foundList" style="margin-top: 10px;"></div>
     </div>
 
-    <button class="btn-new" onclick="startNewGame()">Nowe litery</button>
+    <button class="btn-new" onclick="startNewGame()">NOWE LITERY</button>
 </div>
 
 <script>
@@ -217,6 +221,8 @@
         usedIndices.push(index);
         document.getElementById('wordInput').value += l;
         renderPool();
+        // Lekka wibracja przy kliknięciu (jeśli wspierana)
+        if (window.navigator.vibrate) window.navigator.vibrate(10);
     }
 
     function removeLastLetter() {
@@ -234,7 +240,7 @@
         
         const particleCount = isGold ? 16 : 8;
         const color = isGold ? '#f1c40f' : '#27ae60';
-        const size = isGold ? '12px' : '8px';
+        const size = isGold ? '10px' : '6px';
 
         for (let i = 0; i < particleCount; i++) {
             const particle = document.createElement('div');
@@ -242,20 +248,21 @@
             particle.style.width = size;
             particle.style.height = size;
             particle.style.backgroundColor = color;
-            particle.style.boxShadow = isGold ? '0 0 10px #f1c40f' : 'none';
+            particle.style.boxShadow = isGold ? '0 0 8px #f1c40f' : 'none';
             
             document.body.appendChild(particle);
 
             const angle = (i / particleCount) * Math.PI * 2;
-            const velocity = isGold ? (6 + Math.random() * 6) : (4 + Math.random() * 4);
-            const destinationX = Math.cos(angle) * (isGold ? 150 : 100);
-            const destinationY = Math.sin(angle) * (isGold ? 150 : 100);
+            const velocity = isGold ? (5 + Math.random() * 5) : (3 + Math.random() * 3);
+            const dist = isGold ? 120 : 80;
+            const destinationX = Math.cos(angle) * dist;
+            const destinationY = Math.sin(angle) * dist;
 
             const animation = particle.animate([
                 { transform: `translate(${centerX}px, ${centerY}px) scale(1)`, opacity: 1 },
                 { transform: `translate(${centerX + destinationX}px, ${centerY + destinationY}px) scale(0)`, opacity: 0 }
             ], {
-                duration: isGold ? 1000 : 700,
+                duration: isGold ? 800 : 500,
                 easing: 'cubic-bezier(0, .9, .57, 1)'
             });
 
@@ -292,6 +299,7 @@
 
             if (text.includes("dopuszczalne w grach")) {
                 const isGold = word.length >= 6;
+                if (isGold && window.navigator.vibrate) window.navigator.vibrate([50, 30, 50]);
                 
                 usedIndices.forEach(idx => {
                     const tile = document.getElementById('tile-' + idx);

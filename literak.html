@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Słowne Wyzwanie Mobile</title>
+    <title>Słowne Wyzwanie Mobile Fix</title>
     <style>
         :root {
             --primary: #4a90e2;
@@ -15,59 +15,55 @@
             --disabled: #bdc3c7;
         }
 
-        /* Reset i ustawienia bazowe pod mobile */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Lepiej na mobile przy długich listach */
-            min-height: 100vh;
-            margin: 0;
-            padding: 10px;
-            overflow-x: hidden;
+            overflow: hidden; /* Blokujemy przewijanie całej strony */
         }
 
-        .game-box {
+        .game-container {
             background: white;
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 550px;
-            text-align: center;
-            position: relative;
-            z-index: 10;
-            margin-top: 10px;
+            max-width: 500px;
+            height: 100%;
+            display: flex;
+            flex-direction: column; /* Układ pionowy */
+            padding: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
-        h1 { font-size: 1.8rem; margin: 10px 0; }
-        p { font-size: 0.9rem; color: #666; }
+        header { text-align: center; padding-bottom: 10px; }
+        h1 { font-size: 1.4rem; margin: 5px 0; }
 
-        /* Ulepszony układ liter na mobile */
+        /* Panel z literami - stała wielkość */
         .letters-pills {
             display: grid;
-            grid-template-columns: repeat(5, 1fr); /* 2 rzędy po 5 liter */
+            grid-template-columns: repeat(5, 1fr);
             gap: 8px;
-            margin: 20px 0;
+            margin-bottom: 15px;
+            flex-shrink: 0; /* Nie pozwala się kurczyć */
         }
 
         .letter {
             background: var(--primary);
             color: white;
-            aspect-ratio: 1 / 1; /* Idealne kwadraty */
+            aspect-ratio: 1 / 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 12px;
-            font-size: 1.6rem;
+            border-radius: 10px;
+            font-size: 1.4rem;
             font-weight: bold;
             box-shadow: 0 4px 0 #357abd;
             cursor: pointer;
             user-select: none;
-            transition: all 0.1s;
         }
 
         .letter.used {
@@ -77,30 +73,29 @@
             transform: translateY(2px);
         }
 
-        /* Większe pole wpisywania dla palców */
+        /* Panel wpisywania - stała wielkość */
         .input-area {
             display: flex;
             gap: 8px;
-            margin-bottom: 15px;
-            height: 60px;
+            height: 55px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
         }
 
         input {
             flex: 2;
-            padding: 0;
             border: 2px solid #ddd;
-            border-radius: 12px;
-            font-size: 1.5rem;
+            border-radius: 10px;
+            font-size: 1.3rem;
             text-transform: uppercase;
             outline: none;
             text-align: center;
             background: #fff;
-            color: var(--dark);
         }
 
         button {
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
@@ -108,31 +103,37 @@
             justify-content: center;
         }
 
-        .btn-add { background: var(--success); color: white; flex: 1; font-size: 1.2rem; }
-        .btn-back { background: #e67e22; color: white; width: 60px; font-size: 1.4rem; }
-        .btn-new { background: #95a5a6; color: white; width: 100%; height: 50px; margin-top: 15px; font-size: 1rem; }
+        .btn-add { background: var(--success); color: white; flex: 1; font-size: 1.1rem; }
+        .btn-back { background: #e67e22; color: white; width: 55px; font-size: 1.3rem; }
 
-        #msg { height: 24px; margin-bottom: 10px; font-weight: 600; font-size: 0.9rem; }
-        .loader { display: none; color: var(--primary); font-style: italic; margin-bottom: 10px; }
-        
+        #msg { 
+            height: 20px; 
+            text-align: center; 
+            font-weight: 600; 
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        /* Lista słów - JEDYNY ELEMENT, KTÓRY SIĘ PRZEWIJA I KURCZY */
         .results {
-            border-top: 2px solid #eee;
-            margin-top: 10px;
-            padding-top: 15px;
-            max-height: 25vh; /* Procentowa wysokość ekranu */
-            overflow-y: auto;
+            flex-grow: 1; /* Zajmuje całą dostępną przestrzeń */
+            border: 1px solid #eee;
+            border-radius: 10px;
+            background: #fafafa;
+            padding: 10px;
+            overflow-y: auto; /* Przewijanie tylko tutaj */
+            margin-bottom: 10px;
         }
 
         .word-tag {
             display: inline-block;
             background: #e1f5fe;
             color: #0277bd;
-            padding: 6px 14px;
-            border-radius: 20px;
-            margin: 4px;
-            font-size: 0.9rem;
+            padding: 5px 12px;
+            border-radius: 15px;
+            margin: 3px;
+            font-size: 0.85rem;
             border: 1px solid #b3e5fc;
-            animation: bounceIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
         .word-tag.gold {
@@ -142,36 +143,39 @@
             font-weight: bold;
         }
 
-        .particle { position: absolute; pointer-events: none; border-radius: 50%; z-index: 100; }
-
-        /* Dostosowanie dla bardzo małych ekranów */
-        @media (max-width: 380px) {
-            .letter { font-size: 1.3rem; }
-            h1 { font-size: 1.5rem; }
-            .input-area { height: 50px; }
+        /* Przycisk nowej gry na samym dole */
+        .btn-new {
+            background: #95a5a6;
+            color: white;
+            width: 100%;
+            height: 45px;
+            flex-shrink: 0;
         }
+
+        .loader { display: none; color: var(--primary); text-align: center; font-style: italic; font-size: 0.8rem; }
+        .particle { position: absolute; pointer-events: none; border-radius: 50%; z-index: 100; }
     </style>
 </head>
 <body>
 
-<div class="game-box">
-    <h1>Słowne Wyzwanie</h1>
-    <p>Ułóż słowa (10 liter, 3-4 samogłoski)</p>
+<div class="game-container">
+    <header>
+        <h1>Słowne Wyzwanie</h1>
+        <div id="msg"></div>
+        <div id="loader" class="loader">Sprawdzanie...</div>
+    </header>
 
     <div class="letters-pills" id="lettersGroup"></div>
 
     <div class="input-area">
         <button class="btn-back" onclick="removeLastLetter()">⌫</button>
         <input type="text" id="wordInput" readonly placeholder="...">
-        <button class="btn-add" id="submitBtn" onclick="processWord()">OK</button>
+        <button class="btn-add" onclick="processWord()">OK</button>
     </div>
 
-    <div id="loader" class="loader">Sprawdzanie w SJP.pl...</div>
-    <div id="msg"></div>
-
     <div class="results">
-        <strong>Znalezione (<span id="count">0</span>):</strong>
-        <div id="foundList" style="margin-top: 10px;"></div>
+        <div style="margin-bottom: 8px;"><strong>Słowa (<span id="count">0</span>):</strong></div>
+        <div id="foundList"></div>
     </div>
 
     <button class="btn-new" onclick="startNewGame()">NOWE LITERY</button>
@@ -194,10 +198,8 @@
         document.getElementById('wordInput').value = "";
         
         const numVowels = Math.floor(Math.random() * 2) + 3; 
-        const numConsonants = 10 - numVowels;
-
         for(let i=0; i<numVowels; i++) pool.push(vowels[Math.floor(Math.random() * vowels.length)]);
-        for(let i=0; i<numConsonants; i++) pool.push(alphabet[Math.floor(Math.random() * alphabet.length)]);
+        for(let i=0; i<(10-numVowels); i++) pool.push(alphabet[Math.floor(Math.random() * alphabet.length)]);
         
         pool.sort(() => Math.random() - 0.5);
         renderPool();
@@ -221,8 +223,7 @@
         usedIndices.push(index);
         document.getElementById('wordInput').value += l;
         renderPool();
-        // Lekka wibracja przy kliknięciu (jeśli wspierana)
-        if (window.navigator.vibrate) window.navigator.vibrate(10);
+        if (window.navigator.vibrate) window.navigator.vibrate(15);
     }
 
     function removeLastLetter() {
@@ -237,36 +238,26 @@
         const rect = element.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
-        
-        const particleCount = isGold ? 16 : 8;
+        const particleCount = isGold ? 12 : 6;
         const color = isGold ? '#f1c40f' : '#27ae60';
-        const size = isGold ? '10px' : '6px';
 
         for (let i = 0; i < particleCount; i++) {
             const particle = document.createElement('div');
             particle.className = 'particle';
-            particle.style.width = size;
-            particle.style.height = size;
+            particle.style.width = '8px';
+            particle.style.height = '8px';
             particle.style.backgroundColor = color;
-            particle.style.boxShadow = isGold ? '0 0 8px #f1c40f' : 'none';
-            
             document.body.appendChild(particle);
 
             const angle = (i / particleCount) * Math.PI * 2;
-            const velocity = isGold ? (5 + Math.random() * 5) : (3 + Math.random() * 3);
-            const dist = isGold ? 120 : 80;
-            const destinationX = Math.cos(angle) * dist;
-            const destinationY = Math.sin(angle) * dist;
+            const dist = isGold ? 100 : 60;
+            const destX = Math.cos(angle) * dist;
+            const destY = Math.sin(angle) * dist;
 
-            const animation = particle.animate([
+            particle.animate([
                 { transform: `translate(${centerX}px, ${centerY}px) scale(1)`, opacity: 1 },
-                { transform: `translate(${centerX + destinationX}px, ${centerY + destinationY}px) scale(0)`, opacity: 0 }
-            ], {
-                duration: isGold ? 800 : 500,
-                easing: 'cubic-bezier(0, .9, .57, 1)'
-            });
-
-            animation.onfinish = () => particle.remove();
+                { transform: `translate(${centerX + destX}px, ${centerY + destY}px) scale(0)`, opacity: 0 }
+            ], { duration: 600, easing: 'ease-out' }).onfinish = () => particle.remove();
         }
     }
 
@@ -275,53 +266,34 @@
         const word = input.value;
         const loader = document.getElementById('loader');
 
-        if (word.length < 3) {
-            updateMsg("Minimum 3 litery!", "var(--danger)");
-            return;
-        }
-
-        if (found.includes(word)) {
-            updateMsg("Już to masz!", "orange");
-            resetSelection();
-            return;
-        }
+        if (word.length < 3) { updateMsg("Min. 3 litery!", "var(--danger)"); return; }
+        if (found.includes(word)) { updateMsg("Już ułożone!", "orange"); resetSelection(); return; }
 
         loader.style.display = "block";
         updateMsg("", "");
         
         try {
-            const proxy = "https://corsproxy.io/?";
-            const url = `https://sjp.pl/${encodeURIComponent(word.toLowerCase())}`;
-            const response = await fetch(proxy + url);
+            const response = await fetch("https://corsproxy.io/?https://sjp.pl/" + encodeURIComponent(word.toLowerCase()));
             const text = await response.text();
-
             loader.style.display = "none";
 
             if (text.includes("dopuszczalne w grach")) {
                 const isGold = word.length >= 6;
-                if (isGold && window.navigator.vibrate) window.navigator.vibrate([50, 30, 50]);
-                
-                usedIndices.forEach(idx => {
-                    const tile = document.getElementById('tile-' + idx);
-                    createExplosion(tile, isGold);
-                });
-
+                usedIndices.forEach(idx => createExplosion(document.getElementById('tile-' + idx), isGold));
                 found.push(word);
                 const span = document.createElement('span');
                 span.className = 'word-tag' + (isGold ? ' gold' : '');
                 span.innerText = word;
                 document.getElementById('foundList').prepend(span);
                 document.getElementById('count').innerText = found.length;
-                
-                updateMsg(isGold ? "NIESAMOWITE! 🌟" : "Brawo!", isGold ? "var(--gold)" : "var(--success)");
+                updateMsg(isGold ? "SUPER! 🌟" : "OK!", isGold ? "var(--gold)" : "var(--success)");
             } else {
-                updateMsg("Brak w słowniku SJP.", "var(--danger)");
+                updateMsg("Nie ma w SJP.", "var(--danger)");
             }
         } catch (err) {
             loader.style.display = "none";
-            updateMsg("Błąd połączenia.", "orange");
+            updateMsg("Błąd sieci.", "orange");
         }
-
         resetSelection();
     }
 
@@ -337,13 +309,7 @@
         m.style.color = color;
     }
 
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Backspace') removeLastLetter();
-        if (e.key === 'Enter') processWord();
-    });
-
     startNewGame();
 </script>
-
 </body>
 </html>

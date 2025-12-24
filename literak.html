@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Słowne Wyzwanie SJP</title>
+    <title>Słowne Wyzwanie 10 - Interaktywne</title>
     <style>
         :root {
             --primary: #4a90e2;
@@ -11,6 +11,7 @@
             --danger: #e74c3c;
             --dark: #2c3e50;
             --bg: #f0f2f5;
+            --disabled: #bdc3c7;
         }
 
         body {
@@ -29,16 +30,14 @@
             border-radius: 20px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 450px;
+            max-width: 550px;
             text-align: center;
         }
-
-        h1 { color: var(--dark); margin-bottom: 10px; }
 
         .letters-pills {
             display: flex;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
             margin: 25px 0;
             flex-wrap: wrap;
         }
@@ -46,13 +45,27 @@
         .letter {
             background: var(--primary);
             color: white;
-            width: 42px;
-            height: 42px;
-            line-height: 42px;
+            width: 45px;
+            height: 45px;
+            line-height: 45px;
             border-radius: 10px;
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: bold;
             box-shadow: 0 4px 0 #357abd;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s;
+        }
+
+        .letter:hover:not(.used) { transform: translateY(-2px); }
+        .letter:active:not(.used) { transform: translateY(2px); box-shadow: 0 0 0 #357abd; }
+        
+        .letter.used {
+            background: var(--disabled);
+            box-shadow: 0 4px 0 #95a5a6;
+            cursor: default;
+            opacity: 0.5;
+            transform: translateY(2px);
         }
 
         .input-area {
@@ -66,12 +79,13 @@
             padding: 12px;
             border: 2px solid #ddd;
             border-radius: 10px;
-            font-size: 1.1rem;
+            font-size: 1.4rem;
             text-transform: uppercase;
             outline: none;
+            text-align: center;
+            letter-spacing: 2px;
+            background: #fff;
         }
-
-        input:focus { border-color: var(--primary); }
 
         button {
             padding: 10px 20px;
@@ -79,20 +93,15 @@
             border-radius: 10px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.2s;
         }
 
-        .btn-add { background: var(--success); color: white; }
-        .btn-add:hover { background: #219150; }
+        .btn-add { background: var(--success); color: white; font-size: 1.1rem; }
+        .btn-back { background: #e67e22; color: white; }
         .btn-new { background: #95a5a6; color: white; width: 100%; margin-top: 20px; }
 
-        #msg {
-            height: 20px;
-            font-size: 0.9rem;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
+        #msg { height: 20px; margin-bottom: 15px; font-weight: 600; }
+        .loader { display: none; color: var(--primary); font-style: italic; margin-bottom: 10px; }
+        
         .results {
             border-top: 2px solid #eee;
             margin-top: 10px;
@@ -111,36 +120,31 @@
             font-size: 0.9rem;
             border: 1px solid #b3e5fc;
         }
-
-        .loader {
-            display: none;
-            color: var(--primary);
-            font-style: italic;
-        }
     </style>
 </head>
 <body>
 
 <div class="game-box">
-    <h1>Słownikowe 7</h1>
-    <p>Ułóż słowa z dostępnych liter:</p>
+    <h1>Słowne Wyzwanie</h1>
+    <p>Klikaj w litery, aby ułożyć słowo:</p>
 
     <div class="letters-pills" id="lettersGroup"></div>
 
     <div class="input-area">
-        <input type="text" id="wordInput" placeholder="Wpisz słowo..." autocomplete="off">
+        <button class="btn-back" onclick="removeLastLetter()">⌫</button>
+        <input type="text" id="wordInput" readonly placeholder="...">
         <button class="btn-add" onclick="processWord()">OK</button>
     </div>
 
-    <div id="msg"></div>
     <div id="loader" class="loader">Sprawdzanie w SJP.pl...</div>
+    <div id="msg"></div>
 
     <div class="results">
         <strong>Znalezione (<span id="count">0</span>):</strong>
         <div id="foundList" style="margin-top: 10px;"></div>
     </div>
 
-    <button class="btn-new" onclick="startNewGame()">Losuj nowe litery</button>
+    <button class="btn-new" onclick="startNewGame()">Nowe litery</button>
 </div>
 
 <script>
@@ -148,18 +152,19 @@
     const vowels = "AĄEĘIOÓUY";
     let pool = [];
     let found = [];
+    let usedIndices = [];
 
     function startNewGame() {
         pool = [];
         found = [];
+        usedIndices = [];
         document.getElementById('foundList').innerHTML = "";
         document.getElementById('count').innerText = "0";
         document.getElementById('msg').innerText = "";
         document.getElementById('wordInput').value = "";
         
-        // Gwarantujemy 2 samogłoski + 5 losowych liter
-        for(let i=0; i<2; i++) pool.push(vowels[Math.floor(Math.random() * vowels.length)]);
-        for(let i=0; i<5; i++) pool.push(chars[Math.floor(Math.random() * chars.length)]);
+        for(let i=0; i<3; i++) pool.push(vowels[Math.floor(Math.random() * vowels.length)]);
+        for(let i=0; i<7; i++) pool.push(chars[Math.floor(Math.random() * chars.length)]);
         
         pool.sort(() => Math.random() - 0.5);
         renderPool();
@@ -168,28 +173,36 @@
     function renderPool() {
         const container = document.getElementById('lettersGroup');
         container.innerHTML = "";
-        pool.forEach(l => {
+        pool.forEach((l, index) => {
             const div = document.createElement('div');
-            div.className = 'letter';
+            div.className = 'letter' + (usedIndices.includes(index) ? ' used' : '');
             div.innerText = l;
+            div.onclick = () => addLetter(l, index);
             container.appendChild(div);
         });
     }
 
-    function canBuild(word, available) {
-        let copy = [...available];
-        for (let char of word) {
-            let idx = copy.indexOf(char);
-            if (idx === -1) return false;
-            copy.splice(idx, 1);
-        }
-        return true;
+    function addLetter(l, index) {
+        if (usedIndices.includes(index)) return;
+        
+        usedIndices.push(index);
+        document.getElementById('wordInput').value += l;
+        renderPool();
+        updateMsg("", "");
+    }
+
+    function removeLastLetter() {
+        const input = document.getElementById('wordInput');
+        if (input.value.length === 0) return;
+        
+        input.value = input.value.slice(0, -1);
+        usedIndices.pop();
+        renderPool();
     }
 
     async function processWord() {
         const input = document.getElementById('wordInput');
-        const word = input.value.toUpperCase().trim();
-        const msg = document.getElementById('msg');
+        const word = input.value;
         const loader = document.getElementById('loader');
 
         if (word.length < 3) {
@@ -198,18 +211,13 @@
         }
 
         if (found.includes(word)) {
-            updateMsg("Już to słowo masz!", "orange");
+            updateMsg("Już to masz!", "orange");
+            resetSelection();
             return;
         }
 
-        if (!canBuild(word, pool)) {
-            updateMsg("Nie masz takich liter!", "var(--danger)");
-            return;
-        }
-
-        // Scraping SJP
         loader.style.display = "block";
-        msg.innerText = "";
+        updateMsg("", "");
         
         try {
             const proxy = "https://corsproxy.io/?";
@@ -224,19 +232,24 @@
                 const span = document.createElement('span');
                 span.className = 'word-tag';
                 span.innerText = word;
-                document.getElementById('foundList').appendChild(span);
+                document.getElementById('foundList').prepend(span);
                 document.getElementById('count').innerText = found.length;
-                updateMsg("Brawo! Poprawne słowo.", "var(--success)");
+                updateMsg("Brawo!", "var(--success)");
             } else {
-                updateMsg("Słowo nie istnieje w SJP!", "var(--danger)");
+                updateMsg("Nie ma w słowniku.", "var(--danger)");
             }
         } catch (err) {
             loader.style.display = "none";
-            updateMsg("Błąd połączenia ze słownikiem.", "orange");
+            updateMsg("Błąd połączenia.", "orange");
         }
 
-        input.value = "";
-        input.focus();
+        resetSelection();
+    }
+
+    function resetSelection() {
+        document.getElementById('wordInput').value = "";
+        usedIndices = [];
+        renderPool();
     }
 
     function updateMsg(txt, color) {
@@ -245,7 +258,9 @@
         m.style.color = color;
     }
 
-    document.getElementById('wordInput').addEventListener('keypress', e => {
+    // Obsługa klawisza Backspace
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Backspace') removeLastLetter();
         if (e.key === 'Enter') processWord();
     });
 

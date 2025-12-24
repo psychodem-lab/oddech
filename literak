@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Słowne Wyzwanie SJP</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --bg: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .game-box {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        h1 { color: var(--dark); margin-bottom: 10px; }
+
+        .letters-pills {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+
+        .letter {
+            background: var(--primary);
+            color: white;
+            width: 42px;
+            height: 42px;
+            line-height: 42px;
+            border-radius: 10px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #357abd;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--primary); }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-add { background: var(--success); color: white; }
+        .btn-add:hover { background: #219150; }
+        .btn-new { background: #95a5a6; color: white; width: 100%; margin-top: 20px; }
+
+        #msg {
+            height: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .results {
+            border-top: 2px solid #eee;
+            margin-top: 10px;
+            padding-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .word-tag {
+            display: inline-block;
+            background: #e1f5fe;
+            color: #0277bd;
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin: 4px;
+            font-size: 0.9rem;
+            border: 1px solid #b3e5fc;
+        }
+
+        .loader {
+            display: none;
+            color: var(--primary);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-box">
+    <h1>Słownikowe 7</h1>
+    <p>Ułóż słowa z dostępnych liter:</p>
+
+    <div class="letters-pills" id="lettersGroup"></div>
+
+    <div class="input-area">
+        <input type="text" id="wordInput" placeholder="Wpisz słowo..." autocomplete="off">
+        <button class="btn-add" onclick="processWord()">OK</button>
+    </div>
+
+    <div id="msg"></div>
+    <div id="loader" class="loader">Sprawdzanie w SJP.pl...</div>
+
+    <div class="results">
+        <strong>Znalezione (<span id="count">0</span>):</strong>
+        <div id="foundList" style="margin-top: 10px;"></div>
+    </div>
+
+    <button class="btn-new" onclick="startNewGame()">Losuj nowe litery</button>
+</div>
+
+<script>
+    const chars = "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ";
+    const vowels = "AĄEĘIOÓUY";
+    let pool = [];
+    let found = [];
+
+    function startNewGame() {
+        pool = [];
+        found = [];
+        document.getElementById('foundList').innerHTML = "";
+        document.getElementById('count').innerText = "0";
+        document.getElementById('msg').innerText = "";
+        document.getElementById('wordInput').value = "";
+        
+        // Gwarantujemy 2 samogłoski + 5 losowych liter
+        for(let i=0; i<2; i++) pool.push(vowels[Math.floor(Math.random() * vowels.length)]);
+        for(let i=0; i<5; i++) pool.push(chars[Math.floor(Math.random() * chars.length)]);
+        
+        pool.sort(() => Math.random() - 0.5);
+        renderPool();
+    }
+
+    function renderPool() {
+        const container = document.getElementById('lettersGroup');
+        container.innerHTML = "";
+        pool.forEach(l => {
+            const div = document.createElement('div');
+            div.className = 'letter';
+            div.innerText = l;
+            container.appendChild(div);
+        });
+    }
+
+    function canBuild(word, available) {
+        let copy = [...available];
+        for (let char of word) {
+            let idx = copy.indexOf(char);
+            if (idx === -1) return false;
+            copy.splice(idx, 1);
+        }
+        return true;
+    }
+
+    async function processWord() {
+        const input = document.getElementById('wordInput');
+        const word = input.value.toUpperCase().trim();
+        const msg = document.getElementById('msg');
+        const loader = document.getElementById('loader');
+
+        if (word.length < 3) {
+            updateMsg("Minimum 3 litery!", "var(--danger)");
+            return;
+        }
+
+        if (found.includes(word)) {
+            updateMsg("Już to słowo masz!", "orange");
+            return;
+        }
+
+        if (!canBuild(word, pool)) {
+            updateMsg("Nie masz takich liter!", "var(--danger)");
+            return;
+        }
+
+        // Scraping SJP
+        loader.style.display = "block";
+        msg.innerText = "";
+        
+        try {
+            const proxy = "https://corsproxy.io/?";
+            const url = `https://sjp.pl/${encodeURIComponent(word.toLowerCase())}`;
+            const response = await fetch(proxy + url);
+            const text = await response.text();
+
+            loader.style.display = "none";
+
+            if (text.includes("dopuszczalne w grach")) {
+                found.push(word);
+                const span = document.createElement('span');
+                span.className = 'word-tag';
+                span.innerText = word;
+                document.getElementById('foundList').appendChild(span);
+                document.getElementById('count').innerText = found.length;
+                updateMsg("Brawo! Poprawne słowo.", "var(--success)");
+            } else {
+                updateMsg("Słowo nie istnieje w SJP!", "var(--danger)");
+            }
+        } catch (err) {
+            loader.style.display = "none";
+            updateMsg("Błąd połączenia ze słownikiem.", "orange");
+        }
+
+        input.value = "";
+        input.focus();
+    }
+
+    function updateMsg(txt, color) {
+        const m = document.getElementById('msg');
+        m.innerText = txt;
+        m.style.color = color;
+    }
+
+    document.getElementById('wordInput').addEventListener('keypress', e => {
+        if (e.key === 'Enter') processWord();
+    });
+
+    startNewGame();
+</script>
+
+</body>
+</html>

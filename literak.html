@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Słowne Wyzwanie Mobile Fix</title>
+    <title>Słowne Wyzwanie - Unikalne Znaki</title>
     <style>
         :root {
             --primary: #4a90e2;
@@ -25,7 +25,7 @@
             height: 100vh;
             display: flex;
             justify-content: center;
-            overflow: hidden; /* Blokujemy przewijanie całej strony */
+            overflow: hidden;
         }
 
         .game-container {
@@ -34,7 +34,7 @@
             max-width: 500px;
             height: 100%;
             display: flex;
-            flex-direction: column; /* Układ pionowy */
+            flex-direction: column;
             padding: 15px;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
@@ -42,13 +42,12 @@
         header { text-align: center; padding-bottom: 10px; }
         h1 { font-size: 1.4rem; margin: 5px 0; }
 
-        /* Panel z literami - stała wielkość */
         .letters-pills {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 8px;
             margin-bottom: 15px;
-            flex-shrink: 0; /* Nie pozwala się kurczyć */
+            flex-shrink: 0;
         }
 
         .letter {
@@ -73,7 +72,6 @@
             transform: translateY(2px);
         }
 
-        /* Panel wpisywania - stała wielkość */
         .input-area {
             display: flex;
             gap: 8px;
@@ -114,14 +112,13 @@
             margin-bottom: 5px;
         }
 
-        /* Lista słów - JEDYNY ELEMENT, KTÓRY SIĘ PRZEWIJA I KURCZY */
         .results {
-            flex-grow: 1; /* Zajmuje całą dostępną przestrzeń */
+            flex-grow: 1;
             border: 1px solid #eee;
             border-radius: 10px;
             background: #fafafa;
             padding: 10px;
-            overflow-y: auto; /* Przewijanie tylko tutaj */
+            overflow-y: auto;
             margin-bottom: 10px;
         }
 
@@ -143,7 +140,6 @@
             font-weight: bold;
         }
 
-        /* Przycisk nowej gry na samym dole */
         .btn-new {
             background: #95a5a6;
             color: white;
@@ -182,8 +178,11 @@
 </div>
 
 <script>
-    const alphabet = "BCĆDFGHJKLŁMNŃPRSŚTWZŹŻ";
-    const vowels = "AĄEĘIOÓUY";
+    const alphabetRaw = "BCDFGHJKLMNPRSTWZ"; // Litery standardowe
+    const specialChars = "ĄĆĘŁŃÓŚŹŻ"; // Litery polskie (unikalne)
+    const vowelsRaw = "AEIOUY"; // Samogłoski standardowe
+    const specialVowels = "ĄĘÓ"; // Samogłoski polskie (unikalne)
+
     let pool = [];
     let found = [];
     let usedIndices = [];
@@ -197,9 +196,45 @@
         document.getElementById('msg').innerText = "";
         document.getElementById('wordInput').value = "";
         
-        const numVowels = Math.floor(Math.random() * 2) + 3; 
-        for(let i=0; i<numVowels; i++) pool.push(vowels[Math.floor(Math.random() * vowels.length)]);
-        for(let i=0; i<(10-numVowels); i++) pool.push(alphabet[Math.floor(Math.random() * alphabet.length)]);
+        // Pule robocze dla tej konkretnej gry
+        let currentSpecialChars = (specialChars + specialVowels).split('');
+        
+        // Funkcja losująca z zachowaniem unikalności specjalnych znaków
+        const getRandomLetter = (sourceString, canBeSpecial = true) => {
+            let letter = sourceString[Math.floor(Math.random() * sourceString.length)];
+            
+            // Jeśli wylosowano polski znak specjalny
+            if (specialChars.includes(letter) || specialVowels.includes(letter)) {
+                // Usuń go z puli dostępnych znaków specjalnych
+                const idx = currentSpecialChars.indexOf(letter);
+                if (idx > -1) {
+                    currentSpecialChars.splice(idx, 1);
+                }
+                // Zaktualizuj bazę losowania tak, aby ten znak już nie wypadł
+                // (w tej wersji po prostu sprawdzamy unikalność przy generowaniu puli)
+            }
+            return letter;
+        };
+
+        const numVowels = Math.floor(Math.random() * 2) + 3; // 3 lub 4 samogłoski
+        const fullVowelsPool = vowelsRaw + specialVowels;
+        const fullConsonantsPool = alphabetRaw + specialChars;
+
+        // Losujemy samogłoski
+        while(pool.length < numVowels) {
+            let l = fullVowelsPool[Math.floor(Math.random() * fullVowelsPool.length)];
+            // Jeśli specjalna i już jest w puli - losuj ponownie
+            if (specialVowels.includes(l) && pool.includes(l)) continue;
+            pool.push(l);
+        }
+
+        // Losujemy spółgłoski (dopełnienie do 10)
+        while(pool.length < 10) {
+            let l = fullConsonantsPool[Math.floor(Math.random() * fullConsonantsPool.length)];
+            // Jeśli specjalna i już jest w puli - losuj ponownie
+            if (specialChars.includes(l) && pool.includes(l)) continue;
+            pool.push(l);
+        }
         
         pool.sort(() => Math.random() - 0.5);
         renderPool();

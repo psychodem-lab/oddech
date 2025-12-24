@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Słowne Wyzwanie 10 - Interaktywne</title>
+    <title>Słowne Wyzwanie - Złota Edycja</title>
     <style>
         :root {
             --primary: #4a90e2;
             --success: #27ae60;
+            --gold: #f1c40f;
             --danger: #e74c3c;
             --dark: #2c3e50;
             --bg: #f0f2f5;
@@ -22,6 +23,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            overflow: hidden;
         }
 
         .game-box {
@@ -32,6 +34,8 @@
             width: 100%;
             max-width: 550px;
             text-align: center;
+            position: relative;
+            z-index: 10;
         }
 
         .letters-pills {
@@ -55,6 +59,7 @@
             cursor: pointer;
             user-select: none;
             transition: all 0.1s;
+            position: relative;
         }
 
         .letter:hover:not(.used) { transform: translateY(-2px); }
@@ -85,6 +90,7 @@
             text-align: center;
             letter-spacing: 2px;
             background: #fff;
+            color: var(--dark);
         }
 
         button {
@@ -106,7 +112,7 @@
             border-top: 2px solid #eee;
             margin-top: 10px;
             padding-top: 15px;
-            max-height: 200px;
+            max-height: 180px;
             overflow-y: auto;
         }
 
@@ -119,6 +125,26 @@
             margin: 4px;
             font-size: 0.9rem;
             border: 1px solid #b3e5fc;
+            animation: bounceIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .word-tag.gold {
+            background: #fff9c4;
+            color: #f57f17;
+            border: 1px solid #fbc02d;
+            font-weight: bold;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+            z-index: 100;
         }
     </style>
 </head>
@@ -126,14 +152,14 @@
 
 <div class="game-box">
     <h1>Słowne Wyzwanie</h1>
-    <p>Klikaj w litery, aby ułożyć słowo:</p>
+    <p>Ułóż słowo z 10 liter (3-4 samogłoski):</p>
 
     <div class="letters-pills" id="lettersGroup"></div>
 
     <div class="input-area">
         <button class="btn-back" onclick="removeLastLetter()">⌫</button>
         <input type="text" id="wordInput" readonly placeholder="...">
-        <button class="btn-add" onclick="processWord()">OK</button>
+        <button class="btn-add" id="submitBtn" onclick="processWord()">OK</button>
     </div>
 
     <div id="loader" class="loader">Sprawdzanie w SJP.pl...</div>
@@ -148,7 +174,7 @@
 </div>
 
 <script>
-    const chars = "AĄBCĆDEĘFGHIJKLŁMNŃOÓPRSŚTUWYZŹŻ";
+    const alphabet = "BCĆDFGHJKLŁMNŃPRSŚTWZŹŻ";
     const vowels = "AĄEĘIOÓUY";
     let pool = [];
     let found = [];
@@ -163,8 +189,11 @@
         document.getElementById('msg').innerText = "";
         document.getElementById('wordInput').value = "";
         
-        for(let i=0; i<3; i++) pool.push(vowels[Math.floor(Math.random() * vowels.length)]);
-        for(let i=0; i<7; i++) pool.push(chars[Math.floor(Math.random() * chars.length)]);
+        const numVowels = Math.floor(Math.random() * 2) + 3; 
+        const numConsonants = 10 - numVowels;
+
+        for(let i=0; i<numVowels; i++) pool.push(vowels[Math.floor(Math.random() * vowels.length)]);
+        for(let i=0; i<numConsonants; i++) pool.push(alphabet[Math.floor(Math.random() * alphabet.length)]);
         
         pool.sort(() => Math.random() - 0.5);
         renderPool();
@@ -176,6 +205,7 @@
         pool.forEach((l, index) => {
             const div = document.createElement('div');
             div.className = 'letter' + (usedIndices.includes(index) ? ' used' : '');
+            div.id = 'tile-' + index;
             div.innerText = l;
             div.onclick = () => addLetter(l, index);
             container.appendChild(div);
@@ -184,20 +214,53 @@
 
     function addLetter(l, index) {
         if (usedIndices.includes(index)) return;
-        
         usedIndices.push(index);
         document.getElementById('wordInput').value += l;
         renderPool();
-        updateMsg("", "");
     }
 
     function removeLastLetter() {
         const input = document.getElementById('wordInput');
         if (input.value.length === 0) return;
-        
         input.value = input.value.slice(0, -1);
         usedIndices.pop();
         renderPool();
+    }
+
+    function createExplosion(element, isGold) {
+        const rect = element.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        const particleCount = isGold ? 16 : 8;
+        const color = isGold ? '#f1c40f' : '#27ae60';
+        const size = isGold ? '12px' : '8px';
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.width = size;
+            particle.style.height = size;
+            particle.style.backgroundColor = color;
+            particle.style.boxShadow = isGold ? '0 0 10px #f1c40f' : 'none';
+            
+            document.body.appendChild(particle);
+
+            const angle = (i / particleCount) * Math.PI * 2;
+            const velocity = isGold ? (6 + Math.random() * 6) : (4 + Math.random() * 4);
+            const destinationX = Math.cos(angle) * (isGold ? 150 : 100);
+            const destinationY = Math.sin(angle) * (isGold ? 150 : 100);
+
+            const animation = particle.animate([
+                { transform: `translate(${centerX}px, ${centerY}px) scale(1)`, opacity: 1 },
+                { transform: `translate(${centerX + destinationX}px, ${centerY + destinationY}px) scale(0)`, opacity: 0 }
+            ], {
+                duration: isGold ? 1000 : 700,
+                easing: 'cubic-bezier(0, .9, .57, 1)'
+            });
+
+            animation.onfinish = () => particle.remove();
+        }
     }
 
     async function processWord() {
@@ -228,15 +291,23 @@
             loader.style.display = "none";
 
             if (text.includes("dopuszczalne w grach")) {
+                const isGold = word.length >= 6;
+                
+                usedIndices.forEach(idx => {
+                    const tile = document.getElementById('tile-' + idx);
+                    createExplosion(tile, isGold);
+                });
+
                 found.push(word);
                 const span = document.createElement('span');
-                span.className = 'word-tag';
+                span.className = 'word-tag' + (isGold ? ' gold' : '');
                 span.innerText = word;
                 document.getElementById('foundList').prepend(span);
                 document.getElementById('count').innerText = found.length;
-                updateMsg("Brawo!", "var(--success)");
+                
+                updateMsg(isGold ? "NIESAMOWITE! 🌟" : "Brawo!", isGold ? "var(--gold)" : "var(--success)");
             } else {
-                updateMsg("Nie ma w słowniku.", "var(--danger)");
+                updateMsg("Brak w słowniku SJP.", "var(--danger)");
             }
         } catch (err) {
             loader.style.display = "none";
@@ -258,7 +329,6 @@
         m.style.color = color;
     }
 
-    // Obsługa klawisza Backspace
     document.addEventListener('keydown', e => {
         if (e.key === 'Backspace') removeLastLetter();
         if (e.key === 'Enter') processWord();

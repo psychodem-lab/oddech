@@ -158,10 +158,10 @@
             lastClickTime = Date.now();
             let isBonus = (timeDiff >= 0.8 && timeDiff <= 1.2);
             
-            waterLevel += isBonus ? 16 : 4;
+            waterLevel += isBonus ? 40 : 4;
             
             if (isBonus) {
-                showFloatingText("IDEALNIE! x4");
+                showFloatingText("IDEALNIE!");
                 document.getElementById('bonus-tag').style.display = "inline-block";
             } else {
                 document.getElementById('bonus-tag').style.display = "none";

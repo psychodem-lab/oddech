@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zen Garden - Rytm Natury</title>
+    <title>Zen Garden: Od Kwiatów do Drzew</title>
     <style>
         :root {
             --sky-color: #f0faff;
-            --grass-color: #9ccc65;
             --water-color: #4fc3f7;
             --bonus-color: #ffd700;
+            --trunk-color: #5d4037;
         }
 
         body {
             margin: 0; padding: 0;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; background: linear-gradient(to bottom, var(--sky-color) 0%, #ffffff 100%);
+            height: 100vh; background: linear-gradient(to bottom, var(--sky-color) 0%, #e8f5e9 100%);
             font-family: 'Segoe UI', sans-serif; overflow: hidden; touch-action: manipulation;
         }
 
@@ -23,39 +23,42 @@
         .badge { background: white; padding: 8px 16px; border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); font-weight: 600; color: #444; display: inline-block; margin: 2px; }
         #bonus-tag { color: #f57c00; font-weight: bold; display: none; }
 
-        #stage { position: relative; width: 100%; height: 50vh; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+        #stage { position: relative; width: 100%; height: 60vh; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+        
         #plant-container { position: relative; display: flex; flex-direction: column-reverse; align-items: center; }
 
-        .stem { width: 12px; transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius: 5px; }
-        .leaf { position: absolute; width: 30px; height: 20px; border-radius: 50% 0 50% 0; transition: all 0.5s ease; }
+        /* Pień / Łodyga */
+        .stem { width: 12px; transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius: 5px; z-index: 2; }
+        .is-tree .stem { width: 30px; border-radius: 5px 5px 0 0; }
+
+        /* Liście / Korona */
+        .leaf { position: absolute; width: 30px; height: 20px; border-radius: 50% 0 50% 0; transition: all 0.5s ease; z-index: 3; }
         
-        #flower { position: absolute; width: 50px; height: 50px; top: -40px; left: -20px; transform: scale(0); transition: transform 0.8s; }
+        #crown { position: absolute; width: 120px; height: 100px; top: -90px; left: -45px; transform: scale(0); transition: transform 0.8s; z-index: 4; }
+        .crown-part { position: absolute; width: 60px; height: 60px; border-radius: 50%; opacity: 0.9; }
+        
+        .fruit { position: absolute; width: 15px; height: 15px; border-radius: 50%; background: red; z-index: 5; box-shadow: inset -2px -2px rgba(0,0,0,0.2); }
+
+        /* Kwiat */
+        #flower { position: absolute; width: 50px; height: 50px; top: -40px; left: -20px; transform: scale(0); transition: transform 0.8s; z-index: 4; }
         .petal { position: absolute; width: 25px; height: 25px; border-radius: 50%; }
 
-        #pot { width: 110px; height: 85px; background: #a1887f; clip-path: polygon(0% 0%, 100% 0%, 85% 100%, 15% 100%); z-index: 5; }
-        
-        #bar-box { width: 220px; height: 12px; background: rgba(255,255,255,0.5); border-radius: 10px; margin-top: 25px; border: 2px solid white; overflow: hidden; }
+        /* Doniczka / Ziemia */
+        #pot { width: 110px; height: 85px; background: #a1887f; clip-path: polygon(0% 0%, 100% 0%, 85% 100%, 15% 100%); z-index: 1; transition: opacity 0.5s; }
+        .is-tree #pot { opacity: 0; }
+        #ground-line { position: absolute; bottom: 85px; width: 200%; height: 5px; background: #6d4c41; display: none; }
+        .is-tree #ground-line { display: block; }
+
+        #bar-box { width: 220px; height: 12px; background: rgba(255,255,255,0.5); border-radius: 10px; margin-top: 25px; border: 2px solid white; overflow: hidden; z-index: 10; }
         #bar-fill { width: 0%; height: 100%; background: var(--water-color); transition: width 0.3s ease; }
 
-        #btn-water { 
-            width: 90px; height: 90px; background: var(--water-color); border: none; border-radius: 50%; 
-            margin-top: 40px; cursor: pointer; display: flex; justify-content: center; align-items: center; 
-            box-shadow: 0 8px 20px rgba(79, 195, 247, 0.4); outline: none; transition: transform 0.1s;
-        }
-        #btn-water:active { transform: scale(0.9); }
+        #btn-water { width: 90px; height: 90px; background: var(--water-color); border: none; border-radius: 50%; margin-top: 40px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 8px 20px rgba(79, 195, 247, 0.4); outline: none; z-index: 10; }
         #btn-water svg { fill: white; width: 45px; }
 
         .splash { position: absolute; border-radius: 50%; pointer-events: none; z-index: 20; }
-        
-        .floating-text {
-            position: absolute; color: #f57c00; font-weight: bold; font-size: 20px;
-            pointer-events: none; animation: floatUp 1s forwards;
-        }
+        .floating-text { position: absolute; color: #f57c00; font-weight: bold; font-size: 20px; pointer-events: none; animation: floatUp 1s forwards; z-index: 30; }
 
-        @keyframes floatUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-100px); opacity: 0; }
-        }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -68,7 +71,9 @@
 
     <div id="stage">
         <div id="plant-container">
+            <div id="ground-line"></div>
             <div id="flower"></div>
+            <div id="crown"></div>
             <div id="stem-obj" class="stem"></div>
         </div>
         <div id="pot"></div>
@@ -83,98 +88,109 @@
 
     <script>
         let waterLevel = 0;
-        let level = 0;
+        let level = 1; // Startujemy od 1
         let stage = 0;
         const maxStages = 5;
-        
         let lastClickTime = 0;
-        let isBonusActive = false;
 
         const plantTypes = [
-            { name: "Spokojna Stokrotka", stemColor: "#8bc34a", leafColor: "#4caf50", petalColor: "#f06292", diff: 1 },
-            { name: "Błękitny Dzwonek", stemColor: "#689f38", leafColor: "#388e3c", petalColor: "#4fc3f7", diff: 1.5 },
-            { name: "Złoty Tulipan", stemColor: "#558b2f", leafColor: "#2e7d32", petalColor: "#ffca28", diff: 2 },
-            { name: "Zen Orchidea", stemColor: "#33691e", leafColor: "#1b5e20", petalColor: "#ba68c8", diff: 2.5 }
+            { name: "Stokrotka", stem: "#8bc34a", leaf: "#4caf50", top: "#f06292", type: 'flower' },
+            { name: "Tulipan", stem: "#689f38", leaf: "#388e3c", top: "#ffca28", type: 'flower' },
+            { name: "Jabłoń", stem: "#5d4037", leaf: "#2e7d32", top: "#43a047", type: 'tree' },
+            { name: "Złota Grusza", stem: "#4e342e", leaf: "#1b5e20", top: "#66bb6a", type: 'tree' }
         ];
 
         const stem = document.getElementById('stem-obj');
         const flower = document.getElementById('flower');
-        const bonusTag = document.getElementById('bonus-tag');
+        const crown = document.getElementById('crown');
+        const stageElem = document.getElementById('stage');
 
         function initLevel() {
             waterLevel = 0; stage = 0;
-            const p = plantTypes[level % plantTypes.length];
-            document.getElementById('lvl-num').innerText = level + 1;
-            document.getElementById('plant-name').innerText = p.name;
-            stem.style.height = "10px";
-            stem.style.background = p.stemColor;
-            flower.style.transform = "scale(0)";
-            flower.innerHTML = '';
+            const isTreeLevel = level >= 20;
+            const p = isTreeLevel ? plantTypes[2 + (level % 2)] : plantTypes[level % 2];
             
-            for(let i=0; i<6; i++) {
-                const petal = document.createElement('div');
-                petal.className = 'petal';
-                petal.style.background = p.petalColor;
-                petal.style.transform = `rotate(${i*60}deg) translate(15px)`;
-                flower.appendChild(petal);
+            document.getElementById('lvl-num').innerText = level;
+            document.getElementById('plant-name').innerText = p.name;
+            
+            if (isTreeLevel) stageElem.classList.add('is-tree');
+            else stageElem.classList.remove('is-tree');
+
+            stem.style.height = "10px";
+            stem.style.background = p.stem;
+            flower.style.transform = "scale(0)";
+            crown.style.transform = "scale(0)";
+            flower.innerHTML = ''; crown.innerHTML = '';
+            
+            if (p.type === 'flower') {
+                for(let i=0; i<6; i++) {
+                    const pet = document.createElement('div');
+                    pet.className = 'petal';
+                    pet.style.background = p.top;
+                    pet.style.transform = `rotate(${i*60}deg) translate(15px)`;
+                    flower.appendChild(pet);
+                }
+            } else {
+                for(let i=0; i<5; i++) {
+                    const c = document.createElement('div');
+                    c.className = 'crown-part';
+                    c.style.background = p.top;
+                    c.style.left = (Math.random()*40) + "px";
+                    c.style.top = (Math.random()*40) + "px";
+                    crown.appendChild(c);
+                }
+                for(let i=0; i<3; i++) {
+                    const f = document.createElement('div');
+                    f.className = 'fruit';
+                    f.style.left = (20 + Math.random()*60) + "px";
+                    f.style.top = (20 + Math.random()*50) + "px";
+                    if (p.name.includes("Grusza")) f.style.background = "#ffeb3b";
+                    crown.appendChild(f);
+                }
             }
+
             document.querySelectorAll('.leaf').forEach(l => l.remove());
             updateUI();
         }
 
         function water() {
-            const currentTime = Date.now();
-            const timeDiff = (currentTime - lastClickTime) / 1000;
-            lastClickTime = currentTime;
-
-            // Sprawdzenie rytmu (między 0.8s a 1.2s)
-            let increment = 4;
-            isBonusActive = (timeDiff >= 0.8 && timeDiff <= 1.2);
-
-            if (isBonusActive) {
-                increment = 16; // 4x bonus
+            const timeDiff = (Date.now() - lastClickTime) / 1000;
+            lastClickTime = Date.now();
+            let isBonus = (timeDiff >= 0.8 && timeDiff <= 1.2);
+            
+            waterLevel += isBonus ? 16 : 4;
+            
+            if (isBonus) {
                 showFloatingText("IDEALNIE! x4");
-                bonusTag.style.display = "inline-block";
+                document.getElementById('bonus-tag').style.display = "inline-block";
             } else {
-                bonusTag.style.display = "none";
+                document.getElementById('bonus-tag').style.display = "none";
             }
 
-            waterLevel += increment;
-            spawnParticles(isBonusActive);
-
-            if (waterLevel >= 100) {
-                waterLevel = 0;
-                stage++;
-                grow();
-            }
+            spawnParticles(isBonus);
+            if (waterLevel >= 100) { waterLevel = 0; stage++; grow(); }
             updateUI();
         }
 
         function grow() {
-            const p = plantTypes[level % plantTypes.length];
-            stem.style.height = (stage * 40) + "px";
+            const p = level >= 20 ? plantTypes[2 + (level % 2)] : plantTypes[level % 2];
+            stem.style.height = (stage * 45) + "px";
 
             if (stage < maxStages) {
                 const leaf = document.createElement('div');
                 leaf.className = 'leaf';
-                leaf.style.background = p.leafColor;
-                leaf.style.bottom = (stage * 35 - 15) + "px";
-                if (stage % 2 === 0) {
-                    leaf.style.left = "10px";
-                    leaf.style.transform = "rotate(0deg)";
-                } else {
-                    leaf.style.right = "10px";
-                    leaf.style.transform = "scaleX(-1) rotate(0deg)";
-                }
+                leaf.style.background = p.leaf;
+                leaf.style.bottom = (stage * 40 - 15) + "px";
+                leaf.style[stage % 2 === 0 ? 'left' : 'right'] = (level >= 20 ? "20px" : "10px");
+                if (stage % 2 !== 0) leaf.style.transform = "scaleX(-1)";
                 document.getElementById('plant-container').appendChild(leaf);
             }
 
             if (stage === maxStages - 1) {
-                flower.style.transform = "scale(1.2)";
-                setTimeout(() => {
-                    level++;
-                    initLevel();
-                }, 2500);
+                if (level >= 20) crown.style.transform = "scale(1.2)";
+                else flower.style.transform = "scale(1.2)";
+                
+                setTimeout(() => { level++; initLevel(); }, 2000);
             }
         }
 
@@ -189,29 +205,23 @@
         }
 
         function spawnParticles(isBonus) {
-            for(let i=0; i< (isBonus ? 12 : 5); i++) {
+            for(let i=0; i<(isBonus?10:5); i++) {
                 const s = document.createElement('div');
                 s.className = 'splash';
-                s.style.width = s.style.height = (isBonus ? Math.random()*15+8 : Math.random()*8+4) + "px";
-                s.style.background = isBonus ? 'var(--bonus-color)' : 'var(--water-color)';
+                s.style.width = s.style.height = (isBonus?12:6)+"px";
+                s.style.background = isBonus?'var(--bonus-color)':'var(--water-color)';
                 s.style.left = (window.innerWidth/2 + (Math.random()-0.5)*80) + "px";
-                s.style.top = "65vh";
+                s.style.top = "70vh";
                 document.body.appendChild(s);
-                s.animate([
-                    { transform: 'translateY(0)', opacity: 1 },
-                    { transform: `translate(${(Math.random()-0.5)*150}px, 120px)`, opacity: 0 }
-                ], { duration: 600 }).onfinish = () => s.remove();
+                s.animate([{opacity:1},{transform:`translate(${(Math.random()-0.5)*100}px,100px)`,opacity:0}], 600).onfinish=()=>s.remove();
             }
         }
 
-        function updateUI() {
-            document.getElementById('bar-fill').style.width = Math.min(waterLevel, 100) + "%";
-        }
+        function updateUI() { document.getElementById('bar-fill').style.width = Math.min(waterLevel, 100) + "%"; }
 
-        // Parowanie wody
         setInterval(() => {
             if (waterLevel > 0) {
-                waterLevel -= 0.4 * plantTypes[level % plantTypes.length].diff;
+                waterLevel -= (0.3 + (level * 0.05)); // Trudność rośnie z poziomem
                 updateUI();
             }
         }, 100);

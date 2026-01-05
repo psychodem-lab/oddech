@@ -3,47 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bąbelki Fullscreen</title>
+    <title>Bąbelki Pro</title>
     <style>
         body { 
-            background: #0f172a; /* Bardzo ciemny granatowy/nocny */
+            background: #0f172a; 
             margin: 0; 
-            padding: 0;
-            overflow: hidden; /* Ukrywamy paski przewijania */
+            overflow: hidden; 
             font-family: 'Segoe UI', sans-serif;
-            touch-action: none; /* Blokuje domyślne gesty dotykowe */
-        }
-        
-        .ui { 
-            position: absolute; /* Tekst pływa nad canvasem */
-            top: 20px;
-            left: 0;
-            width: 100%;
-            text-align: center; 
-            color: #94a3b8; 
-            z-index: 10; /* Wyżej niż canvas */
-            pointer-events: none; /* Pozwala klikać w bąbelki "pod" tekstem */
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Lekki cień dla czytelności */
-        }
-
-        canvas { 
-            display: block;
-            position: fixed; /* Sztywno przypięty do ekranu */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
             touch-action: none;
-            /* Usunąłem ramki i radius, aby pasowało do trybu pełnoekranowego */
         }
+        .ui { 
+            position: absolute; 
+            top: 20px; 
+            left: 0; 
+            width: 100%; 
+            text-align: center; 
+            color: #f8fafc; 
+            z-index: 10; 
+            pointer-events: none; 
+        }
+        #score { font-size: 2rem; font-weight: bold; color: #38bdf8; }
+        canvas { display: block; position: fixed; top: 0; left: 0; cursor: crosshair; }
     </style>
 </head>
 <body>
 
 <div class="ui">
-    <h2 style="margin:0; font-weight: 300; color: #f8fafc;">Bąbelki</h2>
-    <p style="margin:5px; opacity: 0.8;">Klikaj w Bąbelki.</p>
+    <div id="score">0</div>
+    <p style="margin:5px; opacity: 0.6; color: #94a3b8;">Precyzyjne kliknięcia dają więcej punktów!</p>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -51,32 +38,30 @@
 <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
+    const scoreElement = document.getElementById("score");
 
     let bubbles = [];
     let particles = [];
-    
-    // Funkcja dostosowująca wielkość canvasu do okna
+    let score = 0;
+
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
-    
-    // Wywołanie przy starcie i przy zmianie rozmiaru okna
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
     function createBubble() {
-        // Dostosowałem limit bąbelków do szerokości ekranu, 
-        // żeby na duzych ekranach nie było zbyt pusto.
-        // np. szerokość 1920 / 80 = ok. 24 bąbelki max.
-        const maxBubbles = Math.floor(canvas.width / 80); 
+        const r = 20 + Math.random() * 40;
+        // Większe bąbelki (r) poruszają się szybciej (fizyka wyporu)
+        const speed = (r / 50) + Math.random() * 0.5;
 
-        if (bubbles.length < maxBubbles) { 
+        if (bubbles.length < 20) { 
             bubbles.push({
                 x: Math.random() * canvas.width,
-                y: canvas.height + 60,
-                r: 25 + Math.random() * 30,
-                speed: 0.4 + Math.random() * 0.4, // Prędkość bez zmian
+                y: canvas.height + 100,
+                r: r,
+                speed: speed,
                 sinOffset: Math.random() * 1000,
                 opacity: 0.4 + Math.random() * 0.3
             });
@@ -84,115 +69,87 @@
     }
 
     function handleInput(e) {
-        e.preventDefault();
-        
-        // Pobieranie współrzędnych jest teraz prostsze (bez skalowania rect),
-        // ponieważ canvas pokrywa się 1:1 z oknem.
-        let clientX, clientY;
-        
-        if (e.changedTouches && e.changedTouches.length > 0) {
-            clientX = e.changedTouches[0].clientX;
-            clientY = e.changedTouches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
-        }
-
-        const x = clientX;
-        const y = clientY;
+        const clientX = e.touches ? e.changedTouches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.changedTouches[0].clientY : e.clientY;
 
         for (let i = bubbles.length - 1; i >= 0; i--) {
             let b = bubbles[i];
-            let dist = Math.sqrt((x - b.x) ** 2 + (y - b.y) ** 2);
-            // Zwiększyłem lekko margines błędu kliknięcia (+15) dla wygody
-            if (dist < b.r + 15) {
-                createSplash(b.x, b.y);
+            let dist = Math.sqrt((clientX - b.x) ** 2 + (clientY - b.y) ** 2);
+            
+            if (dist < b.r + 10) {
+                // Obliczanie punktów na podstawie precyzji (0-100 pkt)
+                let precision = Math.max(0, 1 - (dist / b.r));
+                let points = Math.round(precision * 100);
+                score += points;
+                scoreElement.innerText = score;
+
+                if (window.navigator.vibrate) window.navigator.vibrate(30);
+                
+                createSplash(b.x, b.y, b.opacity);
                 bubbles.splice(i, 1);
-                return; // Rozbijamy tylko jeden na raz
+                break;
             }
         }
     }
 
-    function createSplash(x, y) {
-        for (let i = 0; i < 8; i++) {
+    function createSplash(x, y, opacity) {
+        for (let i = 0; i < 12; i++) {
             particles.push({
                 x: x, y: y,
-                vx: (Math.random() - 0.5) * 5,
-                vy: (Math.random() - 0.5) * 5,
-                life: 1.0
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                life: 1.0,
+                color: `rgba(255, 255, 255, ${opacity})`
             });
         }
     }
 
-    canvas.addEventListener("touchstart", handleInput, { passive: false });
     canvas.addEventListener("mousedown", handleInput);
+    canvas.addEventListener("touchstart", (e) => { e.preventDefault(); handleInput(e); }, { passive: false });
 
     function loop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Tło Canvasu (zachowany oryginalny gradient)
-        let bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        bgGrad.addColorStop(0, "#1e293b");
-        bgGrad.addColorStop(1, "#0f172a");
-        ctx.fillStyle = bgGrad;
+        // Tło
+        let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grad.addColorStop(0, "#1e293b");
+        grad.addColorStop(1, "#0f172a");
+        ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Bąbelki
-        for (let i = bubbles.length - 1; i >= 0; i--) {
-            let b = bubbles[i];
+        bubbles.forEach((b, i) => {
             b.y -= b.speed;
-            b.x += Math.sin(Date.now() / 800 + b.sinOffset) * 0.6;
+            b.x += Math.sin(Date.now() / 1000 + b.sinOffset) * 0.8;
 
-            ctx.save();
             ctx.beginPath();
-
-            // Gradient bąbelka (zachowany)
-            let bubbleGrad = ctx.createRadialGradient(
-                b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.1,
-                b.x, b.y, b.r
-            );
-            bubbleGrad.addColorStop(0, `rgba(255, 255, 255, ${b.opacity})`);
-            bubbleGrad.addColorStop(0.5, `rgba(130, 180, 255, ${b.opacity * 0.3})`);
-            bubbleGrad.addColorStop(1, `rgba(100, 150, 255, ${b.opacity * 0.1})`);
-
-            ctx.fillStyle = bubbleGrad;
-            ctx.strokeStyle = `rgba(255, 255, 255, ${b.opacity * 0.5})`;
-            ctx.lineWidth = 2;
+            let bGrad = ctx.createRadialGradient(b.x - b.r*0.3, b.y - b.r*0.3, b.r*0.1, b.x, b.y, b.r);
+            bGrad.addColorStop(0, `rgba(255, 255, 255, ${b.opacity})`);
+            bGrad.addColorStop(1, `rgba(100, 180, 255, 0.05)`);
+            
+            ctx.fillStyle = bGrad;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${b.opacity * 0.4})`;
             ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
 
-            // Blik świetlny
-            ctx.beginPath();
-            ctx.arc(b.x - b.r/3.5, b.y - b.r/3.5, b.r/6, 0, Math.PI*2);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
-            ctx.fill();
-            ctx.restore();
-
-            // Usuwanie bąbelków, które wyleciały poza górę ekranu
             if (b.y < -100) bubbles.splice(i, 1);
-        }
+        });
 
-        // Cząsteczki po kliknięciu
-        for (let i = particles.length - 1; i >= 0; i--) {
-            let p = particles[i];
-            p.x += p.vx; p.y += p.vy; p.life -= 0.025;
+        // Cząsteczki
+        particles.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy; p.life -= 0.03;
             if (p.life <= 0) particles.splice(i, 1);
             else {
                 ctx.fillStyle = `rgba(255, 255, 255, ${p.life})`;
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
                 ctx.fill();
             }
-        }
+        });
 
-        // Generowanie nowych bąbelków
-        if (Math.random() < 0.02) createBubble(); // Lekko zwiększona szansa (z 0.01 na 0.02) przy większym ekranie
+        if (Math.random() < 0.04) createBubble();
         requestAnimationFrame(loop);
     }
-
     loop();
 </script>
-
 </body>
 </html>

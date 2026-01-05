@@ -3,30 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bąbelki</title>
+    <title>Bąbelki Fullscreen</title>
     <style>
         body { 
             background: #0f172a; /* Bardzo ciemny granatowy/nocny */
             margin: 0; 
             padding: 0;
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
+            overflow: hidden; /* Ukrywamy paski przewijania */
             font-family: 'Segoe UI', sans-serif;
-            touch-action: none;
+            touch-action: none; /* Blokuje domyślne gesty dotykowe */
         }
-        .ui { padding: 20px; text-align: center; color: #94a3b8; }
+        
+        .ui { 
+            position: absolute; /* Tekst pływa nad canvasem */
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center; 
+            color: #94a3b8; 
+            z-index: 10; /* Wyżej niż canvas */
+            pointer-events: none; /* Pozwala klikać w bąbelki "pod" tekstem */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Lekki cień dla czytelności */
+        }
+
         canvas { 
-            background: linear-gradient(to bottom, #1e293b, #0f172a); /* Ciemny gradient wody */
             display: block;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            border-radius: 40px;
+            position: fixed; /* Sztywno przypięty do ekranu */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             cursor: pointer;
             touch-action: none;
-            max-width: 90vw;
-            max-height: 70vh;
-            border: 4px solid #334155;
+            /* Usunąłem ramki i radius, aby pasowało do trybu pełnoekranowego */
         }
     </style>
 </head>
@@ -37,7 +46,7 @@
     <p style="margin:5px; opacity: 0.8;">Klikaj w Bąbelki.</p>
 </div>
 
-<canvas id="gameCanvas" width="800" height="600"></canvas>
+<canvas id="gameCanvas"></canvas>
 
 <script>
     const canvas = document.getElementById("gameCanvas");
@@ -45,14 +54,29 @@
 
     let bubbles = [];
     let particles = [];
+    
+    // Funkcja dostosowująca wielkość canvasu do okna
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    
+    // Wywołanie przy starcie i przy zmianie rozmiaru okna
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
     function createBubble() {
-        if (bubbles.length < 10) { // Mało bąbelków
+        // Dostosowałem limit bąbelków do szerokości ekranu, 
+        // żeby na duzych ekranach nie było zbyt pusto.
+        // np. szerokość 1920 / 80 = ok. 24 bąbelki max.
+        const maxBubbles = Math.floor(canvas.width / 80); 
+
+        if (bubbles.length < maxBubbles) { 
             bubbles.push({
                 x: Math.random() * canvas.width,
                 y: canvas.height + 60,
                 r: 25 + Math.random() * 30,
-                speed: 0.4 + Math.random() * 0.4, // Bardzo wolne
+                speed: 0.4 + Math.random() * 0.4, // Prędkość bez zmian
                 sinOffset: Math.random() * 1000,
                 opacity: 0.4 + Math.random() * 0.3
             });
@@ -61,22 +85,30 @@
 
     function handleInput(e) {
         e.preventDefault();
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        // Pobieranie współrzędnych jest teraz prostsze (bez skalowania rect),
+        // ponieważ canvas pokrywa się 1:1 z oknem.
+        let clientX, clientY;
+        
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
 
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const x = (clientX - rect.left) * scaleX;
-        const y = (clientY - rect.top) * scaleY;
+        const x = clientX;
+        const y = clientY;
 
         for (let i = bubbles.length - 1; i >= 0; i--) {
             let b = bubbles[i];
             let dist = Math.sqrt((x - b.x) ** 2 + (y - b.y) ** 2);
+            // Zwiększyłem lekko margines błędu kliknięcia (+15) dla wygody
             if (dist < b.r + 15) {
                 createSplash(b.x, b.y);
                 bubbles.splice(i, 1);
-                return;
+                return; // Rozbijamy tylko jeden na raz
             }
         }
     }
@@ -98,7 +130,7 @@
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Tło Canvasu (ciemne)
+        // Tło Canvasu (zachowany oryginalny gradient)
         let bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
         bgGrad.addColorStop(0, "#1e293b");
         bgGrad.addColorStop(1, "#0f172a");
@@ -113,8 +145,8 @@
 
             ctx.save();
             ctx.beginPath();
-            
-            // Bardziej złożony gradient dla efektu "3D"
+
+            // Gradient bąbelka (zachowany)
             let bubbleGrad = ctx.createRadialGradient(
                 b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.1,
                 b.x, b.y, b.r
@@ -129,18 +161,19 @@
             ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            
-            // Mały blik świetlny
+
+            // Blik świetlny
             ctx.beginPath();
             ctx.arc(b.x - b.r/3.5, b.y - b.r/3.5, b.r/6, 0, Math.PI*2);
             ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
             ctx.fill();
             ctx.restore();
 
+            // Usuwanie bąbelków, które wyleciały poza górę ekranu
             if (b.y < -100) bubbles.splice(i, 1);
         }
 
-        // Cząsteczki
+        // Cząsteczki po kliknięciu
         for (let i = particles.length - 1; i >= 0; i--) {
             let p = particles[i];
             p.x += p.vx; p.y += p.vy; p.life -= 0.025;
@@ -153,7 +186,8 @@
             }
         }
 
-        if (Math.random() < 0.01) createBubble();
+        // Generowanie nowych bąbelków
+        if (Math.random() < 0.02) createBubble(); // Lekko zwiększona szansa (z 0.01 na 0.02) przy większym ekranie
         requestAnimationFrame(loop);
     }
 

@@ -3,9 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neonowa Podróż</title>
+    <title>Neonowa Podróż PRO</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&display=swap');
+
+        :root {
+            --primary: #00f2fe;
+            --danger: #ff0055;
+            --bg-color: #0f0c29;
+        }
 
         body {
             margin: 0;
@@ -14,360 +20,820 @@
             justify_content: center;
             align-items: center;
             height: 100vh;
-            background-color: #111; /* Ciemne tło strony */
-            font-family: 'Montserrat', sans-serif;
+            background-color: #000;
+            font-family: 'Rajdhani', sans-serif;
             overflow: hidden;
+            color: white;
+            user-select: none;
         }
 
-        /* Kontener gry aby łatwiej pozycjonować UI */
-        #game-container {
+        #game-wrapper {
             position: relative;
-            width: 400px;
-            height: 600px;
-            box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
-            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            max-height: 800px;
+            background: #000;
             overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 242, 254, 0.1);
         }
 
+        /* Punkt 16: Bloom (Poświata) realizowana przez CSS dla wydajności */
         canvas {
             display: block;
-            /* Domyślne tło - gradient */
-            background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
-            transition: background 1.5s ease; /* Płynna zmiana tła */
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 4px rgba(255,255,255,0.3)); 
         }
 
-        /* Efekt mrożonego szkła dla UI */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.15);
+        .ui-panel {
+            position: absolute;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .score-box { font-size: 32px; font-weight: bold; }
+        .sub-text { font-size: 14px; opacity: 0.8; }
+        .currency-box { 
+            color: #ffd700; font-size: 20px; display: flex; align-items: center; gap: 5px; 
+            background: rgba(0,0,0,0.4); padding: 5px 10px; border-radius: 20px;
+        }
+
+        /* Ekrany (Menu, Shop, GameOver) */
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 12, 41, 0.85);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            transition: opacity 0.3s;
+            pointer-events: auto; /* Musi być auto żeby klikać */
         }
 
-        #ui-layer {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 25px;
-            text-align: center;
-            pointer-events: none;
-            white-space: nowrap;
-        }
+        .hidden { opacity: 0; pointer-events: none; }
 
-        #start-screen {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 30px;
-            text-align: center;
+        h1 { font-size: 40px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 3px; 
+             background: linear-gradient(to right, #4facfe, #00f2fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        button {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            padding: 12px 30px;
+            font-size: 18px;
+            font-family: inherit;
+            font-weight: bold;
+            text-transform: uppercase;
             cursor: pointer;
-            width: 80%;
-            box-sizing: border-box;
+            margin: 10px;
+            border-radius: 30px;
+            transition: all 0.2s;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
         }
 
-        h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 1px; }
-        h2 { font-size: 28px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 2px; color: #fff; }
-        p { margin: 10px 0; font-size: 16px; color: #eee; }
-        .highlight { color: #00f2fe; font-weight: bold; }
-        .small-text { font-size: 14px; opacity: 0.8; }
+        button:hover { background: var(--primary); color: #000; box-shadow: 0 0 20px rgba(0, 242, 254, 0.6); }
+        button.secondary { border-color: #fff; color: #fff; }
+        button.secondary:hover { background: #fff; color: #000; }
+
+        /* SKLEP */
+        #shop-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .shop-item {
+            width: 60px; height: 60px;
+            border: 2px solid #555;
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; position: relative;
+        }
+        .shop-item.active { border-color: #00ff00; box-shadow: 0 0 15px #00ff00; }
+        .shop-item.locked { opacity: 0.5; }
+        .price-tag {
+            position: absolute; bottom: -20px; font-size: 12px; color: #ffd700; width: 100%; text-align: center;
+        }
+
+        /* Powiadomienia */
+        #notification {
+            position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 5px;
+            pointer-events: none; opacity: 0; transition: opacity 0.5s; z-index: 100;
+        }
+
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <canvas id="gameCanvas" width="400" height="600"></canvas>
-
-        <div id="ui-layer" class="glass-panel">
-            <h1><span id="score">0</span> pkt</h1>
-            <p class="small-text">Rekord: <span id="high-score">0</span></p>
-            <p class="small-text" id="level-display" style="color: #00f2fe; font-weight: bold; margin-top: 5px;">Kraina: Neonowa Łąka</p>
+<div id="game-wrapper">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="ui-panel">
+        <div class="hud-top">
+            <div>
+                <div class="score-box"><span id="scoreVal">0</span> m</div>
+                <div class="sub-text">Rekord: <span id="highScoreVal">0</span></div>
+            </div>
+            <div class="currency-box">💎 <span id="coinsVal">0</span></div>
         </div>
+        <div id="shield-icon" style="opacity:0; color: #ff0055; font-weight: bold; text-shadow: 0 0 10px #ff0055;">🛡️ TARCZA AKTYWNA</div>
+        <div style="text-align: center; margin-bottom: 20px; font-size: 12px; color: #aaa;">Wersja 2.0</div>
+    </div>
 
-        <div id="start-screen" class="glass-panel">
-            <h2>Podróż Bąbelka</h2>
-            <p>Klikaj, aby unosić się w górę.</p>
-            <p>Unikaj energetycznych barier.</p>
-            <p class="highlight" style="margin-top: 25px; font-size: 18px;">KLIKNIJ ABY ZACZĄĆ</p>
+    <div id="start-screen" class="screen">
+        <h1>Neon Trip</h1>
+        <p>Punkt 23: Dźwięk włączy się po kliknięciu</p>
+        <button id="btn-start">Graj</button>
+        <button id="btn-shop" class="secondary">Sklep</button>
+    </div>
+
+    <div id="shop-screen" class="screen hidden">
+        <h2>Sklep</h2>
+        <p>Wybierz wygląd (Punkt 17)</p>
+        <div id="shop-grid">
+            </div>
+        <button id="btn-back" class="secondary">Wróć</button>
+    </div>
+
+    <div id="gameover-screen" class="screen hidden">
+        <h1 style="color: #ff0055;">KRACH!</h1>
+        <p>Wynik: <span id="final-score">0</span></p>
+        <div style="display:flex;">
+            <button id="btn-restart">Jeszcze raz</button>
+            <button id="btn-share" class="secondary">Udostępnij (Pkt 26)</button>
         </div>
     </div>
 
-    <script>
-        // --- KONFIGURACJA ---
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreEl = document.getElementById('score');
-        const highScoreEl = document.getElementById('high-score');
-        const levelEl = document.getElementById('level-display');
-        const startScreen = document.getElementById('start-screen');
-        const gameContainer = document.getElementById('game-container');
+    <div id="notification">Skopiowano wynik!</div>
+</div>
 
-        let frames = 0;
-        let score = 0;
-        let highScore = localStorage.getItem('glassBubbleHighScore') || 0;
-        let isRunning = false;
-        let currentStage = 0;
+<script>
+/**
+ * ARCHITEKTURA GRY:
+ * 1. AudioController - Syntezatory dźwięku (Web Audio API)
+ * 2. Visuals - Klasy cząsteczek, tła, efektów
+ * 3. GameLogic - Fizyka, stany, kolizje
+ */
 
-        highScoreEl.innerText = highScore;
+// --- KONFIGURACJA I ZMIENNE GLOBALNE ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-        // --- DEFINICJE ETAPÓW (KOLORYSTYKA) ---
-        const stages = [
-            { name: "Neonowa Łąka", bg: "linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%)", obsColor1: "rgba(0, 255, 127, 0.6)", obsColor2: "rgba(0, 200, 100, 0.3)", glow: "#00ff7f" },
-            { name: "Kryształowa Pustynia", bg: "linear-gradient(to bottom, #ff9a44 0%, #fc6076 100%)", obsColor1: "rgba(255, 165, 0, 0.6)", obsColor2: "rgba(200, 100, 0, 0.3)", glow: "#ffd700" },
-            { name: "Szklane Góry", bg: "linear-gradient(to bottom, #a18cd1 0%, #fbc2eb 100%)", obsColor1: "rgba(0, 191, 255, 0.6)", obsColor2: "rgba(0, 100, 200, 0.3)", glow: "#00bfff" },
-            { name: "Cyfrowy Kosmos", bg: "linear-gradient(to bottom, #0f0c29, #302b63, #24243e)", obsColor1: "rgba(147, 112, 219, 0.6)", obsColor2: "rgba(75, 0, 130, 0.3)", glow: "#9370db" }
-        ];
+let width, height;
+function resize() {
+    width = canvas.width = document.getElementById('game-wrapper').offsetWidth;
+    height = canvas.height = document.getElementById('game-wrapper').offsetHeight;
+}
+window.addEventListener('resize', resize);
+resize();
 
-        // --- OBIEKTY GRY ---
+// Stan gry
+const state = {
+    screen: 'START', // START, PLAY, GAMEOVER, SHOP
+    frames: 0,
+    score: 0,
+    coins: parseInt(localStorage.getItem('neonCoins')) || 0,
+    highScore: parseInt(localStorage.getItem('neonHighScore')) || 0,
+    skinId: parseInt(localStorage.getItem('neonSkin')) || 0,
+    unlockedSkins: JSON.parse(localStorage.getItem('neonSkinsUnlocked')) || [0],
+    stage: 0, // 0: Łąka, 1: Pustynia, 2: Góry, 3: Kosmos
+    gravity: 0.25,
+    wind: 0
+};
+
+// Aktualizacja UI
+function updateUI() {
+    document.getElementById('scoreVal').innerText = Math.floor(state.score);
+    document.getElementById('highScoreVal').innerText = state.highScore;
+    document.getElementById('coinsVal').innerText = state.coins;
+    document.getElementById('shield-icon').style.opacity = bubble.hasShield ? '1' : '0';
+}
+
+// --- SYSTEM AUDIO (Punkt 22, 23) ---
+const Audio = {
+    ctx: null,
+    initialized: false,
+    
+    init: function() {
+        if(this.initialized) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.initialized = true;
+        this.startAmbient();
+    },
+
+    playTone: function(freq, type, duration, vol = 0.1) {
+        if(!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    },
+
+    jump: function() { // "Plump"
+        if(!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+    },
+
+    coin: function() {
+        this.playTone(1200, 'sine', 0.2, 0.05);
+        setTimeout(() => this.playTone(1800, 'sine', 0.2, 0.05), 100);
+    },
+
+    crash: function() {
+        this.playTone(100, 'sawtooth', 0.5, 0.2);
+    },
+    
+    // Szum tła (Punkt 23 - Ambient)
+    startAmbient: function() {
+        if (!this.ctx) return;
+        const bufferSize = this.ctx.sampleRate * 2; // 2 sekundy
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        noise.loop = true;
+        const gain = this.ctx.createGain();
+        gain.gain.value = 0.02; // Bardzo cicho
         
-        // Szklany Bąbelek
-        const balloon = {
-            x: 100,
-            y: 250,
-            radius: 18,
-            velocity: 0,
-            gravity: 0.2, // Zmniejszona grawitacja dla wrażenia lekkości
-            jump: -3.8,   // Delikatniejszy skok
-            
-            draw: function() {
-                ctx.save();
-                
-                // 1. Główne ciało bąbelka (gradient radialny dla objętości)
-                let radGrad = ctx.createRadialGradient(this.x, this.y, this.radius * 0.2, this.x, this.y, this.radius);
-                radGrad.addColorStop(0, 'rgba(255, 255, 255, 0.1)'); // Środek prawie przezroczysty
-                radGrad.addColorStop(0.8, 'rgba(200, 240, 255, 0.4)'); // Niebieskawa otoczka
-                radGrad.addColorStop(1, 'rgba(255, 255, 255, 0.6)'); // Biała krawędź
+        // Filtr dolnoprzepustowy dla "wiatru"
+        this.filter = this.ctx.createBiquadFilter();
+        this.filter.type = 'lowpass';
+        this.filter.frequency.value = 400;
 
-                ctx.fillStyle = radGrad;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
+        noise.connect(this.filter);
+        this.filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start();
+    },
 
-                // 2. Zewnętrzna, cienka, świecąca krawędź
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-                ctx.lineWidth = 1.5;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#00f2fe'; // Neonowy błękitny blask
-                ctx.stroke();
-                ctx.closePath();
+    updateAmbient: function(stage) {
+        if(!this.filter) return;
+        // Zmiana brzmienia w zależności od etapu
+        if(stage === 2) this.filter.frequency.linearRampToValueAtTime(800, this.ctx.currentTime + 1); // Wiatr w górach
+        else if(stage === 3) this.filter.frequency.linearRampToValueAtTime(200, this.ctx.currentTime + 1); // Cichy kosmos
+        else this.filter.frequency.linearRampToValueAtTime(400, this.ctx.currentTime + 1);
+    }
+};
 
-                // 3. Refleks świetlny (kluczowy dla efektu szkła)
-                ctx.beginPath();
-                // Łuk w lewym górnym rogu
-                ctx.arc(this.x, this.y, this.radius * 0.7, Math.PI * 1.1, Math.PI * 1.6); 
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-                ctx.lineWidth = 3;
-                ctx.lineCap = 'round';
-                ctx.shadowBlur = 0; // Refleks jest ostry
-                ctx.stroke();
-                ctx.closePath();
+// --- GRAFIKA I EFEKTY ---
 
-                ctx.restore();
-            },
-            
-            update: function() {
-                this.velocity += this.gravity;
-                this.y += this.velocity;
+// Punkt 9: Paralaksa
+class Background {
+    constructor() {
+        this.stars = [];
+        for(let i=0; i<50; i++) {
+            this.stars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 2,
+                speed: Math.random() * 0.5 + 0.1
+            });
+        }
+    }
+    
+    draw() {
+        // Kolor tła zależny od etapu
+        let grad;
+        if(state.stage === 3) { // Kosmos
+             grad = ctx.createLinearGradient(0, 0, 0, height);
+             grad.addColorStop(0, '#000'); grad.addColorStop(1, '#1a0b2e');
+        } else if (state.stage === 2) { // Góry/Szarówka
+             grad = ctx.createLinearGradient(0, 0, 0, height);
+             grad.addColorStop(0, '#2c3e50'); grad.addColorStop(1, '#4ca1af');
+        } else {
+             grad = ctx.createLinearGradient(0, 0, 0, height);
+             grad.addColorStop(0, '#13547a'); grad.addColorStop(1, '#80d0c7');
+        }
+        
+        ctx.fillStyle = grad;
+        ctx.fillRect(0,0, width, height);
 
-                if (this.y + this.radius >= canvas.height) resetGame();
-                if (this.y - this.radius <= 0) {
-                    this.y = this.radius;
-                    this.velocity = 0;
-                }
-            },
-            
-            flap: function() {
-                this.velocity = this.jump;
-            },
-            
-            reset: function() {
-                this.y = 250;
-                this.velocity = 0;
+        // Rysowanie gwiazd/pyłu z efektem paralaksy
+        ctx.fillStyle = '#fff';
+        this.stars.forEach(s => {
+            s.x -= s.speed;
+            if(s.x < 0) s.x = width;
+            ctx.globalAlpha = Math.random() * 0.5 + 0.3;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+    }
+}
+
+// Punkt 10, 11, 14: System cząsteczek (Ślad, Skok, Wybuch)
+class Particle {
+    constructor(x, y, type, color) {
+        this.x = x; this.y = y;
+        this.type = type; // 'trail', 'jump', 'shatter', 'rain'
+        this.life = 1.0;
+        this.color = color;
+        
+        if(type === 'shatter') {
+            this.vx = (Math.random() - 0.5) * 10;
+            this.vy = (Math.random() - 0.5) * 10;
+            this.decay = 0.02;
+        } else if (type === 'jump') {
+            this.vx = (Math.random() - 0.5) * 2;
+            this.vy = Math.random() * 2;
+            this.decay = 0.05;
+        } else if (type === 'rain') { // Punkt 12
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.vx = 0;
+            this.vy = 0;
+            this.life = Math.random() * 0.5 + 0.5; // Żyje chwilę na ekranie
+            this.decay = 0.005;
+            this.radius = Math.random() * 2 + 1;
+        } else { // trail
+            this.vx = -2; this.vy = 0;
+            this.decay = 0.05;
+        }
+    }
+    
+    update() {
+        if(this.type === 'rain') {
+            this.life -= this.decay;
+            this.y += 0.2; // Powoli spływa
+            return;
+        }
+
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+        
+        if(this.type === 'shatter') this.vy += 0.2; // Grawitacja odłamków
+    }
+    
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        
+        if (this.type === 'rain') {
+            // Krople na "szybie"
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.stroke();
+        } else if (this.type === 'shatter') {
+            // Trójkątne odłamki
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.life * 10);
+            ctx.beginPath();
+            ctx.moveTo(0, -5); ctx.lineTo(5, 5); ctx.lineTo(-5, 5);
+            ctx.fill();
+        } else {
+            // Kółka
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.type==='jump' ? 3 : 5, 0, Math.PI*2);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+
+// --- OBIEKTY GRY ---
+
+class Bubble {
+    constructor() {
+        this.x = width * 0.3;
+        this.y = height / 2;
+        this.radius = 15;
+        this.velocity = 0;
+        this.hasShield = false; // Punkt 5
+        this.skinColor = this.getSkinColor();
+        this.particles = [];
+    }
+
+    getSkinColor() {
+        const skins = ['#00f2fe', '#ff0055', '#ffff00', '#00ff00'];
+        return skins[state.skinId] || skins[0];
+    }
+
+    reset() {
+        this.y = height / 2;
+        this.velocity = 0;
+        this.hasShield = false;
+        this.skinColor = this.getSkinColor();
+        this.particles = [];
+    }
+
+    flap() {
+        this.velocity = -5;
+        Audio.jump();
+        // Punkt 10: Cząsteczki skoku
+        for(let i=0; i<5; i++) {
+            this.particles.push(new Particle(this.x, this.y + this.radius, 'jump', '#fff'));
+        }
+    }
+
+    update() {
+        // Punkt 6: Grawitacja
+        let g = state.stage === 3 ? 0.12 : 0.25; // Słabsza w kosmosie
+        this.velocity += g;
+        
+        // Punkt 3: Wiatr w górach
+        if(state.stage === 2) {
+            this.velocity += (Math.random() - 0.5) * 0.3; // Turbulencje
+        }
+
+        this.y += this.velocity;
+
+        // Sufit/Podłoga
+        if(this.y + this.radius > height) gameOver();
+        if(this.y - this.radius < 0) { this.y = this.radius; this.velocity = 0; }
+
+        // Punkt 11: Ślad
+        if(state.frames % 5 === 0) {
+            this.particles.push(new Particle(this.x, this.y, 'trail', this.skinColor));
+        }
+
+        // Aktualizacja cząsteczek
+        for(let i = this.particles.length - 1; i >= 0; i--) {
+            this.particles[i].update();
+            if(this.particles[i].life <= 0) this.particles.splice(i, 1);
+        }
+    }
+
+    draw() {
+        // Cząsteczki (ślad) pod spodem
+        this.particles.forEach(p => p.draw());
+
+        ctx.save();
+        // Poświata
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.skinColor;
+        
+        // Ciało
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.strokeStyle = this.hasShield ? '#fff' : this.skinColor;
+        ctx.lineWidth = this.hasShield ? 3 : 2; // Grubszy obrys jak tarcza
+        
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Refleks
+        ctx.beginPath();
+        ctx.arc(this.x - 5, this.y - 5, 4, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fill();
+        ctx.restore();
+    }
+    
+    // Punkt 14: Shatter effect
+    explode() {
+        Audio.crash();
+        for(let i=0; i<30; i++) {
+            globalParticles.push(new Particle(this.x, this.y, 'shatter', this.skinColor));
+        }
+    }
+}
+
+class Obstacle {
+    constructor() {
+        this.w = 50;
+        this.gap = 180;
+        this.x = width;
+        this.topH = Math.random() * (height - this.gap - 100) + 50;
+        this.passed = false;
+        
+        // Generowanie monety (30% szans) lub tarczy (5% szans)
+        this.item = null;
+        let rand = Math.random();
+        if (rand < 0.05) this.item = { type: 'shield', y: this.topH + this.gap/2 };
+        else if (rand < 0.35) this.item = { type: 'coin', y: this.topH + this.gap/2 };
+    }
+
+    update() {
+        this.x -= 3; // Prędkość gry
+        
+        // Punkt 13: Dynamiczne oświetlenie
+        // Oblicz dystans do bąbelka, jeśli blisko -> zwiększ jasność bąbelka (symulacja w draw bąbelka jest trudna, więc tutaj dodamy efekt wizualny)
+        let dist = Math.abs(this.x - bubble.x);
+        if (dist < 100) {
+             // Jeśli blisko, możemy dodać poświatę do przeszkody
+             this.glow = true;
+        } else {
+             this.glow = false;
+        }
+    }
+
+    draw() {
+        ctx.fillStyle = this.glow ? '#ff4d4d' : '#444'; // Czerwienieją jak blisko
+        ctx.strokeStyle = '#fff';
+        
+        // Góra
+        ctx.fillRect(this.x, 0, this.w, this.topH);
+        // Dół
+        ctx.fillRect(this.x, height - (height - this.gap - this.topH), this.w, height - this.gap - this.topH);
+        
+        // Item
+        if(this.item) {
+            ctx.save();
+            ctx.translate(this.x + this.w/2, this.item.y);
+            if(this.item.type === 'coin') {
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#000'; ctx.fillText('$', -3, 3);
+            } else { // Shield
+                ctx.fillStyle = '#ff0055';
+                ctx.font = '20px Arial';
+                ctx.fillText('❤️', -10, 5);
             }
-        };
+            ctx.restore();
+        }
+    }
+}
 
-        // Przeszkody (Energetyczne Filary)
-        const obstacles = {
-            list: [],
-            gap: 180,
-            dx: 2, 
-            frequency: 140,
+// --- LOGIKA GRY ---
 
-            draw: function() {
-                const stageData = stages[currentStage];
+let bubble;
+let obstacles = [];
+let globalParticles = []; // Dla deszczu i wybuchów
+let bg;
+let animationId;
 
-                for (let i = 0; i < this.list.length; i++) {
-                    let p = this.list[i];
-                    
-                    ctx.save();
-                    ctx.lineWidth = 2;
-                    ctx.strokeStyle = stageData.glow;
-                    ctx.shadowBlur = 15;
-                    ctx.shadowColor = stageData.glow;
-                    
-                    // Górna przeszkoda
-                    // Gradient liniowy pionowy
-                    let gradTop = ctx.createLinearGradient(p.x, 0, p.x, p.top);
-                    gradTop.addColorStop(0, stageData.obsColor2);
-                    gradTop.addColorStop(1, stageData.obsColor1);
-                    ctx.fillStyle = gradTop;
-                    
-                    ctx.beginPath();
-                    ctx.roundRect(p.x, -10, p.w, p.top + 10, [0, 0, 10, 10]); // Zaokrąglone doły
-                    ctx.fill();
-                    ctx.stroke();
-                    ctx.closePath();
+function init() {
+    bubble = new Bubble();
+    bg = new Background();
+    obstacles = [];
+    globalParticles = [];
+    state.score = 0;
+    state.frames = 0;
+    state.stage = 0;
+    updateUI();
+}
 
-                    // Dolna przeszkoda
-                    let gradBottom = ctx.createLinearGradient(p.x, canvas.height - p.bottom, p.x, canvas.height);
-                    gradBottom.addColorStop(0, stageData.obsColor1);
-                    gradBottom.addColorStop(1, stageData.obsColor2);
-                    ctx.fillStyle = gradBottom;
+function gameOver() {
+    state.screen = 'GAMEOVER';
+    bubble.explode(); // Efekt rozbicia
+    
+    // Zapisz wyniki
+    if(state.score > state.highScore) {
+        state.highScore = Math.floor(state.score);
+        localStorage.setItem('neonHighScore', state.highScore);
+        // Punkt 22 (część): Fanfara rekordu (uproszczona)
+        Audio.playTone(800, 'square', 0.2);
+        Audio.playTone(1200, 'square', 0.4);
+    }
+    localStorage.setItem('neonCoins', state.coins);
+    
+    document.getElementById('final-score').innerText = Math.floor(state.score);
+    document.getElementById('gameover-screen').classList.remove('hidden');
+    
+    // Zatrzymaj pętlę po krótkiej animacji cząsteczek
+    setTimeout(() => cancelAnimationFrame(animationId), 1000);
+}
 
-                    ctx.beginPath();
-                    ctx.roundRect(p.x, canvas.height - p.bottom, p.w, p.bottom + 10, [10, 10, 0, 0]); // Zaokrąglone góry
-                    ctx.fill();
-                    ctx.stroke();
-                    ctx.closePath();
+function loop() {
+    if(state.screen !== 'PLAY') {
+        // Rysuj tylko cząsteczki wybuchu
+        ctx.clearRect(0,0,width,height);
+        bg.draw();
+        globalParticles.forEach(p => { p.update(); p.draw(); });
+        animationId = requestAnimationFrame(loop);
+        return;
+    }
 
-                    ctx.restore();
+    ctx.clearRect(0, 0, width, height);
+
+    // 1. Tło i aktualizacja etapu
+    bg.draw();
+    if(state.score > 500) state.stage = 1;
+    if(state.score > 1000) state.stage = 2; // Góry (Deszcz)
+    if(state.score > 2000) state.stage = 3; // Kosmos
+    
+    Audio.updateAmbient(state.stage);
+
+    // 2. Punkt 12: Deszcz (Tylko w etapie 2)
+    if(state.stage === 2 && Math.random() < 0.3) {
+        globalParticles.push(new Particle(0,0,'rain', '#fff'));
+    }
+
+    // 3. Generowanie przeszkód
+    if (state.frames % 100 === 0) {
+        obstacles.push(new Obstacle());
+    }
+
+    // 4. Logika Przeszkód
+    for(let i = 0; i < obstacles.length; i++) {
+        let obs = obstacles[i];
+        obs.update();
+        obs.draw();
+
+        // Kolizja z Itemami
+        if(obs.item) {
+            let dx = bubble.x - (obs.x + obs.w/2);
+            let dy = bubble.y - obs.item.y;
+            if(Math.sqrt(dx*dx + dy*dy) < bubble.radius + 15) {
+                if(obs.item.type === 'coin') {
+                    state.coins++;
+                    Audio.coin();
+                } else {
+                    bubble.hasShield = true; // Punkt 5
+                    Audio.playTone(600, 'sine', 0.3);
                 }
-            },
-
-            update: function() {
-                if (frames % this.frequency === 0) {
-                    const maxTop = canvas.height - this.gap - 120;
-                    const topHeight = Math.random() * (maxTop - 80) + 80; 
-                    
-                    this.list.push({
-                        x: canvas.width,
-                        w: 55,
-                        top: topHeight,
-                        bottom: canvas.height - (topHeight + this.gap)
-                    });
-                }
-
-                for (let i = 0; i < this.list.length; i++) {
-                    let p = this.list[i];
-                    p.x -= this.dx;
-
-                    if (p.x + p.w < 0) {
-                        this.list.shift();
-                        i--;
-                        continue;
-                    }
-
-                    // Kolizja (AABB - prostokątna, lekko zmniejszona dla wybaczenia błędów)
-                    const hitboxMargin = 4;
-                    if (
-                        balloon.x + balloon.radius - hitboxMargin > p.x && 
-                        balloon.x - balloon.radius + hitboxMargin < p.x + p.w && 
-                        (balloon.y - balloon.radius + hitboxMargin < p.top ||
-                        balloon.y + balloon.radius - hitboxMargin > canvas.height - p.bottom)
-                    ) {
-                        resetGame();
-                    }
-                }
-            },
-            
-            reset: function() {
-                this.list = [];
-            }
-        };
-
-        // --- LOGIKA GŁÓWNA ---
-
-        function updateLevelStyles() {
-            let newStage = 0;
-            if (score < 500) newStage = 0;
-            else if (score < 1000) newStage = 1;
-            else if (score < 2000) newStage = 2;
-            else newStage = 3;
-
-            if (newStage !== currentStage || frames === 0) {
-                currentStage = newStage;
-                // Zmiana tła canvasa za pomocą CSS
-                canvas.style.background = stages[currentStage].bg;
-                // Zmiana tekstu i koloru w UI
-                levelEl.innerText = "Kraina: " + stages[currentStage].name;
-                levelEl.style.color = stages[currentStage].glow;
+                obs.item = null;
+                updateUI();
             }
         }
 
-        function loop() {
-            if (!isRunning) return;
-
-            balloon.update();
-            obstacles.update();
-            
-            if (frames % 8 === 0) { // Szybsze naliczanie punktów
-                score++;
-                scoreEl.innerText = score;
-                if (score > highScore) {
-                    highScore = score;
-                    highScoreEl.innerText = highScore;
-                }
-            }
-            
-            updateLevelStyles();
-            frames++;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            obstacles.draw();
-            balloon.draw();
-
-            requestAnimationFrame(loop);
-        }
-
-        function resetGame() {
-            if (score > localStorage.getItem('glassBubbleHighScore')) {
-                localStorage.setItem('glassBubbleHighScore', score);
-            }
-            
-            isRunning = false;
-            startScreen.style.display = 'block';
-            startScreen.querySelector('h2').innerText = "CRASH!";
-            startScreen.querySelector('.highlight').innerText = "SPRÓBUJ PONOWNIE";
-            
-            score = 0;
-            frames = 0;
-            currentStage = -1; // Wymuś odświeżenie stylu przy starcie
-            scoreEl.innerText = '0';
-            
-            balloon.reset();
-            obstacles.reset();
-            updateLevelStyles(); // Reset tła
-            
-            // Narysuj stan początkowy
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            balloon.draw();
-        }
-
-        function startGame() {
-            if (isRunning) {
-                balloon.flap();
-            } else {
-                isRunning = true;
-                startScreen.style.display = 'none';
-                loop();
-                balloon.flap();
+        // Kolizja z Przeszkodą
+        // Prosta kolizja AABB (dla uproszczenia kodu)
+        if (
+            bubble.x + bubble.radius > obs.x && 
+            bubble.x - bubble.radius < obs.x + obs.w && 
+            (bubble.y - bubble.radius < obs.topH || bubble.y + bubble.radius > height - (height - obs.gap - obs.topH))
+        ) {
+            if(bubble.hasShield) {
+                bubble.hasShield = false;
+                obs.passed = true; // Ignoruj tę przeszkodę dalej
+                // Odbij bąbla lekko
+                bubble.velocity = 5; 
+                Audio.crash(); // Dźwięk pęknięcia tarczy
+            } else if (!obs.passed) {
+                gameOver();
             }
         }
 
-        // --- STEROWANIE ---
-        // Używamy gameContainer dla zdarzeń myszy/dotyku, aby objąć też UI
-        gameContainer.addEventListener('mousedown', (e) => { if(e.target.tagName !== 'BUTTON') startGame(); });
-        window.addEventListener('keydown', (e) => { if (e.code === 'Space') startGame(); });
-        gameContainer.addEventListener('touchstart', (e) => { e.preventDefault(); startGame(); }, {passive: false});
+        // Usuwanie
+        if(obs.x + obs.w < 0) {
+            obstacles.shift();
+            i--;
+        }
+    }
 
-        // Inicjalizacja
-        updateLevelStyles();
-        balloon.draw(); // Narysuj bąbelek na starcie
+    // 5. Bąbelek
+    bubble.update();
+    bubble.draw();
 
-    </script>
+    // 6. Globalne cząsteczki
+    globalParticles.forEach((p, index) => {
+        p.update();
+        p.draw();
+        if(p.life <= 0) globalParticles.splice(index, 1);
+    });
+
+    state.frames++;
+    state.score += 0.1;
+    updateUI();
+
+    animationId = requestAnimationFrame(loop);
+}
+
+// --- OBSŁUGA UI I STEROWANIE ---
+
+function startGame() {
+    Audio.init(); // Włącz audio
+    state.screen = 'PLAY';
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('gameover-screen').classList.add('hidden');
+    document.getElementById('shop-screen').classList.add('hidden');
+    init();
+    loop();
+    bubble.flap(); // Pierwszy skok
+}
+
+// Punkt 17: Sklep
+const skinsData = [
+    {color: '#00f2fe', price: 0},
+    {color: '#ff0055', price: 50},
+    {color: '#ffff00', price: 100},
+    {color: '#00ff00', price: 200}
+];
+
+function renderShop() {
+    const grid = document.getElementById('shop-grid');
+    grid.innerHTML = '';
+    skinsData.forEach((skin, index) => {
+        const el = document.createElement('div');
+        el.className = `shop-item ${state.skinId === index ? 'active' : ''} ${!state.unlockedSkins.includes(index) ? 'locked' : ''}`;
+        el.style.backgroundColor = skin.color;
+        el.onclick = () => buySkin(index);
+        
+        if(!state.unlockedSkins.includes(index)) {
+            el.innerHTML = `<div class="price-tag">${skin.price}💎</div>`;
+        }
+        grid.appendChild(el);
+    });
+}
+
+function buySkin(index) {
+    if(state.unlockedSkins.includes(index)) {
+        state.skinId = index;
+        localStorage.setItem('neonSkin', index);
+        renderShop();
+    } else {
+        if(state.coins >= skinsData[index].price) {
+            state.coins -= skinsData[index].price;
+            state.unlockedSkins.push(index);
+            state.skinId = index;
+            
+            localStorage.setItem('neonCoins', state.coins);
+            localStorage.setItem('neonSkinsUnlocked', JSON.stringify(state.unlockedSkins));
+            localStorage.setItem('neonSkin', index);
+            updateUI();
+            renderShop();
+        } else {
+            alert("Za mało diamentów!");
+        }
+    }
+}
+
+// Punkt 26: Udostępnianie
+document.getElementById('btn-share').onclick = async () => {
+    const text = `Mój rekord w Neon Trip to ${state.highScore}m! Zagraj ze mną!`;
+    if (navigator.share) {
+        try {
+            await navigator.share({ title: 'Neon Trip', text: text, url: window.location.href });
+        } catch(e) { console.log("Share failed", e); }
+    } else {
+        // Fallback: Kopiowanie do schowka
+        navigator.clipboard.writeText(text);
+        const notif = document.getElementById('notification');
+        notif.style.opacity = 1;
+        setTimeout(() => notif.style.opacity = 0, 2000);
+    }
+};
+
+// Event Listeners
+document.getElementById('btn-start').onclick = startGame;
+document.getElementById('btn-restart').onclick = startGame;
+document.getElementById('btn-shop').onclick = () => {
+    state.screen = 'SHOP';
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('shop-screen').classList.remove('hidden');
+    renderShop();
+};
+document.getElementById('btn-back').onclick = () => {
+    state.screen = 'START';
+    document.getElementById('shop-screen').classList.add('hidden');
+    document.getElementById('start-screen').classList.remove('hidden');
+};
+
+// Input gry
+window.addEventListener('mousedown', (e) => {
+    if(state.screen === 'PLAY') bubble.flap();
+});
+window.addEventListener('keydown', (e) => {
+    if(e.code === 'Space') {
+        if(state.screen === 'PLAY') bubble.flap();
+        else if (state.screen !== 'SHOP') startGame();
+    }
+});
+window.addEventListener('touchstart', (e) => {
+    if(state.screen === 'PLAY') {
+        e.preventDefault();
+        bubble.flap();
+    }
+}, {passive: false});
+
+</script>
 </body>
 </html>

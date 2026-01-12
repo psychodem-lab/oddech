@@ -543,15 +543,15 @@ class Obstacle {
         this.topH = Math.random() * (height - this.gap - 100) + 50;
         this.passed = false;
         
-        // Generowanie monety (30% szans) lub tarczy (5% szans)
+        // Generowanie monety (30% szans) lub tarczy (10% szans)
         this.item = null;
         let rand = Math.random();
-        if (rand < 0.05) this.item = { type: 'shield', y: this.topH + this.gap/2 };
+        if (rand < 0.10) this.item = { type: 'shield', y: this.topH + this.gap/2 };
         else if (rand < 0.35) this.item = { type: 'coin', y: this.topH + this.gap/2 };
     }
 
     update() {
-        this.x -= 3; // Prędkość gry
+        this.x -= 2; // Prędkość gry
         
         // Punkt 13: Dynamiczne oświetlenie
         // Oblicz dystans do bąbelka, jeśli blisko -> zwiększ jasność bąbelka (symulacja w draw bąbelka jest trudna, więc tutaj dodamy efekt wizualny)

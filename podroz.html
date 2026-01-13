@@ -770,7 +770,7 @@ function loop(timestamp) {
     // Normalizacja do 60 FPS (1.0 = normalna prędkość)
     // Jeśli ekran ma 120Hz, dt wyniesie ok. 0.5. Jeśli 60Hz, ok. 1.0.
     // Ograniczenie dt, żeby gra nie "skoczyła" przy lagu (max 3 klatki)
-    let dt = Math.min(deltaTime / 25, 3);
+    let dt = Math.min(deltaTime / 20, 3);
 
     if(state.screen !== 'PLAY') {
         ctx.clearRect(0,0,width,height);
@@ -801,7 +801,7 @@ function loop(timestamp) {
     // 3. Generowanie przeszkód (na podstawie czasu, nie klatek)
     state.obstacleTimer += dt;
     // Generuj co ok. 100 jednostek czasu (ok 1.6 sekundy przy 60fps)
-    if (state.obstacleTimer > 100) {
+    if (state.obstacleTimer > 200) {
         obstacles.push(new Obstacle());
         state.obstacleTimer = 0;
     }

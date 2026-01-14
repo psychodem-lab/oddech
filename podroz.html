@@ -245,12 +245,15 @@
 
 <script>
 /**
- * Neonowa Podróż - Wersja Zsynchronizowana Czasowo (Time-Based)
- * Rozwiązuje problem przyspieszenia na ekranach 120Hz/Messengerze.
+ * ARCHITEKTURA GRY (ZMODYFIKOWANA):
+ * 1. Zastosowano Delta Time (dt) do fizyki.
+ * 2. Dodano MusicSequencer.
+ * 3. Dodano obsługę responsywności i interpolację kolorów.
  */
 
+// --- ZMIENNE GLOBALNE I KONFIGURACJA ---
 const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d', { alpha: false });
+const ctx = canvas.getContext('2d', { alpha: false }); // Optymalizacja
 
 let width, height;
 function resize() {
@@ -261,6 +264,7 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+// Stan gry
 const state = {
     screen: 'START',
     score: 0,
@@ -268,296 +272,704 @@ const state = {
     highScore: parseInt(localStorage.getItem('neonHighScore')) || 0,
     skinId: parseInt(localStorage.getItem('neonSkin')) || 0,
     unlockedSkins: JSON.parse(localStorage.getItem('neonSkinsUnlocked')) || [0],
-    stage: 0,
+    stage: 0, 
     muted: false,
+    
+    // Zmienne do logiki czasu
+    gameSpeed: 1.0,     // Mnożnik prędkości globalnej
     lastTime: 0,
     obstacleTimer: 0
 };
 
-// --- SYSTEM AUDIO ---
-const AudioSystem = {
+// --- SYSTEM AUDIO (Usprawnienie 20: Muzyka) ---
+const Audio = {
     ctx: null,
     initialized: false,
     nextNoteTime: 0,
     noteIndex: 0,
-    tempo: 120,
-    sequence: [220, 220, 0, 220, 261, 261, 0, 261, 196, 196, 0, 196, 164, 164, 196, 164],
+    tempo: 120, // BPM
+    sequence: [ // Prosta linia basowa
+        220, 220, 0, 220, 
+        261.63, 261.63, 0, 261.63, 
+        196, 196, 0, 196,
+        164.81, 164.81, 196, 164.81
+    ], 
 
-    init() {
-        if (this.initialized) return;
+    init: function() {
+        if(this.initialized) return;
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         this.initialized = true;
+        this.startAmbient(); // Szum wiatru
     },
 
-    toggleMute() {
+    toggleMute: function() {
         state.muted = !state.muted;
-        document.getElementById('mute-btn').innerText = state.muted ? '🔇' : '🔊';
-        if (this.ctx) state.muted ? this.ctx.suspend() : this.ctx.resume();
+        const btn = document.getElementById('mute-btn');
+        btn.innerText = state.muted ? '🔇' : '🔊';
+        if(this.ctx) {
+            if(state.muted) this.ctx.suspend();
+            else this.ctx.resume();
+        }
     },
 
-    playTone(freq, type, duration, vol = 0.1) {
-        if (!this.ctx || state.muted) return;
+    playTone: function(freq, type, duration, vol = 0.1) {
+        if(!this.ctx || state.muted) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = type;
         osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
         gain.gain.setValueAtTime(vol, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-        osc.connect(gain); gain.connect(this.ctx.destination);
-        osc.start(); osc.stop(this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
     },
 
-    updateMusic() {
-        if (!this.ctx || state.screen !== 'PLAY' || state.muted) return;
-        let secondsPerBeat = 60.0 / (this.tempo + state.stage * 15);
+    // Sekwencer muzyczny (Usprawnienie 20)
+    updateMusic: function(dt) {
+        if(!this.ctx || state.screen !== 'PLAY' || state.muted) return;
+        
+        // Zwiększ tempo w trudniejszych etapach
+        let currentTempo = this.tempo + (state.stage * 20);
+        let secondsPerBeat = 60.0 / currentTempo;
+        
+        // Planowanie nut z wyprzedzeniem (lookahead)
         while (this.nextNoteTime < this.ctx.currentTime + 0.1) {
             this.scheduleNote(this.noteIndex, this.nextNoteTime);
-            this.nextNoteTime += secondsPerBeat / 4;
+            this.nextNoteTime += secondsPerBeat / 4; // 16-tki
             this.noteIndex = (this.noteIndex + 1) % this.sequence.length;
         }
     },
 
-    scheduleNote(index, time) {
+    scheduleNote: function(index, time) {
         const freq = this.sequence[index];
-        if (freq > 0) {
+        if(freq > 0) {
+            // Zmiana brzmienia zależnie od etapu
+            let type = state.stage === 3 ? 'sawtooth' : (state.stage === 2 ? 'square' : 'sine');
+            let vol = state.stage === 3 ? 0.03 : 0.05;
+            
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
-            osc.type = state.stage >= 2 ? 'square' : 'sine';
+            osc.type = type;
             osc.frequency.setValueAtTime(freq, time);
-            gain.gain.setValueAtTime(0.04, time);
+            
+            // Envelope
+            gain.gain.setValueAtTime(vol, time);
             gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
-            osc.connect(gain); gain.connect(this.ctx.destination);
-            osc.start(time); osc.stop(time + 0.1);
+            
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(time);
+            osc.stop(time + 0.15);
         }
+    },
+
+    jump: function() { 
+        this.playTone(300, 'triangle', 0.1, 0.1); 
+        // Pitch bend
+        if(this.ctx && !state.muted) {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(600, this.ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(); osc.stop(this.ctx.currentTime+0.1);
+        }
+    },
+    coin: function() { this.playTone(1200, 'sine', 0.2, 0.05); setTimeout(() => this.playTone(1800, 'sine', 0.2, 0.05), 100); },
+    crash: function() { this.playTone(100, 'sawtooth', 0.5, 0.2); },
+    
+    startAmbient: function() {
+        if (!this.ctx) return;
+        const bufferSize = this.ctx.sampleRate * 2; 
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        noise.loop = true;
+        const gain = this.ctx.createGain();
+        gain.gain.value = 0.01; 
+        
+        this.filter = this.ctx.createBiquadFilter();
+        this.filter.type = 'lowpass';
+        this.filter.frequency.value = 400;
+
+        noise.connect(this.filter);
+        this.filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start();
     }
 };
 
-// --- GRAFIKA I TŁO ---
+// --- GRAFIKA (Usprawnienie 11 & 12) ---
+
 class Background {
     constructor() {
-        this.stars = Array.from({ length: 50 }, () => ({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            size: Math.random() * 2,
-            speed: Math.random() * 0.05 + 0.02 // px/ms
-        }));
-        // Warstwa paralaksy (Usprawnienie 12)
-        this.planets = Array.from({ length: 5 }, () => ({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            size: Math.random() * 30 + 10,
-            speed: 0.01 // Bardzo wolno
-        }));
-        this.colors = { top: [19, 84, 122], bot: [128, 208, 199] };
-    }
-
-    draw(ms) {
-        // Płynna zmiana kolorów (Usprawnienie 11)
-        let target = { top: [19, 84, 122], bot: [128, 208, 199] };
-        if (state.stage === 1) target = { top: [178, 69, 146], bot: [241, 95, 121] };
-        if (state.stage === 2) target = { top: [44, 62, 80], bot: [76, 161, 175] };
-        if (state.stage === 3) target = { top: [0, 0, 0], bot: [26, 11, 46] };
-
-        const lerp = (a, b, t) => a + (b - a) * t;
-        for (let i = 0; i < 3; i++) {
-            this.colors.top[i] = lerp(this.colors.top[i], target.top[i], 0.002 * ms);
-            this.colors.bot[i] = lerp(this.colors.bot[i], target.bot[i], 0.002 * ms);
+        this.stars = [];
+        // Warstwa 1: Gwiazdy
+        for(let i=0; i<60; i++) {
+            this.stars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 2,
+                speed: Math.random() * 0.5 + 0.2,
+                layer: 1
+            });
+        }
+        // Warstwa 2 (Usprawnienie 12): Odległe obiekty (wolniejsze)
+        for(let i=0; i<15; i++) {
+            this.stars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 4 + 2,
+                speed: Math.random() * 0.1 + 0.05,
+                layer: 2,
+                color: 'rgba(255,255,255,0.2)'
+            });
         }
 
+        // System kolorów (Usprawnienie 11)
+        this.colors = {
+            top: [19, 84, 122], // RGB start
+            bottom: [128, 208, 199]
+        };
+        this.targetColors = {
+            top: [19, 84, 122],
+            bottom: [128, 208, 199]
+        };
+    }
+    
+    // Funkcja lerp do płynnej zmiany
+    lerp(start, end, t) {
+        return start + (end - start) * t;
+    }
+
+    updateColor(dt) {
+        // Ustawianie celów w zależności od etapu
+        if(state.stage === 0) { // Ocean
+            this.targetColors = { top: [19, 84, 122], bottom: [128, 208, 199] };
+        } else if (state.stage === 1) { // Pustynia (Naprawa braku zmian)
+            this.targetColors = { top: [178, 69, 146], bottom: [241, 95, 121] };
+        } else if (state.stage === 2) { // Góry
+            this.targetColors = { top: [44, 62, 80], bottom: [76, 161, 175] };
+        } else { // Kosmos
+            this.targetColors = { top: [0, 0, 0], bottom: [26, 11, 46] };
+        }
+
+        // Interpolacja
+        const speed = 1.0 * dt; // Prędkość zmiany koloru
+        for(let i=0; i<3; i++) {
+            this.colors.top[i] = this.lerp(this.colors.top[i], this.targetColors.top[i], 0.01 * speed);
+            this.colors.bottom[i] = this.lerp(this.colors.bottom[i], this.targetColors.bottom[i], 0.01 * speed);
+        }
+    }
+    
+    draw(dt) {
+        this.updateColor(dt);
+        
+        // Budowanie stringa rgb
+        const cTop = `rgb(${this.colors.top[0]},${this.colors.top[1]},${this.colors.top[2]})`;
+        const cBot = `rgb(${this.colors.bottom[0]},${this.colors.bottom[1]},${this.colors.bottom[2]})`;
+
         const grad = ctx.createLinearGradient(0, 0, 0, height);
-        grad.addColorStop(0, `rgb(${this.colors.top.join(',')})`);
-        grad.addColorStop(1, `rgb(${this.colors.bot.join(',')})`);
+        grad.addColorStop(0, cTop); 
+        grad.addColorStop(1, cBot);
+        
         ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, width, height);
+        ctx.fillRect(0,0, width, height);
 
-        ctx.fillStyle = "rgba(255,255,255,0.1)";
-        this.planets.forEach(p => {
-            p.x -= p.speed * ms;
-            if (p.x + p.size < 0) p.x = width + p.size;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
-        });
-
-        ctx.fillStyle = "#fff";
+        // Rysowanie warstw (Usprawnienie 12)
         this.stars.forEach(s => {
-            s.x -= s.speed * ms;
-            if (s.x < 0) s.x = width;
-            ctx.fillRect(s.x, s.y, s.size, s.size);
+            s.x -= s.speed * dt; // Delta time movement
+            if(s.x < 0) {
+                s.x = width;
+                s.y = Math.random() * height;
+            }
+            
+            ctx.beginPath();
+            if (s.layer === 2) {
+                ctx.fillStyle = s.color;
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+            } else {
+                ctx.fillStyle = '#fff';
+                ctx.globalAlpha = Math.random() * 0.5 + 0.3;
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+            }
+            ctx.fill();
+            ctx.globalAlpha = 1;
         });
     }
 }
 
-// --- KLASY OBIEKTÓW ---
+class Particle {
+    constructor(x, y, type, color) {
+        this.x = x; this.y = y; this.type = type; this.life = 1.0; this.color = color;
+        if(type === 'shatter') {
+            this.vx = (Math.random() - 0.5) * 10;
+            this.vy = (Math.random() - 0.5) * 10;
+            this.decay = 0.02;
+        } else if (type === 'jump') {
+            this.vx = (Math.random() - 0.5) * 2;
+            this.vy = Math.random() * 2;
+            this.decay = 0.05;
+        } else if (type === 'rain') { 
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.vx = -1; // Lekki wiatr
+            this.vy = 8;  // Prędkość spadania
+            this.life = Math.random() * 0.5 + 0.5;
+            this.decay = 0.01;
+            this.radius = Math.random() * 2 + 1;
+        } else { // trail
+            this.vx = -2; this.vy = 0; this.decay = 0.05;
+        }
+    }
+    
+    update(dt) {
+        if(this.type === 'rain') {
+            this.y += this.vy * dt;
+            this.x += this.vx * dt;
+            this.life -= this.decay * dt;
+            if (this.y > height) { this.y = 0; this.x = Math.random() * width; }
+            return;
+        }
+
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.life -= this.decay * dt;
+        if(this.type === 'shatter') this.vy += 0.2 * dt; 
+    }
+    
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.life);
+        ctx.fillStyle = this.color;
+        
+        if (this.type === 'rain') {
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+        } else if (this.type === 'shatter') {
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.life * 10);
+            ctx.beginPath();
+            ctx.moveTo(0, -5); ctx.lineTo(5, 5); ctx.lineTo(-5, 5);
+            ctx.fill();
+        } else {
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.type==='jump' ? 3 : 5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+
 class Bubble {
     constructor() {
-        this.x = width * 0.25;
+        this.x = width * 0.3;
         this.y = height / 2;
         this.radius = 15;
         this.velocity = 0;
         this.hasShield = false;
-        this.trail = [];
+        this.skinColor = this.getSkinColor();
+        this.particles = [];
+        this.trailTimer = 0;
+    }
+
+    getSkinColor() {
+        const skins = ['#00f2fe', '#ff0055', '#ffff00', '#00ff00'];
+        return skins[state.skinId] || skins[0];
+    }
+
+    reset() {
+        this.y = height / 2;
+        this.velocity = 0;
+        this.hasShield = false;
+        this.skinColor = this.getSkinColor();
+        this.particles = [];
     }
 
     flap() {
-        this.velocity = -0.45; // px/ms
-        AudioSystem.playTone(300, 'triangle', 0.1);
+        this.velocity = -6; // Lekko zwiększona siła skoku dla lepszego czucia
+        Audio.jump();
+        for(let i=0; i<5; i++) {
+            this.particles.push(new Particle(this.x, this.y + this.radius, 'jump', '#fff'));
+        }
     }
 
-    update(ms) {
-        const gravity = (state.stage === 3 ? 0.012 : 0.018) * ms;
-        this.velocity += gravity;
-        this.y += this.velocity * ms;
+    update(dt) {
+        // Grawitacja (Delta Time)
+        let g = (state.stage === 3 ? 0.15 : 0.35) * dt; 
+        this.velocity += g;
+        
+        // Wiatr w górach
+        if(state.stage === 2) {
+            this.velocity += (Math.random() - 0.5) * 0.3 * dt;
+        }
 
-        if (this.y + this.radius > height) gameOver();
-        if (this.y - this.radius < 0) { this.y = this.radius; this.velocity = 0; }
+        this.y += this.velocity * dt;
 
-        // Ślad bąbelka
-        if (Math.random() > 0.5) this.trail.push({ x: this.x, y: this.y, life: 1.0 });
-        this.trail.forEach((t, i) => {
-            t.x -= 0.2 * ms;
-            t.life -= 0.005 * ms;
-            if (t.life <= 0) this.trail.splice(i, 1);
-        });
+        // Kolizja z sufitem/podłogą
+        if(this.y + this.radius > height) gameOver();
+        if(this.y - this.radius < 0) { this.y = this.radius; this.velocity = 0; }
+
+        // Ślad generowany na podstawie czasu
+        this.trailTimer += dt;
+        if(this.trailTimer > 5) { // Co ok. 5 klatek "standardowych"
+            this.particles.push(new Particle(this.x, this.y, 'trail', this.skinColor));
+            this.trailTimer = 0;
+        }
+
+        // Update cząsteczek
+        for(let i = this.particles.length - 1; i >= 0; i--) {
+            this.particles[i].update(dt);
+            if(this.particles[i].life <= 0) this.particles.splice(i, 1);
+        }
     }
 
     draw() {
-        this.trail.forEach(t => {
-            ctx.globalAlpha = t.life;
-            ctx.fillStyle = this.hasShield ? "#ff0055" : "#00f2fe";
-            ctx.beginPath(); ctx.arc(t.x, t.y, 3, 0, Math.PI * 2); ctx.fill();
-        });
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = this.hasShield ? 4 : 2;
-        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.stroke();
+        this.particles.forEach(p => p.draw());
+        ctx.save();
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.skinColor;
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.strokeStyle = this.hasShield ? '#fff' : this.skinColor;
+        ctx.lineWidth = this.hasShield ? 3 : 2; 
+        
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(this.x - 5, this.y - 5, 4, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fill();
+        ctx.restore();
+    }
+    
+    explode() {
+        Audio.crash();
+        for(let i=0; i<30; i++) {
+            globalParticles.push(new Particle(this.x, this.y, 'shatter', this.skinColor));
+        }
     }
 }
 
 class Obstacle {
     constructor() {
         this.w = 50;
-        this.gap = 170;
+        this.gap = 180; // Stała szczelina dla balansu
         this.x = width;
         this.topH = Math.random() * (height - this.gap - 100) + 50;
         this.passed = false;
-        this.item = Math.random() < 0.2 ? (Math.random() < 0.7 ? 'coin' : 'shield') : null;
+        this.item = null;
+        this.glow = false;
+
+        let rand = Math.random();
+        if (rand < 0.10) this.item = { type: 'shield', y: this.topH + this.gap/2 };
+        else if (rand < 0.35) this.item = { type: 'coin', y: this.topH + this.gap/2 };
     }
 
-    update(ms) {
-        this.x -= 0.22 * ms; // Stała prędkość 220px/s
+    update(dt) {
+        this.x -= 3.5 * dt; // Prędkość przeszkód (skalowana przez dt)
+        
+        // Dynamiczne oświetlenie (zbliżenie)
+        let dist = Math.abs(this.x - bubble.x);
+        this.glow = (dist < 150);
     }
 
     draw() {
-        ctx.fillStyle = "#444";
-        ctx.fillRect(this.x, 0, this.w, this.topH);
-        ctx.fillRect(this.x, this.topH + this.gap, this.w, height);
+        ctx.fillStyle = this.glow ? '#ff4d4d' : '#444'; 
+        ctx.strokeStyle = '#fff';
         
-        if (this.item) {
-            ctx.fillStyle = this.item === 'coin' ? "#ffd700" : "#ff0055";
-            ctx.beginPath(); ctx.arc(this.x + this.w / 2, this.topH + this.gap / 2, 10, 0, Math.PI * 2); ctx.fill();
+        // Górna rura
+        ctx.fillRect(this.x, 0, this.w, this.topH);
+        // Dolna rura
+        ctx.fillRect(this.x, height - (height - this.gap - this.topH), this.w, height - this.gap - this.topH);
+        
+        // Item
+        if(this.item) {
+            ctx.save();
+            ctx.translate(this.x + this.w/2, this.item.y);
+            if(this.item.type === 'coin') {
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#000'; ctx.fillText('$', -3, 3);
+            } else { 
+                ctx.fillStyle = '#ff0055';
+                ctx.font = '20px Arial';
+                ctx.fillText('❤️', -10, 5);
+            }
+            ctx.restore();
         }
     }
 }
 
-// --- LOGIKA GRY ---
-let bubble, bg, obstacles, animationId;
+// --- LOGIKA GŁÓWNA ---
+
+let bubble;
+let obstacles = [];
+let globalParticles = [];
+let bg;
+let animationId;
 
 function updateUI() {
     document.getElementById('scoreVal').innerText = Math.floor(state.score);
+    document.getElementById('highScoreVal').innerText = state.highScore;
     document.getElementById('coinsVal').innerText = state.coins;
+    document.getElementById('shield-icon').style.opacity = bubble.hasShield ? '1' : '0';
+    
     // Usprawnienie 19: Pasek Postępu
-    let prog = (state.score % 500) / 5;
-    document.getElementById('progress-bar-fill').style.width = prog + "%";
+    let progress = 0;
+    // Pasek liczy postęp do następnego "kamienia milowego" (500, 1000, 2000)
+    if(state.score < 500) progress = (state.score / 500) * 100;
+    else if(state.score < 1000) progress = ((state.score - 500) / 500) * 100;
+    else if(state.score < 2000) progress = ((state.score - 1000) / 1000) * 100;
+    else progress = 100; // Po 2000 zawsze pełny (kosmos)
+    
+    document.getElementById('progress-bar-fill').style.width = `${progress}%`;
+}
+
+function init() {
+    bubble = new Bubble();
+    bg = new Background();
+    obstacles = [];
+    globalParticles = [];
+    state.score = 0;
+    state.stage = 0;
+    state.lastTime = 0;
+    state.obstacleTimer = 0;
+    updateUI();
+    Audio.nextNoteTime = Audio.ctx ? Audio.ctx.currentTime + 0.1 : 0;
 }
 
 function gameOver() {
     state.screen = 'GAMEOVER';
-    AudioSystem.playTone(100, 'sawtooth', 0.5);
-    if (state.score > state.highScore) {
+    bubble.explode();
+    if(state.score > state.highScore) {
         state.highScore = Math.floor(state.score);
         localStorage.setItem('neonHighScore', state.highScore);
     }
     localStorage.setItem('neonCoins', state.coins);
+    
     document.getElementById('final-score').innerText = Math.floor(state.score);
     document.getElementById('gameover-screen').classList.remove('hidden');
+    // Kontynuuj pętlę przez chwilę dla efektu wybuchu
+    setTimeout(() => cancelAnimationFrame(animationId), 1000);
 }
 
-function startGame() {
-    AudioSystem.init();
-    bubble = new Bubble();
-    bg = new Background();
-    obstacles = [];
-    state.score = 0;
-    state.stage = 0;
-    state.obstacleTimer = 0;
-    state.screen = 'PLAY';
-    state.lastTime = performance.now();
-    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-    loop(performance.now());
-}
-
+// PĘTLA GRY Z DELTA TIME
 function loop(timestamp) {
+    if(!state.lastTime) state.lastTime = timestamp;
     const deltaTime = timestamp - state.lastTime;
     state.lastTime = timestamp;
 
-    if (state.screen !== 'PLAY') return;
+    // Normalizacja do 60 FPS (1.0 = normalna prędkość)
+    // Jeśli ekran ma 120Hz, dt wyniesie ok. 0.5. Jeśli 60Hz, ok. 1.0.
+    // Ograniczenie dt, żeby gra nie "skoczyła" przy lagu (max 3 klatki)
+    let dt = Math.min(deltaTime / 16.666, 3);
+
+    if(state.screen !== 'PLAY') {
+        ctx.clearRect(0,0,width,height);
+        bg.draw(dt * 0.2); // Tło rusza się wolno w menu
+        globalParticles.forEach(p => { p.update(dt); p.draw(); });
+        animationId = requestAnimationFrame(loop);
+        return;
+    }
 
     ctx.clearRect(0, 0, width, height);
-    bg.draw(deltaTime);
-    AudioSystem.updateMusic();
+    
+    // Logika Etapów
+    if(state.score > 500) state.stage = 1; // Pustynia
+    if(state.score > 1000) state.stage = 2; // Góry
+    if(state.score > 2000) state.stage = 3; // Kosmos
 
-    // Etapy
-    state.stage = Math.min(3, Math.floor(state.score / 500));
+    // Audio
+    Audio.updateMusic(dt);
 
-    // Generowanie przeszkód co 1600ms
-    state.obstacleTimer += deltaTime;
-    if (state.obstacleTimer > 1600) {
+    // 1. Tło
+    bg.draw(dt);
+
+    // 2. Deszcz (tylko etap 2)
+    if(state.stage === 2 && Math.random() < 0.3 * dt) { // Prawdopodobieństwo skalowane czasem
+        globalParticles.push(new Particle(0,0,'rain', '#fff'));
+    }
+
+    // 3. Generowanie przeszkód (na podstawie czasu, nie klatek)
+    state.obstacleTimer += dt;
+    // Generuj co ok. 100 jednostek czasu (ok 1.6 sekundy przy 60fps)
+    if (state.obstacleTimer > 100) {
         obstacles.push(new Obstacle());
         state.obstacleTimer = 0;
     }
 
-    for (let i = obstacles.length - 1; i >= 0; i--) {
+    // 4. Obsługa Przeszkód
+    for(let i = 0; i < obstacles.length; i++) {
         let obs = obstacles[i];
-        obs.update(deltaTime);
+        obs.update(dt);
         obs.draw();
 
-        // Kolizje
-        if (bubble.x + 10 > obs.x && bubble.x - 10 < obs.x + obs.w) {
-            if (bubble.y - 10 < obs.topH || bubble.y + 10 > obs.topH + obs.gap) {
-                if (bubble.hasShield) {
-                    bubble.hasShield = false;
-                    obs.passed = true;
-                } else if (!obs.passed) gameOver();
+        // Kolizja z Itemami
+        if(obs.item) {
+            let dx = bubble.x - (obs.x + obs.w/2);
+            let dy = bubble.y - obs.item.y;
+            if(Math.sqrt(dx*dx + dy*dy) < bubble.radius + 15) {
+                if(obs.item.type === 'coin') {
+                    state.coins++;
+                    Audio.coin();
+                } else {
+                    bubble.hasShield = true;
+                    Audio.playTone(600, 'sine', 0.3);
+                }
+                obs.item = null;
+                updateUI();
             }
         }
 
-        // Przedmioty
-        if (obs.item && Math.abs(bubble.x - (obs.x + 25)) < 25 && Math.abs(bubble.y - (obs.topH + obs.gap/2)) < 25) {
-            obs.item === 'coin' ? state.coins++ : bubble.hasShield = true;
-            obs.item = null;
-            updateUI();
+        // Kolizja z Przeszkodą
+        if (
+            bubble.x + bubble.radius > obs.x && 
+            bubble.x - bubble.radius < obs.x + obs.w && 
+            (bubble.y - bubble.radius < obs.topH || bubble.y + bubble.radius > height - (height - obs.gap - obs.topH))
+        ) {
+            if(bubble.hasShield) {
+                bubble.hasShield = false;
+                obs.passed = true;
+                bubble.velocity = 5;
+                Audio.crash();
+            } else if (!obs.passed) {
+                gameOver();
+            }
         }
 
-        if (obs.x + obs.w < 0) obstacles.splice(i, 1);
+        // Usuwanie
+        if(obs.x + obs.w < 0) {
+            obstacles.shift();
+            i--;
+        }
     }
 
-    bubble.update(deltaTime);
+    // 5. Bąbelek
+    bubble.update(dt);
     bubble.draw();
 
-    state.score += 0.01 * deltaTime;
+    // 6. Globalne cząsteczki
+    globalParticles.forEach((p, index) => {
+        p.update(dt);
+        p.draw();
+        if(p.life <= 0) globalParticles.splice(index, 1);
+    });
+
+    state.score += 0.15 * dt; // Wynik zależny od czasu
     updateUI();
 
-    if (state.screen === 'PLAY') animationId = requestAnimationFrame(loop);
+    animationId = requestAnimationFrame(loop);
 }
 
-// Input
-const handleInput = () => state.screen === 'PLAY' ? bubble.flap() : (state.screen === 'START' || state.screen === 'GAMEOVER' ? startGame() : null);
-window.addEventListener('mousedown', handleInput);
-window.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(); }, { passive: false });
-window.addEventListener('keydown', (e) => { if (e.code === 'Space' || e.code === 'ArrowUp') handleInput(); });
+// --- OBSŁUGA UI ---
 
+function startGame() {
+    Audio.init();
+    state.screen = 'PLAY';
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('gameover-screen').classList.add('hidden');
+    document.getElementById('shop-screen').classList.add('hidden');
+    init();
+    loop(0); // Reset czasu
+    bubble.flap();
+}
+
+const skinsData = [
+    {color: '#00f2fe', price: 0},
+    {color: '#ff0055', price: 50},
+    {color: '#ffff00', price: 100},
+    {color: '#00ff00', price: 200}
+];
+
+function renderShop() {
+    const grid = document.getElementById('shop-grid');
+    grid.innerHTML = '';
+    skinsData.forEach((skin, index) => {
+        const el = document.createElement('div');
+        el.className = `shop-item ${state.skinId === index ? 'active' : ''} ${!state.unlockedSkins.includes(index) ? 'locked' : ''}`;
+        el.style.backgroundColor = skin.color;
+        el.onclick = () => buySkin(index);
+        
+        if(!state.unlockedSkins.includes(index)) {
+            el.innerHTML = `<div class="price-tag">${skin.price}💎</div>`;
+        }
+        grid.appendChild(el);
+    });
+}
+
+function buySkin(index) {
+    if(state.unlockedSkins.includes(index)) {
+        state.skinId = index;
+        localStorage.setItem('neonSkin', index);
+        renderShop();
+    } else {
+        if(state.coins >= skinsData[index].price) {
+            state.coins -= skinsData[index].price;
+            state.unlockedSkins.push(index);
+            state.skinId = index;
+            localStorage.setItem('neonCoins', state.coins);
+            localStorage.setItem('neonSkinsUnlocked', JSON.stringify(state.unlockedSkins));
+            localStorage.setItem('neonSkin', index);
+            updateUI();
+            renderShop();
+        } else {
+            alert("Za mało diamentów!");
+        }
+    }
+}
+
+document.getElementById('btn-share').onclick = async () => {
+    const text = `Mój rekord w Neon Trip to ${state.highScore}m! Zagraj ze mną!`;
+    if (navigator.share) {
+        try { await navigator.share({ title: 'Neon Trip', text: text, url: window.location.href }); } catch(e) {}
+    } else {
+        navigator.clipboard.writeText(text);
+        const notif = document.getElementById('notification');
+        notif.style.opacity = 1;
+        setTimeout(() => notif.style.opacity = 0, 2000);
+    }
+};
+
+// Event Listeners
 document.getElementById('btn-start').onclick = startGame;
 document.getElementById('btn-restart').onclick = startGame;
-document.getElementById('mute-btn').onclick = (e) => { e.stopPropagation(); AudioSystem.toggleMute(); };
+document.getElementById('mute-btn').onclick = () => Audio.toggleMute();
+document.getElementById('btn-shop').onclick = () => {
+    state.screen = 'SHOP';
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('shop-screen').classList.remove('hidden');
+    renderShop();
+};
+document.getElementById('btn-back').onclick = () => {
+    state.screen = 'START';
+    document.getElementById('shop-screen').classList.add('hidden');
+    document.getElementById('start-screen').classList.remove('hidden');
+};
+
+window.addEventListener('mousedown', (e) => {
+    if(state.screen === 'PLAY') bubble.flap();
+});
+window.addEventListener('keydown', (e) => {
+    if(e.code === 'Space' || e.code === 'ArrowUp') { // Dodano strzałkę
+        if(state.screen === 'PLAY') bubble.flap();
+        else if (state.screen !== 'SHOP') startGame();
+    }
+});
+window.addEventListener('touchstart', (e) => {
+    if(state.screen === 'PLAY') {
+        e.preventDefault();
+        bubble.flap();
+    }
+}, {passive: false});
+
 </script>
 </body>
 </html>

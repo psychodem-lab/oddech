@@ -65,7 +65,6 @@
             position: relative;
         }
 
-        /* MODAL STYLES */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -321,8 +320,18 @@
 </div>
 
 <script>
-    const vowelsWeighted = "AAAAAAAĄEEEEEEEĘIIIIIIIIOOOOOÓUUUUYYY";
-    const consonantsWeighted = "BBCCĆDDFFGGHHJJKKLLŁŁMMMNNNNNŃPPPPQRRRRRSSŚŚTTTWWWWVXXZZZŹŻ";
+    // POPRAWIONE WAGI: Więcej popularnych liter
+    const vowelsWeighted = "AAAAAAAAAEEEEEEEEIIIIIIOOOOOOÓUUYY"; 
+    const consonantsWeighted = "BBCCCCDDDDFFGGHHHHJJKKKLLLLŁŁŁMMMMNNNNNNPPPPPRRRRRSSSSSTTTTTWWWWWWZZZZZ";
+    
+    // Baza słów gwarantujących możliwość ułożenia czegoś sensownego
+    const seedWords = [
+        "KLAWIATURA", "CZEKOLADA", "KOMPUTER", "POZIOMKA", "PRZYGODA", 
+        "SŁONECZKO", "TELEWIZOR", "PIELĘGNACJA", "WSZECHŚWIAT", "PROJEKTANT",
+        "MIESZKANIE", "TRUSKAWKA", "PAMIĘTNIK", "SAMOCHÓD", "RESTAURACJA",
+        "KRAJOBRAZ", "PODRÓŻNIK", "FILIŻANKA", "BALONIK", "DRZEWO"
+    ];
+
     const letterScores = {
         'A':1, 'I':1, 'E':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1,
         'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2,
@@ -335,7 +344,8 @@
         pool: [],
         found: [],
         score: 0,
-        isDaily: false
+        isDaily: false,
+        date: ""
     };
 
     let usedIndices = [];
@@ -395,13 +405,11 @@
             const span = document.createElement('span');
             span.className = 'word-tag' + (word.length >= 6 ? ' gold' : '');
             span.innerHTML = `${word} <small>(${wordPts})</small>`;
-            // DODANE: Obsługa kliknięcia w słowo, by pokazać definicję
             span.onclick = () => showDefinition(word);
             list.prepend(span);
         });
     }
 
-    // --- LOGIKA DEFINICJI (SJP.PL) ---
     async function showDefinition(word) {
         const modal = document.getElementById('defModal');
         const title = document.getElementById('defTitle');
@@ -424,7 +432,6 @@
             paragraphs.forEach(p => {
                 if (p.style.margin === "0.5em 0px" || p.innerHTML.includes("<b>znaczenie:</b>")) {
                     let clone = p.cloneNode(true);
-                    
                     clone.querySelectorAll('a').forEach(a => {
                         const txt = document.createTextNode(a.innerText);
                         a.parentNode.replaceChild(txt, a);
@@ -445,7 +452,7 @@
                 body.innerHTML = "Słowo jest dopuszczalne, ale baza SJP.pl nie posiada jeszcze opisu dla tej formy.";
             }
         } catch (e) {
-            body.innerText = "Błąd połączenia z bazą danych SJP. Proszę sprawdzić połączenie internetowe.";
+            body.innerText = "Błąd połączenia z bazą danych SJP.";
         }
     }
 
@@ -453,7 +460,6 @@
         document.getElementById('defModal').style.display = "none";
     }
 
-    // --- LOGIKA GRY ---
     function startNewGame() {
         const todayStr = new Date().toISOString().slice(0,10);
         let randomFunc = Math.random;
@@ -468,9 +474,23 @@
         state.date = todayStr;
         
         let tempPool = [];
-        const numVowels = Math.floor(randomFunc() * 2) + 3;
-        for(let i=0; i<numVowels; i++) tempPool.push(vowelsWeighted[Math.floor(randomFunc() * vowelsWeighted.length)]);
-        while(tempPool.length < 10) tempPool.push(consonantsWeighted[Math.floor(randomFunc() * consonantsWeighted.length)]);
+        
+        // ZMIANA: Losowanie słowa-bazy dla ułatwienia
+        const seedWord = seedWords[Math.floor(randomFunc() * seedWords.length)];
+        const charsFromSeed = seedWord.toUpperCase().split('');
+        
+        // Wybierz 7 losowych liter z wybranego słowa
+        for(let i=0; i<7; i++) {
+            const idx = Math.floor(randomFunc() * charsFromSeed.length);
+            tempPool.push(charsFromSeed.splice(idx, 1)[0]);
+        }
+
+        // Dopełnij 3 litery całkowicie losowo
+        while(tempPool.length < 10) {
+            const isVowel = randomFunc() > 0.6;
+            const src = isVowel ? vowelsWeighted : consonantsWeighted;
+            tempPool.push(src[Math.floor(randomFunc() * src.length)]);
+        }
         
         tempPool.sort(() => randomFunc() - 0.5);
         state.pool = tempPool.map((char, i) => ({ char, pts: letterScores[char] || 1 }));
@@ -536,13 +556,13 @@
     function shareResult() {
         const goldCount = state.found.filter(w => w.length >= 6).length;
         const appUrl = window.location.href;
-        const text = `🧩 Słowne Wyzwanie: ${state.isDaily ? 'Wyzwanie Dnia' : 'Trening'}\n` +
+        const text = `🧩 Literak: ${state.isDaily ? 'Wyzwanie Dnia' : 'Trening'}\n` +
                      `🏆 Wynik: ${state.score} pkt\n` +
                      `✍️ Słowa: ${state.found.length} (Złote: ${goldCount})\n` +
                      `🔗 Zagraj tutaj: ${appUrl}`;
         
         if (navigator.share) {
-            navigator.share({ title: 'Mój wynik w Słowne Wyzwanie', text: text });
+            navigator.share({ title: 'Mój wynik w Literak', text: text });
         } else {
             navigator.clipboard.writeText(text).then(() => updateMsg("Skopiowano do schowka!", "var(--primary)"));
         }

@@ -64,9 +64,9 @@
             background: var(--cell-filled); border-radius: 4px; 
         }
 
-        .actions { display: flex; gap: 10px; margin-top: 10px; }
+        .actions { display: flex; gap: 15px; margin-top: 10px; }
         .btn {
-            background: #2a2a35; border: none; color: white; padding: 12px 20px; 
+            background: #2a2a35; border: none; color: white; padding: 12px 25px; 
             border-radius: 50px; cursor: pointer; font-size: 0.9rem; font-weight: bold;
             transition: background 0.2s, transform 0.1s;
         }
@@ -78,9 +78,15 @@
             border-radius: 2px; z-index: 100;
         }
 
+        /* MODAL KONIEC GRY */
         #game-over {
             position: fixed; inset: 0; background: rgba(0,0,0,0.95);
             display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 3000;
+        }
+
+        .share-btn {
+            background: transparent; border: 2px solid var(--cell-filled); color: var(--cell-filled);
+            margin-top: 15px;
         }
 
         @media (max-width: 500px) {
@@ -102,13 +108,13 @@
     <div class="actions">
         <button class="btn" id="undo-btn" onclick="undoMove()">↩ Cofnij</button>
         <button class="btn" id="refresh-btn" onclick="refreshPieces()">♻ Nowe (1)</button>
-        <button class="btn" onclick="shareScore()">📤 Wynik</button>
     </div>
 
     <div id="game-over">
         <h1 style="color:var(--cell-filled); font-size: 3rem; margin: 0;">KONIEC</h1>
         <p id="final-score" style="font-size: 1.5rem; margin: 10px 0 30px 0;">Twój wynik: 0</p>
         <button class="btn" onclick="location.reload()" style="background:var(--cell-filled); color: #000; padding: 20px 40px; font-size: 1.2rem;">ZAGRAJ PONOWNIE</button>
+        <button class="btn share-btn" onclick="shareScore()">📤 Udostępnij wynik</button>
     </div>
 
 <script>
@@ -118,7 +124,7 @@
     let score = 0;
     let refreshesLeft = 1;
     let isDragging = false;
-    let currentPieces = []; // Przechowuje aktualne macierze klocków w doku
+    let currentPieces = [];
 
     const todaySeed = parseInt(new Date().toISOString().slice(0,10).replace(/-/g,""));
     let currentSeed = todaySeed;
@@ -187,7 +193,7 @@
             currentPieces[index] = rotated;
             piece.remove();
             createPieceElement(rotated, index);
-            checkGameOver(); // Sprawdź czy po rotacji gra jest możliwa
+            checkGameOver();
         };
 
         setupDrag(piece, index);
@@ -221,7 +227,7 @@
                 saveState();
                 placePiece(currentPieces[index], g.x, g.y);
                 el.remove();
-                currentPieces[index] = null; // Oznacz ten slot jako pusty
+                currentPieces[index] = null;
                 checkLogic();
             } else {
                 el.style.position = 'static';
@@ -250,10 +256,10 @@
     function getGridPos(el) {
         const b = boardEl.getBoundingClientRect();
         const r = el.getBoundingClientRect();
-        const cs = b.width / 9;
+        const cs = (b.width - 16) / 9; // 16 to padding
         return {
-            x: Math.round((r.left - b.left) / cs),
-            y: Math.round((r.top - b.top) / cs)
+            x: Math.round((r.left - b.left - 8) / cs),
+            y: Math.round((r.top - b.top - 8) / cs)
         };
     }
 
@@ -280,10 +286,12 @@
 
     function checkLogic() {
         let toClear = new Set();
+        // Sprawdź linie pionowe i poziome
         for(let i=0; i<9; i++) {
             if(boardState[i].every(v => v)) for(let x=0; x<9; x++) toClear.add(`${x},${i}`);
             if(boardState.every(r => r[i])) for(let y=0; y<9; y++) toClear.add(`${i},${y}`);
         }
+        // Sprawdź kwadraty 3x3
         for(let r=0; r<3; r++) {
             for(let c=0; c<3; c++) {
                 let full = true;
@@ -308,34 +316,29 @@
             setTimeout(renderBoard, 250);
         }
         
-        if(currentPieces.every(p => p === null)) {
-            spawnPieces();
-        } else {
-            checkGameOver();
-        }
+        if(currentPieces.every(p => p === null)) spawnPieces();
+        else checkGameOver();
+        
         updateUI();
     }
 
     function checkGameOver() {
         let possible = false;
-        // Sprawdź każdy dostępny klocek w doku
         currentPieces.forEach(matrix => {
             if(!matrix) return;
-            // Sprawdź każdą możliwą komórkę na planszy
             for(let y = 0; y < 9; y++) {
                 for(let x = 0; x < 9; x++) {
-                    if(canPlace(matrix, x, y)) {
-                        possible = true;
-                        break;
-                    }
+                    if(canPlace(matrix, x, y)) { possible = true; break; }
                 }
                 if(possible) break;
             }
         });
 
         if(!possible) {
-            document.getElementById('final-score').innerText = `Twój wynik: ${score}`;
-            document.getElementById('game-over').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('final-score').innerText = `Twój wynik: ${score}`;
+                document.getElementById('game-over').style.display = 'flex';
+            }, 500);
         }
     }
 
@@ -346,11 +349,8 @@
     function undoMove() {
         if(!lastState) return;
         const data = JSON.parse(lastState);
-        boardState = data.b; 
-        score = data.s;
-        currentPieces = data.p;
+        boardState = data.b; score = data.s; currentPieces = data.p;
         lastState = null;
-        
         renderBoard();
         dockEl.innerHTML = '';
         currentPieces.forEach((m, i) => { if(m) createPieceElement(m, i); });
@@ -358,17 +358,19 @@
     }
 
     function refreshPieces() {
-        if(refreshesLeft > 0) {
-            spawnPieces(); 
-            refreshesLeft--; 
-            updateUI();
-        }
+        if(refreshesLeft > 0) { spawnPieces(); refreshesLeft--; updateUI(); }
     }
 
     function shareScore() {
-        const text = `BLOCK MASTER: ${score} pkt! 🧩 Spróbuj pobić mój wynik!`;
-        navigator.clipboard.writeText(text);
-        alert("Wynik skopiowany do schowka!");
+        const gameUrl = window.location.href;
+        const text = `BLOCK MASTER 🧩\nZdobylem ${score} punktów! Poczuj ten miętowy flow i spróbuj mnie pobić:\n${gameUrl}`;
+        
+        if (navigator.share) {
+            navigator.share({ title: 'Block Master', text: text, url: gameUrl });
+        } else {
+            navigator.clipboard.writeText(text);
+            alert("Wynik i link do gry skopiowane do schowka!");
+        }
     }
 
     function updateUI() {
@@ -380,13 +382,13 @@
 
     function createParticles(x, y) {
         const b = boardEl.getBoundingClientRect();
-        const cs = b.width / 9;
+        const cs = (b.width - 16) / 9;
         for(let i=0; i<6; i++) {
             const p = document.createElement('div');
             p.className = 'particle';
             p.style.width = p.style.height = Math.random() * 6 + 2 + 'px';
-            p.style.left = b.left + (x * cs) + cs/2 + 'px';
-            p.style.top = b.top + (y * cs) + cs/2 + 'px';
+            p.style.left = b.left + 8 + (x * cs) + cs/2 + 'px';
+            p.style.top = b.top + 8 + (y * cs) + cs/2 + 'px';
             document.body.appendChild(p);
             const a = Math.random() * Math.PI * 2;
             const d = Math.random() * 60 + 20;

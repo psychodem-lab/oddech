@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>9x9 Block Puzzle</title>
+    <title>9x9 Block Puzzle Pro</title>
     <style>
         :root {
-            --bg-color: #1a1a2e;
-            --board-bg: #16213e;
-            --cell-empty: #0f3460;
-            --cell-filled: #e94560;
-            --text-color: #ffffff;
+            --bg-color: #121212;
+            --board-bg: #1e1e24;
+            --cell-empty: #2a2a35;
+            --cell-filled: #4ecca3; /* Nowoczesny turkus/mięta */
+            --cell-ghost: rgba(78, 204, 163, 0.3); /* Półprzezroczysty kolor wypełnienia */
+            --text-color: #eeeeee;
             --gap: 4px;
-            --cell-size: 40px; /* Bazowy rozmiar na desktop */
+            /* Kluczowe: Jedna zmienna kontrolująca wielkość wszystkich pól w grze */
+            --cell-size: 40px; 
         }
 
         body {
@@ -25,117 +27,143 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
-            overflow: hidden; /* Zapobiega przewijaniu przy przeciąganiu */
+            overflow: hidden;
             user-select: none;
+            touch-action: none; /* Zapobiega systemowym gestom na całej stronie */
         }
 
-        h1 { margin: 10px 0; font-weight: 300; letter-spacing: 2px; }
-        .score-box { font-size: 1.5rem; margin-bottom: 20px; font-weight: bold; }
+        h1 { margin: 10px 0; font-weight: 300; letter-spacing: 1px; font-size: 1.2rem; opacity: 0.7;}
+        .score-box { font-size: 2rem; margin-bottom: 20px; font-weight: 700; color: var(--cell-filled); }
 
-        /* PLANSZA */
+        /* PLANSZA GŁÓWNA */
         .game-board {
             display: grid;
-            grid-template-columns: repeat(9, 1fr);
-            grid-template-rows: repeat(9, 1fr);
+            grid-template-columns: repeat(9, var(--cell-size));
+            grid-template-rows: repeat(9, var(--cell-size));
             gap: var(--gap);
             background-color: var(--board-bg);
             padding: 10px;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: fit-content;
+            /* Zapewnia, że plansza nie zmienia rozmiaru */
+            width: calc(9 * var(--cell-size) + 8 * var(--gap) + 20px); 
+            height: calc(9 * var(--cell-size) + 8 * var(--gap) + 20px);
+            box-sizing: border-box;
         }
 
         .cell {
-            width: var(--cell-size);
-            height: var(--cell-size);
+            width: 100%; /* Wypełnia komórkę gridu */
+            height: 100%;
             background-color: var(--cell-empty);
             border-radius: 4px;
-            transition: background-color 0.2s, transform 0.2s;
+            transition: background-color 0.1s ease-in-out;
         }
 
         .cell.filled {
             background-color: var(--cell-filled);
-            box-shadow: 0 0 10px var(--cell-filled);
+            box-shadow: inset 0 0 5px rgba(255,255,255,0.2);
+        }
+        
+        /* Styl dla Ghost Piece */
+        .cell.ghost {
+            background-color: var(--cell-ghost);
+            border: 2px solid var(--cell-filled);
+            box-sizing: border-box; /* Aby obramowanie nie powiększało komórki */
         }
         
         /* Animacja usuwania */
         .cell.clearing {
-            animation: flash 0.3s ease-out;
+            animation: flash 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
 
         @keyframes flash {
-            0% { transform: scale(1); background-color: #fff; }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(0); }
+            0% { transform: scale(1); background-color: #fff; opacity: 1;}
+            100% { transform: scale(0.5); background-color: var(--cell-filled); opacity: 0; }
         }
 
-        /* POJEMNIK NA KLOCKI (DOCK) */
+        /* DOCK (Pojemnik na klocki do wyboru) */
         .pieces-container {
             display: flex;
-            justify-content: center;
+            justify-content: space-around; /* Równomierne rozłożenie */
             align-items: center;
-            gap: 30px;
-            margin-top: 30px;
-            min-height: 100px;
+            gap: 20px;
+            margin-top: 40px;
+            min-height: calc(4 * var(--cell-size)); /* Wysokość na największy klocek */
             width: 100%;
+            max-width: 600px;
+            padding: 0 20px;
+            box-sizing: border-box;
         }
 
+        /* KLOCEK PRZECIĄGANY */
         .draggable-piece {
             display: grid;
-            gap: 2px;
+            gap: var(--gap);
             cursor: grab;
-            touch-action: none; /* Kluczowe dla dotyku */
+            touch-action: none;
             transition: transform 0.1s;
+            /* Wyśrodkowanie w doku */
+            align-self: center;
+            justify-self: center;
         }
         
-        .draggable-piece:active { cursor: grabbing; transform: scale(1.1); }
+        .draggable-piece:active { cursor: grabbing; }
 
+        /* KOMÓRKA KLOCKA PRZECIĄGANEGO */
         .piece-cell {
-            width: 25px;
-            height: 25px;
+            /* Kluczowa zmiana: używamy tej samej wielkości co plansza */
+            width: var(--cell-size);
+            height: var(--cell-size);
             background-color: var(--cell-filled);
-            border-radius: 2px;
-            pointer-events: none; /* Mysz przelatuje przez komórki do kontenera */
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            pointer-events: none; 
         }
-        
-        .hidden { opacity: 0; pointer-events: none; }
 
         /* GAME OVER MODAL */
         #game-over {
-            position: absolute;
+            position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
+            background: rgba(18, 18, 18, 0.95);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 100;
-            display: none;
+            z-index: 2000;
+            display: none; /* Domyślnie ukryty */
         }
         
         button {
-            padding: 15px 30px;
+            padding: 15px 40px;
             font-size: 1.2rem;
             background: var(--cell-filled);
-            color: white;
+            color: var(--bg-color);
+            font-weight: bold;
             border: none;
-            border-radius: 8px;
+            border-radius: 50px;
             cursor: pointer;
-            margin-top: 20px;
+            margin-top: 30px;
+            transition: transform 0.1s, filter 0.1s;
         }
+        button:hover { filter: brightness(1.1); }
+        button:active { transform: scale(0.95); }
 
-        /* Responsywność dla mobile */
-        @media (max-width: 500px) {
-            :root { --cell-size: 9vw; } /* Skalowanie do szerokości ekranu */
-            .game-board { padding: 5px; gap: 2px; }
-            .pieces-container { gap: 10px; margin-top: 20px; }
-            .piece-cell { width: 18px; height: 18px; }
+        /* Responsywność */
+        @media (max-width: 600px) {
+            /* Na mobilkach obliczamy rozmiar komórki na podstawie szerokości ekranu */
+            :root { 
+                --cell-size: calc((100vw - 60px) / 9); /* 60px to marginesy i odstępy */
+                --gap: 3px;
+            } 
+            .pieces-container { margin-top: 20px; gap: 10px;}
+            .score-box { font-size: 1.5rem; margin-bottom: 10px; }
         }
     </style>
 </head>
 <body>
 
-    <div id="score-display" class="score-box">Wynik: 0</div>
+    <h1>BLOCK PUZZLE 9x9</h1>
+    <div id="score-display" class="score-box">0</div>
 
     <div class="game-board" id="board">
         </div>
@@ -144,33 +172,29 @@
         </div>
 
     <div id="game-over">
-        <h1>Koniec Gry</h1>
-        <p id="final-score">Twój wynik: 0</p>
+        <h2 style="font-size: 3rem; margin-bottom: 0; color: var(--cell-filled)">KONIEC GRY</h2>
+        <p id="final-score" style="font-size: 1.5rem; margin-top: 10px;">Twój wynik: 0</p>
         <button onclick="initGame()">Zagraj ponownie</button>
     </div>
 
 <script>
     // --- KONFIGURACJA I DANE ---
     const BOARD_SIZE = 9;
-    let boardState = []; // 0 = puste, 1 = zajęte
+    let boardState = []; 
     let score = 0;
     
-    // Definicje kształtów (proste macierze 0/1)
+    // Zmienne globalne do obsługi przeciągania i ghost piece
+    let currentDraggedMatrix = null;
+    let dragOffset = { x: 0, y: 0 };
+    let boardRect = null;
+    let cellSizePx = 0;
+    
     const SHAPES = [
-        [[1]], // 1x1
-        [[1,1]], // 2x1
-        [[1],[1]], // 1x2
-        [[1,1,1]], // 3x1
-        [[1],[1],[1]], // 1x3
-        [[1,1],[1,1]], // 2x2
-        [[1,1,1],[0,1,0]], // T
-        [[0,1,0],[1,1,1]], // T odwrócone
-        [[1,0],[1,0],[1,1]], // L
-        [[0,1],[0,1],[1,1]], // J
-        [[1,1,0],[0,1,1]], // Z
-        [[0,1,1],[1,1,0]], // S
-        [[1,1,1,1]], // 4x1
-        [[1],[1],[1],[1]] // 1x4
+        [[1]], [[1,1]], [[1],[1]], [[1,1,1]], [[1],[1],[1]], 
+        [[1,1],[1,1]], [[1,1,1],[0,1,0]], [[0,1,0],[1,1,1]], 
+        [[1,0],[1,0],[1,1]], [[0,1],[0,1],[1,1]], [[0,0,1],[0,0,1],[1,1,1]], [[1,0,0],[1,0,0],[1,1,1]],
+        [[1,1,0],[0,1,1]], [[0,1,1],[1,1,0]], [[1,1,1,1]], [[1],[1],[1],[1]],
+        [[1,1,1],[1,0,0],[1,0,0]]
     ];
 
     const boardEl = document.getElementById('board');
@@ -184,11 +208,23 @@
         score = 0;
         updateScore(0);
         gameOverEl.style.display = 'none';
-        
-        // Reset planszy
         boardState = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
         renderBoard();
+        // Cache'ujemy wymiary planszy po renderze
+        resizeHandler();
         spawnPieces();
+        window.addEventListener('resize', resizeHandler);
+    }
+
+    function resizeHandler() {
+        boardRect = boardEl.getBoundingClientRect();
+        // Obliczamy rzeczywisty rozmiar komórki w pikselach (uwzględniając gap)
+        cellSizePx = (boardRect.width - (BOARD_SIZE -1) * getGapSize() - 20) / BOARD_SIZE;
+    }
+    
+    function getGapSize() {
+         // Pobieramy aktualną wartość gap z CSS (może się różnić na mobile/desktop)
+        return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap')) || 4;
     }
 
     function renderBoard() {
@@ -197,8 +233,8 @@
             row.forEach((val, x) => {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
-                cell.dataset.x = x;
-                cell.dataset.y = y;
+                // Używamy atrybutów data- do łatwego znajdowania komórek dla ghosta
+                cell.setAttribute('data-coord', `${x},${y}`);
                 if (val === 1) cell.classList.add('filled');
                 boardEl.appendChild(cell);
             });
@@ -207,20 +243,20 @@
 
     function spawnPieces() {
         dockEl.innerHTML = '';
-        // Losujemy 3 klocki
         for (let i = 0; i < 3; i++) {
             const shapeMatrix = SHAPES[Math.floor(Math.random() * SHAPES.length)];
             createDraggablePiece(shapeMatrix);
         }
-        checkGameOver();
+        checkGameOverByAvailableMoves();
     }
 
     function createDraggablePiece(matrix) {
         const pieceContainer = document.createElement('div');
         pieceContainer.classList.add('draggable-piece');
-        pieceContainer.style.gridTemplateColumns = `repeat(${matrix[0].length}, 1fr)`;
+        // Ustawiamy grid klocka, aby pasował do jego kształtu
+        pieceContainer.style.gridTemplateColumns = `repeat(${matrix[0].length}, var(--cell-size))`;
+        pieceContainer.style.gridTemplateRows = `repeat(${matrix.length}, var(--cell-size))`;
         
-        // Generowanie wizualne klocka
         matrix.forEach(row => {
             row.forEach(val => {
                 const cell = document.createElement('div');
@@ -229,201 +265,242 @@
             });
         });
 
-        // Obsługa Drag & Drop
+        // --- OBSŁUGA DRAG & DROP + GHOST ---
         let isDragging = false;
-        let startX, startY, initialLeft, initialTop;
 
         const startDrag = (e) => {
-            e.preventDefault(); // Zapobiegaj scrollowaniu na mobile
+            e.preventDefault();
             isDragging = true;
-            
-            // Pobranie pozycji
+            currentDraggedMatrix = matrix; // Zapisz jaki kształt ciągniemy
+
             const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-            
             const rect = pieceContainer.getBoundingClientRect();
-            startX = clientX - rect.left;
-            startY = clientY - rect.top;
+            
+            // Zapisz offset myszki względem lewego górnego rogu klocka
+            dragOffset.x = clientX - rect.left;
+            dragOffset.y = clientY - rect.top;
 
+            // Przygotuj klocek do lotu
             pieceContainer.style.position = 'fixed';
             pieceContainer.style.zIndex = 1000;
-            pieceContainer.style.width = rect.width + 'px'; // Zamroź szerokość
+            // Kluczowe: zachowaj szerokość podczas przeciągania, aby się nie rozjechał
+            pieceContainer.style.width = rect.width + 'px'; 
+            pieceContainer.style.height = rect.height + 'px';
             
             movePiece(clientX, clientY);
+            
+            // Dodaj nasłuchiwacze ruchu globalnie
+            document.addEventListener(e.type.includes('touch') ? 'touchmove' : 'mousemove', moveDrag, {passive: false});
+            document.addEventListener(e.type.includes('touch') ? 'touchend' : 'mouseup', endDrag);
         };
 
         const moveDrag = (e) => {
             if (!isDragging) return;
+            e.preventDefault();
             const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
             movePiece(clientX, clientY);
+
+            // --- GHOST PIECE LOGIC ---
+            clearGhosts(); // Wyczyść poprzednie cienie
+            const gridPos = calculateGridPosition(pieceContainer);
+            if (canPlace(matrix, gridPos.x, gridPos.y)) {
+                showGhost(matrix, gridPos.x, gridPos.y);
+            }
         };
 
         const movePiece = (x, y) => {
-            pieceContainer.style.left = (x - startX) + 'px';
-            pieceContainer.style.top = (y - startY) + 'px';
+            // Przesuń klocek uwzględniając początkowy offset chwytu
+            pieceContainer.style.left = (x - dragOffset.x) + 'px';
+            pieceContainer.style.top = (y - dragOffset.y) + 'px';
         };
 
         const endDrag = (e) => {
             if (!isDragging) return;
             isDragging = false;
+            clearGhosts(); // Zawsze czyść cienie po upuszczeniu
 
-            // Sprawdzenie gdzie upuszczono
-            const boardRect = boardEl.getBoundingClientRect();
-            const pieceRect = pieceContainer.getBoundingClientRect();
-            
-            // Oblicz pozycję lewego górnego rogu klocka względem siatki
-            // Używamy środka pierwszej komórki klocka dla precyzji
-            const cellSize = boardRect.width / BOARD_SIZE;
-            
-            const relativeX = pieceRect.left - boardRect.left + (cellSize / 2);
-            const relativeY = pieceRect.top - boardRect.top + (cellSize / 2);
+            document.removeEventListener(e.type.includes('touch') ? 'touchmove' : 'mousemove', moveDrag);
+            document.removeEventListener(e.type.includes('touch') ? 'touchend' : 'mouseup', endDrag);
 
-            const gridX = Math.floor(relativeX / cellSize);
-            const gridY = Math.floor(relativeY / cellSize);
+            const gridPos = calculateGridPosition(pieceContainer);
 
-            if (canPlace(matrix, gridX, gridY)) {
-                placePiece(matrix, gridX, gridY);
-                pieceContainer.remove(); // Usuń klocek z docka
+            if (canPlace(matrix, gridPos.x, gridPos.y)) {
+                placePiece(matrix, gridPos.x, gridPos.y);
+                pieceContainer.remove();
                 afterMove();
             } else {
-                // Powrót na miejsce (reset stylów)
+                // Reset pozycji (powrót do docka)
                 pieceContainer.style.position = 'static';
                 pieceContainer.style.zIndex = 'auto';
                 pieceContainer.style.width = 'auto';
-                pieceContainer.style.left = 'auto';
-                pieceContainer.style.top = 'auto';
+                pieceContainer.style.height = 'auto';
+                pieceContainer.style.left = 'auto'; pieceContainer.style.top = 'auto';
             }
+            currentDraggedMatrix = null;
         };
 
-        // Event Listeners (Mouse & Touch)
         pieceContainer.addEventListener('mousedown', startDrag);
-        document.addEventListener('mousemove', moveDrag);
-        document.addEventListener('mouseup', endDrag);
-
         pieceContainer.addEventListener('touchstart', startDrag, {passive: false});
-        document.addEventListener('touchmove', moveDrag, {passive: false});
-        document.addEventListener('touchend', endDrag);
-
         dockEl.appendChild(pieceContainer);
+    }
+
+    // --- POMOCNIKI GHOST I POZYCJI ---
+
+    // Oblicza pozycję w siatce na podstawie położenia klocka względem planszy
+    function calculateGridPosition(pieceEl) {
+        if(!boardRect) resizeHandler();
+        const pieceRect = pieceEl.getBoundingClientRect();
+        const gap = getGapSize();
+        const effectiveCellSize = cellSizePx + gap;
+
+        // Obliczamy pozycję lewego górnego rogu klocka względem wnętrza planszy (pomijając padding)
+        const relativeX = pieceRect.left - (boardRect.left + 10);
+        const relativeY = pieceRect.top - (boardRect.top + 10);
+
+        // Dodajemy połowę rozmiaru komórki dla lepszego "przyciągania" do środka pola
+        const gridX = Math.round(relativeX / effectiveCellSize);
+        const gridY = Math.round(relativeY / effectiveCellSize);
+
+        return { x: gridX, y: gridY };
+    }
+
+    function showGhost(matrix, startX, startY) {
+        iterateMatrix(matrix, startX, startY, (x, y) => {
+             const cell = document.querySelector(`.cell[data-coord="${x},${y}"]`);
+             if (cell) cell.classList.add('ghost');
+        });
+    }
+
+    function clearGhosts() {
+        document.querySelectorAll('.cell.ghost').forEach(cell => cell.classList.remove('ghost'));
+    }
+
+    // Pomocnik do iteracji po macierzy klocka
+    function iterateMatrix(matrix, startX, startY, callback) {
+        for (let y = 0; y < matrix.length; y++) {
+            for (let x = 0; x < matrix[y].length; x++) {
+                if (matrix[y][x] === 1) {
+                    callback(startX + x, startY + y);
+                }
+            }
+        }
     }
 
     // --- LOGIKA PLANSZY ---
 
     function canPlace(matrix, startX, startY) {
-        for (let y = 0; y < matrix.length; y++) {
-            for (let x = 0; x < matrix[y].length; x++) {
-                if (matrix[y][x] === 1) {
-                    const boardX = startX + x;
-                    const boardY = startY + y;
-                    
-                    // Sprawdź czy mieści się w granicach
-                    if (boardX < 0 || boardX >= BOARD_SIZE || boardY < 0 || boardY >= BOARD_SIZE) return false;
-                    // Sprawdź czy pole nie jest już zajęte
-                    if (boardState[boardY][boardX] === 1) return false;
-                }
-            }
-        }
-        return true;
+        let can = true;
+        iterateMatrix(matrix, startX, startY, (boardX, boardY) => {
+             if (boardX < 0 || boardX >= BOARD_SIZE || boardY < 0 || boardY >= BOARD_SIZE || boardState[boardY][boardX] === 1) {
+                 can = false;
+             }
+        });
+        return can;
     }
 
     function placePiece(matrix, startX, startY) {
-        for (let y = 0; y < matrix.length; y++) {
-            for (let x = 0; x < matrix[y].length; x++) {
-                if (matrix[y][x] === 1) {
-                    boardState[startY + y][startX + x] = 1;
-                }
-            }
-        }
-        renderBoard(); // Odśwież widok
-        updateScore(score + 10); // Punkty za postawienie
+        iterateMatrix(matrix, startX, startY, (boardX, boardY) => {
+            boardState[boardY][boardX] = 1;
+        });
+        renderBoard();
+        updateScore(score + 10 * matrix.flat().filter(x=>x).length); // Punkty za liczbę klocków
     }
 
     function afterMove() {
-        // 1. Sprawdź i wyczyść linie
         checkLines();
-        
-        // 2. Jeśli dock pusty, daj nowe klocki
         if (dockEl.children.length === 0) {
-            spawnPieces();
+            setTimeout(spawnPieces, 300); // Lekkie opóźnienie dla lepszego efektu
         } else {
-            // 3. Jeśli są klocki, sprawdź czy gra się nie skończyła
-            checkGameOver();
+            checkGameOverByAvailableMoves();
         }
     }
 
     function checkLines() {
-        let linesCleared = 0;
         let rowsClearing = [];
         let colsClearing = [];
 
-        // Sprawdź wiersze
         for (let y = 0; y < BOARD_SIZE; y++) {
-            if (boardState[y].every(val => val === 1)) {
-                rowsClearing.push(y);
-            }
+            if (boardState[y].every(val => val === 1)) rowsClearing.push(y);
         }
-
-        // Sprawdź kolumny
         for (let x = 0; x < BOARD_SIZE; x++) {
-            let colFilled = true;
-            for (let y = 0; y < BOARD_SIZE; y++) {
-                if (boardState[y][x] === 0) {
-                    colFilled = false;
-                    break;
-                }
-            }
-            if (colFilled) colsClearing.push(x);
+            if (boardState.every(row => row[x] === 1)) colsClearing.push(x);
         }
 
         if (rowsClearing.length === 0 && colsClearing.length === 0) return;
 
-        // Usuwanie logiczne i wizualne
+        // Efekt wizualny usuwania
         rowsClearing.forEach(y => {
-            for(let x=0; x<BOARD_SIZE; x++) boardState[y][x] = 0;
+             for(let x=0; x<BOARD_SIZE; x++) {
+                document.querySelector(`[data-coord="${x},${y}"]`).classList.add('clearing');
+             }
         });
         colsClearing.forEach(x => {
-            for(let y=0; y<BOARD_SIZE; y++) boardState[y][x] = 0;
+             for(let y=0; y<BOARD_SIZE; y++) {
+                 // Dodaj klasę tylko jeśli nie została już dodana przez czyszczenie wiersza (unika podwójnej animacji)
+                const cell = document.querySelector(`[data-coord="${x},${y}"]`);
+                if (!cell.classList.contains('clearing')) cell.classList.add('clearing');
+             }
         });
 
-        // Opóźnione renderowanie dla efektu flash (opcjonalne, tutaj uproszczone przez natychmiastowe odświeżenie)
-        renderBoard(); 
-        
-        // Oblicz punkty (więcej linii = więcej punktów)
-        let totalLines = rowsClearing.length + colsClearing.length;
-        let bonus = totalLines > 1 ? totalLines * 20 : 0;
-        updateScore(score + (totalLines * 100) + bonus);
+        // Logiczne usunięcie po zakończeniu animacji
+        setTimeout(() => {
+            rowsClearing.forEach(y => boardState[y].fill(0));
+            colsClearing.forEach(x => { for(let y=0; y<BOARD_SIZE; y++) boardState[y][x] = 0; });
+            renderBoard();
+            
+            let totalLines = rowsClearing.length + colsClearing.length;
+            // Prosty system combo
+            let multiplier = totalLines > 1 ? totalLines : 1; 
+            updateScore(score + (totalLines * 100 * multiplier));
+        }, 400); // Czas musi pasować do animacji CSS
     }
 
-    function checkGameOver() {
-        // Sprawdź czy JAKIKOLWIEK klocek z docka pasuje GDZIEKOLWIEK
-        const pieces = Array.from(dockEl.children);
-        if (pieces.length === 0) return; // Jeśli dock pusty, to nie ma game over (zaraz się zrespią)
+    // Sprawdza, czy jakikolwiek klocek z doku pasuje gdziekolwiek na planszy
+    function checkGameOverByAvailableMoves() {
+        const piecesInDock = Array.from(dockEl.children);
+        if (piecesInDock.length === 0) return;
 
-        // Pobieramy macierze aktualnych klocków w docku
-        // (W pełnej wersji przechowalibyśmy referencje, tutaj musimy zrekonstruować lub pobrać z closures. 
-        //  Dla uproszczenia: w tym kodzie checkGameOver działa na "nadchodzących" klockach
-        //  Jeżeli dock nie jest pusty, musimy wiedzieć jakie tam są kształty.
-        //  W tym prostym przykładzie pominiemy dogłębną analizę każdego shape'a z DOM, 
-        //  zamiast tego game over sprawdzamy przy próbie ruchu. 
-        //  ALE: Dla lepszego UX zróbmy proste sprawdzenie).
-        
-        // *Uproszczenie dla wersji jednoplikowej:*
-        // Mechanizm "Game Over" w tej wersji może nie wykryć końca automatycznie w 100% przypadków
-        // bez przechowywania stanu klocków w zmiennej globalnej.
-        // Zostawiam to graczowi - jeśli nie może wykonać ruchu, gra jest skończona.
-        // Ale dodam proste sprawdzenie ilości wolnych pól.
-        
-        // (Wersja PRO wymagałaby obiektu State dla klocków w docku).
+        // Musimy odzyskać macierze klocków z elementów DOM (w tej prostej strukturze)
+        // W tym celu symulujemy "odtworzenie" macierzy na podstawie siatki CSS elementu.
+        let canMakeAnyMove = false;
+
+        for (let pieceEl of piecesInDock) {
+            let cols = parseInt(pieceEl.style.gridTemplateColumns.split('(')[1]);
+            let rows = parseInt(pieceEl.style.gridTemplateRows.split('(')[1]);
+            let reconstructedMatrix = Array(rows).fill().map(() => Array(cols).fill(0));
+            
+            let cells = pieceEl.children;
+            for(let i=0; i<cells.length; i++) {
+                if(cells[i].classList.contains('piece-cell')) {
+                     reconstructedMatrix[Math.floor(i/cols)][i%cols] = 1;
+                }
+            }
+
+            // Sprawdź każde pole na planszy dla tego klocka
+            for (let y = 0; y < BOARD_SIZE; y++) {
+                for (let x = 0; x < BOARD_SIZE; x++) {
+                    if (canPlace(reconstructedMatrix, x, y)) {
+                        canMakeAnyMove = true;
+                        break;
+                    }
+                }
+                if (canMakeAnyMove) break;
+            }
+            if (canMakeAnyMove) break;
+        }
+
+        if (!canMakeAnyMove) {
+            setTimeout(() => {
+                gameOverEl.style.display = 'flex';
+            }, 500);
+        }
     }
-
-    // Bardziej zaawansowana logika Game Over wymagałaby refaktoryzacji, 
-    // aby klocki w docku były obiektami JS, a nie tylko DOM. 
-    // Tutaj polegamy na graczu widzącym brak ruchów.
     
     function updateScore(newScore) {
         score = newScore;
-        scoreEl.innerText = `Wynik: ${score}`;
+        scoreEl.innerText = score;
         document.getElementById('final-score').innerText = `Twój wynik: ${score}`;
     }
 

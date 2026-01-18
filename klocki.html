@@ -9,7 +9,7 @@
             --bg-color: #121212;
             --board-bg: #1e1e24;
             --cell-empty: #2a2a35;
-            --cell-filled: #4ecca3; /* Twój ulubiony miętowy kolor */
+            --cell-filled: #4ecca3;
             --cell-ghost: rgba(78, 204, 163, 0.2);
             --text-color: #eeeeee;
             --gap: 4px;
@@ -28,7 +28,6 @@
         .score-box { font-size: 2.5rem; font-weight: 800; color: var(--cell-filled); line-height: 1; }
         .sub-text { font-size: 0.8rem; opacity: 0.5; letter-spacing: 2px; margin-top: 5px; }
 
-        /* PLANSZA */
         .game-board {
             display: grid;
             grid-template-columns: repeat(9, var(--cell-size));
@@ -46,11 +45,9 @@
             transition: background-color 0.2s;
         }
 
-        /* Wypełnione komórki i cienie - wszystko w jednym kolorze */
         .cell.filled { background-color: var(--cell-filled); box-shadow: 0 0 10px rgba(78, 204, 163, 0.4); }
         .cell.ghost { background-color: var(--cell-ghost); border: 1px solid var(--cell-filled); box-sizing: border-box; }
 
-        /* DOLNY PANEL */
         .pieces-container {
             display: flex; justify-content: center; align-items: center; 
             gap: 25px; min-height: 160px; width: 100%; margin-top: 20px;
@@ -59,6 +56,7 @@
         .draggable-piece {
             display: grid; gap: var(--gap); cursor: grab;
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            touch-action: none;
         }
         
         .piece-cell { 
@@ -70,12 +68,11 @@
         .btn {
             background: #2a2a35; border: none; color: white; padding: 12px 20px; 
             border-radius: 50px; cursor: pointer; font-size: 0.9rem; font-weight: bold;
-            transition: background 0.2s;
+            transition: background 0.2s, transform 0.1s;
         }
         .btn:active { transform: scale(0.95); }
         .btn:disabled { opacity: 0.2; cursor: default; }
 
-        /* CZĄSTECZKI */
         .particle {
             position: absolute; pointer-events: none; background: var(--cell-filled);
             border-radius: 2px; z-index: 100;
@@ -87,7 +84,7 @@
         }
 
         @media (max-width: 500px) {
-            :root { --cell-size: calc((100vw - 70px) / 9); }
+            :root { --cell-size: calc((100vw - 75px) / 9); }
             .pieces-container { gap: 15px; }
         }
     </style>
@@ -100,7 +97,6 @@
     </div>
 
     <div class="game-board" id="board"></div>
-
     <div class="pieces-container" id="pieces-dock"></div>
 
     <div class="actions">
@@ -110,8 +106,8 @@
     </div>
 
     <div id="game-over">
-        <h1 style="color:var(--cell-filled); font-size: 3rem;">KONIEC</h1>
-        <p id="final-score" style="font-size: 1.5rem;">Twój wynik: 0</p>
+        <h1 style="color:var(--cell-filled); font-size: 3rem; margin: 0;">KONIEC</h1>
+        <p id="final-score" style="font-size: 1.5rem; margin: 10px 0 30px 0;">Twój wynik: 0</p>
         <button class="btn" onclick="location.reload()" style="background:var(--cell-filled); color: #000; padding: 20px 40px; font-size: 1.2rem;">ZAGRAJ PONOWNIE</button>
     </div>
 
@@ -122,8 +118,8 @@
     let score = 0;
     let refreshesLeft = 1;
     let isDragging = false;
-    
-    // Seedowanie dla Daily Challenge
+    let currentPieces = []; // Przechowuje aktualne macierze klocków w doku
+
     const todaySeed = parseInt(new Date().toISOString().slice(0,10).replace(/-/g,""));
     let currentSeed = todaySeed;
     function seededRandom() {
@@ -134,7 +130,7 @@
     const SHAPES = [
         [[1]], [[1,1]], [[1,1,1]], [[1,1],[1,1]], [[1,1,1],[0,1,0]], 
         [[1,0],[1,0],[1,1]], [[1,1,1,1]], [[1,1,1],[1,0,0],[1,0,0]], [[0,1,1],[1,1,0]],
-        [[1,1,1],[1,1,1],[1,1,1]]
+        [[1,1,1],[1,1,1],[1,1,1]], [[1,1,1],[1,1,1]]
     ];
 
     const boardEl = document.getElementById('board');
@@ -164,16 +160,19 @@
 
     function spawnPieces() {
         dockEl.innerHTML = '';
+        currentPieces = [];
         for (let i = 0; i < 3; i++) {
             const shape = SHAPES[Math.floor(seededRandom() * SHAPES.length)];
-            createPiece(shape);
+            currentPieces.push(shape);
+            createPieceElement(shape, i);
         }
         checkGameOver();
     }
 
-    function createPiece(matrix) {
+    function createPieceElement(matrix, index) {
         const piece = document.createElement('div');
         piece.className = 'draggable-piece';
+        piece.dataset.index = index;
         piece.style.gridTemplateColumns = `repeat(${matrix[0].length}, var(--cell-size))`;
         
         matrix.forEach(row => row.forEach(v => {
@@ -182,20 +181,20 @@
             piece.appendChild(c);
         }));
 
-        // Rotacja po kliknięciu
         piece.onclick = () => {
             if (isDragging) return;
-            const rotated = rotateMatrix(matrix);
-            const parent = piece.parentElement;
+            const rotated = rotateMatrix(currentPieces[index]);
+            currentPieces[index] = rotated;
             piece.remove();
-            createPiece(rotated);
+            createPieceElement(rotated, index);
+            checkGameOver(); // Sprawdź czy po rotacji gra jest możliwa
         };
 
-        setupDrag(piece, matrix);
+        setupDrag(piece, index);
         dockEl.appendChild(piece);
     }
 
-    function setupDrag(el, matrix) {
+    function setupDrag(el, index) {
         let startX, startY;
         
         const onMove = (e) => {
@@ -207,7 +206,7 @@
 
             clearGhosts();
             const g = getGridPos(el);
-            if(canPlace(matrix, g.x, g.y)) showGhost(matrix, g.x, g.y);
+            if(canPlace(currentPieces[index], g.x, g.y)) showGhost(currentPieces[index], g.x, g.y);
         };
 
         const onEnd = (e) => {
@@ -218,10 +217,11 @@
             clearGhosts();
 
             const g = getGridPos(el);
-            if(canPlace(matrix, g.x, g.y)) {
+            if(canPlace(currentPieces[index], g.x, g.y)) {
                 saveState();
-                placePiece(matrix, g.x, g.y);
+                placePiece(currentPieces[index], g.x, g.y);
                 el.remove();
+                currentPieces[index] = null; // Oznacz ten slot jako pusty
                 checkLogic();
             } else {
                 el.style.position = 'static';
@@ -258,6 +258,7 @@
     }
 
     function canPlace(m, sx, sy) {
+        if(!m) return false;
         let ok = true;
         m.forEach((row, y) => row.forEach((v, x) => {
             if(v) {
@@ -279,12 +280,10 @@
 
     function checkLogic() {
         let toClear = new Set();
-        // Linie h/v
         for(let i=0; i<9; i++) {
             if(boardState[i].every(v => v)) for(let x=0; x<9; x++) toClear.add(`${x},${i}`);
             if(boardState.every(r => r[i])) for(let y=0; y<9; y++) toClear.add(`${i},${y}`);
         }
-        // Sudoku 3x3
         for(let r=0; r<3; r++) {
             for(let c=0; c<3; c++) {
                 let full = true;
@@ -309,10 +308,74 @@
             setTimeout(renderBoard, 250);
         }
         
-        if(dockEl.children.length === 0) spawnPieces();
-        else checkGameOver();
-        
+        if(currentPieces.every(p => p === null)) {
+            spawnPieces();
+        } else {
+            checkGameOver();
+        }
         updateUI();
+    }
+
+    function checkGameOver() {
+        let possible = false;
+        // Sprawdź każdy dostępny klocek w doku
+        currentPieces.forEach(matrix => {
+            if(!matrix) return;
+            // Sprawdź każdą możliwą komórkę na planszy
+            for(let y = 0; y < 9; y++) {
+                for(let x = 0; x < 9; x++) {
+                    if(canPlace(matrix, x, y)) {
+                        possible = true;
+                        break;
+                    }
+                }
+                if(possible) break;
+            }
+        });
+
+        if(!possible) {
+            document.getElementById('final-score').innerText = `Twój wynik: ${score}`;
+            document.getElementById('game-over').style.display = 'flex';
+        }
+    }
+
+    function saveState() { 
+        lastState = JSON.stringify({b: boardState, s: score, p: JSON.parse(JSON.stringify(currentPieces))}); 
+    }
+    
+    function undoMove() {
+        if(!lastState) return;
+        const data = JSON.parse(lastState);
+        boardState = data.b; 
+        score = data.s;
+        currentPieces = data.p;
+        lastState = null;
+        
+        renderBoard();
+        dockEl.innerHTML = '';
+        currentPieces.forEach((m, i) => { if(m) createPieceElement(m, i); });
+        updateUI();
+    }
+
+    function refreshPieces() {
+        if(refreshesLeft > 0) {
+            spawnPieces(); 
+            refreshesLeft--; 
+            updateUI();
+        }
+    }
+
+    function shareScore() {
+        const text = `BLOCK MASTER: ${score} pkt! 🧩 Spróbuj pobić mój wynik!`;
+        navigator.clipboard.writeText(text);
+        alert("Wynik skopiowany do schowka!");
+    }
+
+    function updateUI() {
+        document.getElementById('score-display').innerText = score;
+        document.getElementById('undo-btn').disabled = !lastState;
+        document.getElementById('refresh-btn').innerText = `♻ Nowe (${refreshesLeft})`;
+        document.getElementById('refresh-btn').disabled = refreshesLeft <= 0;
     }
 
     function createParticles(x, y) {
@@ -332,40 +395,6 @@
                 { transform: `translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px) scale(0)`, opacity: 0 }
             ], { duration: 600, easing: 'ease-out' }).onfinish = () => p.remove();
         }
-    }
-
-    function checkGameOver() {
-        const pieces = Array.from(dockEl.children);
-        // Ta uproszczona logika sprawdza czy jest miejsce na klocki w doku
-        // (Wersja produkcyjna wymagałaby mapowania aktualnych macierzy klocków)
-    }
-
-    function saveState() { lastState = JSON.stringify({b: boardState, s: score}); }
-    
-    function undoMove() {
-        if(!lastState) return;
-        const data = JSON.parse(lastState);
-        boardState = data.b; score = data.s;
-        lastState = null; renderBoard(); updateUI();
-    }
-
-    function refreshPieces() {
-        if(refreshesLeft > 0) {
-            spawnPieces(); refreshesLeft--; updateUI();
-        }
-    }
-
-    function shareScore() {
-        const text = `BLOCK MASTER: ${score} pkt! 🧩 Spróbuj pobić mój wynik!`;
-        navigator.clipboard.writeText(text);
-        alert("Skopiowano do schowka!");
-    }
-
-    function updateUI() {
-        document.getElementById('score-display').innerText = score;
-        document.getElementById('undo-btn').disabled = !lastState;
-        document.getElementById('refresh-btn').innerText = `♻ Nowe (${refreshesLeft})`;
-        document.getElementById('refresh-btn').disabled = refreshesLeft <= 0;
     }
 
     function showGhost(m, sx, sy) {

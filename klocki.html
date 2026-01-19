@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>9x9 Block Master Minimal</title>
+    <title>Klocuchy</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -99,7 +99,7 @@
 
     <div class="header">
         <div id="score-display" class="score-box">0</div>
-        <div class="sub-text">BLOCK MASTER</div>
+        <div class="sub-text">KLOCUCHY</div>
     </div>
 
     <div class="game-board" id="board"></div>
@@ -363,7 +363,7 @@
 
     function shareScore() {
         const gameUrl = window.location.href;
-        const text = `BLOCK MASTER 🧩\nZdobylem ${score} punktów! Poczuj ten miętowy flow i spróbuj mnie pobić:\n${gameUrl}`;
+        const text = `Klocuchy 🧩\nZdobylem ${score} punktów! Poczuj ten miętowy flow i spróbuj mnie pobić:\n${gameUrl}`;
         
         if (navigator.share) {
             navigator.share({ title: 'Block Master', text: text, url: gameUrl });

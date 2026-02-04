@@ -127,7 +127,7 @@
         updateMsg("Sprawdzanie...", "var(--primary)");
 
         try {
-            const resp = await fetch(`https://corsproxy.io/?https://sjp.pl/${encodeURIComponent(word.toLowerCase())}`);
+            const resp = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://sjp.pl/' + word.toLowerCase())});
             const html = await resp.text();
             const isAllowed = html.includes("dopuszczalne w grach") && !html.includes("niedopuszczalne w grach");
 

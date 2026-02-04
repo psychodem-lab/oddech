@@ -374,7 +374,7 @@
     let usedIndices = [];
     
     // NOWA ZMIENNA NA SŁOWNIK
-    let validWords = new Set();
+    let loadedDictionaries = {};
     const wordCache = JSON.parse(localStorage.getItem('wordCache') || '{}');
 
     function init() {
@@ -394,36 +394,59 @@
     }
     
     // FUNKCJA ŁADUJĄCA PLIK odm.txt
-    async function loadDictionary() {
-        updateMsg("Ładowanie słownika...", "var(--primary)");
-        try {
-            const response = await fetch('odm.txt');
-            if(!response.ok) throw new Error("Brak pliku odm.txt");
+async function processWord() {
+    const input = document.getElementById('wordInput');
+    const word = input.value.trim().toUpperCase();
+    
+    if (word.length < 2) { 
+        updateMsg("Min. 2 litery!", "var(--danger)"); 
+        return; 
+    }
+    if (state.found.includes(word)) { 
+        updateMsg("Już ułożone!", "orange"); 
+        resetSelection(); 
+        return; 
+    }
+
+    const firstLetter = word[0];
+    // Mapowanie polskich znaków na bezpieczne nazwy plików
+    const fileName = firstLetter.replace('Ą','A1').replace('Ć','C1').replace('Ę','E1')
+                                .replace('Ł','L1').replace('Ń','N1').replace('Ó','O1')
+                                .replace('Ś','S1').replace('Ź','Z1').replace('Ż','Z2');
+    
+    document.getElementById('loader').style.display = "block";
+
+    try {
+        // Sprawdź, czy ta litera jest już pobrana, jeśli nie - pobierz plik .txt
+        if (!loadedDictionaries[firstLetter]) {
+            updateMsg(`Ładowanie bazy na ${firstLetter}...`, "var(--primary)");
+            const response = await fetch(`slowa/${fileName}.txt`);
+            if (!response.ok) throw new Error("Brak pliku");
             const text = await response.text();
-            
-            // Parsowanie pliku: podział na linie, potem po przecinkach
-            // SJP w pliku odm.txt ma format: słowo bazowe, odmiana1, odmiana2...
-            // Czasem są to oddzielne linie. Dzielimy wszystko.
-            
-            // Używamy prostego podziału na tokeny, aby było szybciej
-            const lines = text.split(/\r?\n/);
-            lines.forEach(line => {
-                if(!line) return;
-                const parts = line.split(',');
-                for(let i=0; i<parts.length; i++) {
-                    const w = parts[i].trim().toUpperCase();
-                    if(w.length > 0) validWords.add(w);
-                }
-            });
-            
-            updateMsg("Słownik załadowany!", "var(--success)");
-            setTimeout(() => {
-                if(!document.getElementById('wordInput').value) updateMsg("", "");
-            }, 2000);
-            
-        } catch (e) {
-            console.error(e);
-            updateMsg("Błąd ładowania słownika (odm.txt)", "var(--danger)");
+            // Tworzymy zbiór słów z pobranego pliku
+            loadedDictionaries[firstLetter] = new Set(text.split('\n').map(s => s.trim()));
+        }
+
+        const exists = loadedDictionaries[firstLetter].has(word);
+        
+        if (exists) {
+            const p = calculateScore(word);
+            state.score += p;
+            state.found.push(word);
+            // Efekty graficzne
+            usedIndices.forEach(idx => createExplosion(document.getElementById('tile-' + idx), word.length >= 6));
+            updateMsg(`+${p} PKT!`, word.length >= 6 ? "var(--gold)" : "var(--success)");
+            saveGameState();
+            renderAll();
+        } else {
+            updateMsg("Nie ma w słowniku.", "var(--danger)");
+        }
+    } catch (e) {
+        updateMsg("Błąd bazy słów.", "var(--danger)");
+        console.error(e);
+    } finally {
+        document.getElementById('loader').style.display = "none";
+        resetSelection();
         }
     }
 
@@ -583,7 +606,7 @@
     async function processWord() {
         const input = document.getElementById('wordInput');
         const word = input.value;
-        if (word.length < 3) { updateMsg("Min. 3 litery!", "var(--danger)"); return;
+        if (word.length < 2) { updateMsg("Min. 2 litery!", "var(--danger)"); return;
         }
         if (state.found.includes(word)) { updateMsg("Już ułożone!", "orange"); resetSelection(); return;
         }

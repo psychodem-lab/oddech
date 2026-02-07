@@ -45,8 +45,33 @@
         .input-area { display: flex; gap: 8px; height: 50px; margin-bottom: 10px; }
         input { flex: 2; border: 2px solid var(--border); border-radius: 8px; text-align: center; font-size: 1.2rem; background: var(--input-bg); color: var(--text-main); text-transform: uppercase; outline: none; }
         
-        .results { flex-grow: 1; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); padding: 10px; overflow-y: auto; margin-bottom: 10px; }
-        .word-tag { display: inline-block; background: var(--tag-bg); padding: 6px 12px; border-radius: 20px; margin: 4px; font-size: 0.9rem; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; }
+        /* POPRAWKA DLA URZĄDZEŃ MOBILNYCH */
+        .results { 
+            flex-grow: 1; 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            background: var(--bg); 
+            padding: 10px; 
+            overflow-y: auto; 
+            margin-bottom: 10px;
+            min-height: 0; /* Zapobiega wypychaniu kontenera przez flexbox */
+        }
+        #foundList {
+            display: flex;
+            flex-wrap: wrap; /* Wymusza zawijanie słów w nowej linii */
+            gap: 4px;
+        }
+        .word-tag { 
+            display: inline-block; 
+            background: var(--tag-bg); 
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-size: 0.9rem; 
+            cursor: pointer; 
+            border: 1px solid rgba(0,0,0,0.1); 
+            font-weight: bold;
+            white-space: nowrap; 
+        }
         
         button { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; padding: 10px; }
         .btn-add { background: var(--success); color: white; flex: 1; }
@@ -57,7 +82,7 @@
         .expert-hub { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; }
         .hub-btn { display: block; color: white; text-align: center; text-decoration: none; padding: 10px 5px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
         .bg-pwn { background: #004a99; }
-        .bg-sjp { background: #6c5ce7; } /* Fioletowy kolor dla sjp.pl */
+        .bg-sjp { background: #6c5ce7; }
     </style>
 </head>
 <body>

@@ -234,35 +234,47 @@
     function calcPts(w) { let p = 0; for(let c of w) p += (letterScores[c]||1); return w.length >= 6 ? p + 15 : p; }
 
     function startNewGame() {
-        state.found = []; state.score = 0;
-        let seed = state.isDaily ? parseInt(new Date().toISOString().slice(0,10).replace(/-/g, '')) : Math.random() * 1000000;
-        let rngCounter = 0;
-        
-        function getNextRnd() {
-            return state.isDaily ? seededRandom(seed + (rngCounter++)) : Math.random();
-        }
-
-        let pool = []; 
-        let fullSeedList = [...seedWords];
-        let seedWordIndex = Math.floor(getNextRnd() * fullSeedList.length);
-        let baseLetters = fullSeedList[seedWordIndex].split('');
-        
-        while(baseLetters.length > 0) {
-            let idx = Math.floor(getNextRnd() * baseLetters.length);
-            pool.push(baseLetters.splice(idx, 1)[0]);
-        }
-        
-        state.pool = pool
-            .map(c => ({ 
-                char: c.toUpperCase(), 
-                pts: letterScores[c.toUpperCase()] || 1, 
-                sort: getNextRnd() 
-            }))
-            .sort((a, b) => a.sort - b.sort);
-
-        saveGame(); 
-        renderAll();
+    // 1. Resetujemy wszystko, by uniknąć błędów w wyświetlaniu
+    state.found = []; 
+    state.score = 0;
+    usedIndices = [];
+    document.getElementById('wordInput').value = "";
+    
+    // 2. Ustalamy ziarno (Daily lub Losowe)
+    let seed = state.isDaily ? parseInt(new Date().toISOString().slice(0,10).replace(/-/g, '')) : Math.random() * 1000000;
+    let rngCounter = 0;
+    
+    function getNextRnd() {
+        return state.isDaily ? seededRandom(seed + (rngCounter++)) : Math.random();
     }
+
+    // 3. Wybieramy słowo (upewniamy się, że mamy kopię liter)
+    let fullSeedList = [...seedWords];
+    let seedWordIndex = Math.floor(getNextRnd() * fullSeedList.length);
+    let originalWord = fullSeedList[seedWordIndex].toUpperCase();
+    let baseLetters = originalWord.split('');
+    
+    // 4. Budujemy pulę dokładnie 10 liter
+    let pool = [];
+    // Mieszamy litery ze słowa bazowego do puli
+    let tempLetters = [...baseLetters];
+    while(tempLetters.length > 0) {
+        let idx = Math.floor(getNextRnd() * tempLetters.length);
+        pool.push(tempLetters.splice(idx, 1)[0]);
+    }
+
+    // 5. Ostateczne przemieszanie kafelków i przypisanie punktów
+    // Używamy .slice(0, 10) dla absolutnej pewności, że nie będzie 11 liter
+    state.pool = pool.slice(0, 10).map(c => ({ 
+        char: c, 
+        pts: letterScores[c] || 1, 
+        sort: getNextRnd() 
+    })).sort((a, b) => a.sort - b.sort);
+
+    // 6. Zapis i odświeżenie widoku
+    saveGame(); 
+    renderAll();
+}
 
     function saveLocal(w, v, d) { if(db) db.transaction("words", "readwrite").objectStore("words").put({valid:v, def:d}, w); }
     function getLocal(w) { return new Promise(r => { if(!db) return r(null); const req = db.transaction("words").objectStore("words").get(w); req.onsuccess = () => r(req.result); }); }

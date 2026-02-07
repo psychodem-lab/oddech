@@ -19,11 +19,9 @@
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; height: 100vh; display: flex; justify-content: center; overflow: hidden; }
         .game-container { background: var(--panel-bg); width: 100%; max-width: 500px; height: 100vh; display: flex; flex-direction: column; padding: 10px; position: relative; }
         
-        /* Modal */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: var(--panel-bg); padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         
-        /* UI Elements */
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 5px; font-size: 0.8rem; }
         .letters-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
         .letter { background: var(--primary); color: white; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.4rem; font-weight: bold; box-shadow: 0 4px 0 #357abd; cursor: pointer; position: relative; }
@@ -92,14 +90,13 @@
 
 <script>
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
-    const seedWords = ["KLAWIATURA", "CZEKOLADA", "SAMOCHÓD", "POZIOMKA", "PRZYGODA", "TELEWIZOR", "RESTAURACJA", "KALEJDOSKOP", "MARZENIE", "PODRÓŻNIK"];
+    const seedWords = ["KLAWIATURA", "CZEKOLADA", "SAMOCHÓD", "POZIOMKA", "PRZYGODA", "TELEWIZOR", "KINO", "MARZENIE", "PODRÓŻNIK"];
     
     let state = { pool: [], found: [], score: 0, isDaily: false };
     let usedIndices = [];
     let db;
 
-    // --- INDEXED DB (Twoja prywatna baza słów) ---
-    const request = indexedDB.open("LiterakV3", 1);
+    const request = indexedDB.open("LiterakV4", 1);
     request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
 
@@ -110,13 +107,15 @@
     }
 
     async function checkWord() {
-        const word = document.getElementById('wordInput').value.toLowerCase();
+        const inputVal = document.getElementById('wordInput').value;
+        const word = inputVal.toLowerCase().trim();
+        
         if(word.length < 3) return;
         if(state.found.includes(word.toUpperCase())) { updateMsg("Już jest!", "orange"); return; }
 
         updateMsg("Sprawdzanie...", "var(--primary)");
 
-        // 1. Sprawdź w lokalnej bazie
+        // 1. Sprawdź w lokalnej bazie IndexedDB
         const cached = await getLocal(word);
         let valid = false;
         let definition = "";
@@ -125,15 +124,19 @@
             valid = cached.valid;
             definition = cached.def;
         } else {
-            // 2. Jeśli nie ma, zapytaj Wikisłownik
+            // 2. Pobierz z Wikisłownika
             try {
                 const res = await fetch(`https://pl.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`);
                 if(res.ok) {
                     const data = await res.json();
                     valid = true;
-                    definition = data.extract;
+                    // Bierzemy opis (extract) lub tytuł jeśli brak opisu
+                    definition = data.extract || "Słowo istnieje w bazie Wikisłownika.";
+                } else {
+                    // Czasem Wikisłownik wymaga dużej litery dla nazw własnych, 
+                    // ale my tutaj trzymamy się standardu małych liter dla gier słownych.
+                    valid = false;
                 }
-                // Zapisz wynik na przyszłość
                 saveLocal(word, valid, definition);
             } catch(e) { updateMsg("Błąd sieci!", "red"); return; }
         }
@@ -158,7 +161,7 @@
         state.found = []; state.score = 0;
         let pool = [];
         let seed = seedWords[Math.floor(rnd()*seedWords.length)].split('');
-        for(let i=0; i<7; i++) pool.push(seed.splice(Math.floor(rnd()*seed.length), 1)[0]);
+        for(let i=0; i<Math.min(7, seed.length); i++) pool.push(seed.splice(Math.floor(rnd()*seed.length), 1)[0]);
         while(pool.length < 10) pool.push("AEEIOOZZRRSSNNWWBCDD".split('')[Math.floor(rnd()*20)]);
         state.pool = pool.sort(() => rnd()-0.5).map(c => ({ char: c.toUpperCase(), pts: letterScores[c.toUpperCase()] || 1 }));
         saveGame(); renderAll();
@@ -191,12 +194,23 @@
         document.getElementById('defTitle').innerText = word;
         document.getElementById('defModal').style.display = 'flex';
         const cached = await getLocal(word.toLowerCase());
-        document.getElementById('defBody').innerText = cached?.def || "Brak opisu.";
+        document.getElementById('defBody').innerHTML = cached?.def || "Brak szczegółowego opisu w Wikisłowniku.";
     }
 
     // --- POMOCNICZE ---
-    function saveLocal(w, v, d) { const tx = db.transaction("words", "readwrite"); tx.objectStore("words").put({valid:v, def:d}, w); }
-    function getLocal(w) { return new Promise(r => { const req = db.transaction("words").objectStore("words").get(w); req.onsuccess = () => r(req.result); }); }
+    function saveLocal(w, v, d) { 
+        if(!db) return;
+        const tx = db.transaction("words", "readwrite"); 
+        tx.objectStore("words").put({valid:v, def:d}, w); 
+    }
+    function getLocal(w) { 
+        return new Promise(r => { 
+            if(!db) return r(null);
+            const req = db.transaction("words").objectStore("words").get(w); 
+            req.onsuccess = () => r(req.result); 
+            req.onerror = () => r(null);
+        }); 
+    }
     function calcPts(w) { let p = 0; for(let c of w) p += (letterScores[c]||1); return w.length > 5 ? p + 10 : p; }
     function saveGame() { localStorage.setItem(state.isDaily?'sD':'sT', JSON.stringify(state)); localStorage.setItem('lastMode', state.isDaily?'daily':'training'); }
     function loadGame() { const s = localStorage.getItem(state.isDaily?'sD':'sT'); if(s) { state = JSON.parse(s); renderAll(); } else startNewGame(); }

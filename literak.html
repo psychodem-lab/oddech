@@ -161,18 +161,33 @@ const seedWords = ["ABSTRAKCJA", "ANTYPATIA", "ATMOSFERA", "AUTORYTET", "BALUSTR
         loadGame();
     }
 
-    async function shareResult() {
+        async function shareResult() {
         const best = state.isDaily ? 'bestD' : 'bestT';
         const score = localStorage.getItem(best) || 0;
         const mode = state.isDaily ? "Dnia" : "Trening";
-        const text = `Mój rekord w Literaku (Tryb ${mode}) to ${score} pkt! 🧩 #Literak #GraSłowna`;
+        
+        // Pobiera aktualny link do Twojej strony
+        const gameUrl = window.location.href; 
+        
+        const text = `Mój rekord w Literaku (Tryb ${mode}) to ${score} pkt! 🧩 Spróbuj mnie pobić:`;
+        
         if (navigator.share) {
-            try { await navigator.share({ title: 'Literak', text: text }); } catch (err) {}
+            try { 
+                await navigator.share({ 
+                    title: 'Słownikowy Ninja', 
+                    text: text,
+                    url: gameUrl // Przekazuje link jako osobny parametr dla lepszego wyglądu w Social Media
+                }); 
+            } catch (err) {
+                console.log("Anulowano udostępnianie");
+            }
         } else {
-            navigator.clipboard.writeText(text);
-            updateMsg("Wynik skopiowany!", "var(--success)");
+            // Jeśli przeglądarka nie wspiera navigator.share, kopiujemy tekst + link do schowka
+            navigator.clipboard.writeText(`${text} ${gameUrl}`);
+            updateMsg("Wynik i link skopiowany!", "var(--success)");
         }
     }
+
 
     async function checkWord() {
         const word = document.getElementById('wordInput').value.toLowerCase().trim();

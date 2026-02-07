@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neonowa Podróż PRO v2.5 (Time-Based)</title>
+    <title>Neonowa Podróż PRO v2.6 (Shop update)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&display=swap');
 
@@ -68,6 +68,13 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
+        .status-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
         #progress-bar-container {
             position: absolute;
             top: 0;
@@ -88,7 +95,7 @@
         .score-box { font-size: clamp(24px, 5vw, 32px); font-weight: bold; }
         .sub-text { font-size: 14px; opacity: 0.8; }
         
-        .currency-box { 
+        .currency-box, .shield-box { 
             color: #ffd700;
             font-size: 20px; 
             display: flex; 
@@ -97,6 +104,12 @@
             background: rgba(0,0,0,0.4); 
             padding: 5px 10px; 
             border-radius: 20px;
+        }
+
+        .shield-box {
+            color: #ff0055;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
         .screen {
@@ -152,8 +165,11 @@
         #shop-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 20px;
+            max-height: 50vh;
+            overflow-y: auto;
+            padding: 10px;
         }
         .shop-item {
             width: 60px;
@@ -169,7 +185,7 @@
         .shop-item.locked { opacity: 0.5; }
         .price-tag {
             position: absolute;
-            bottom: -25px; font-size: 12px; color: #ffd700; width: 140%; left: -20%; text-align: center;
+            bottom: -20px; font-size: 11px; color: #ffd700; width: 140%; left: -20%; text-align: center;
         }
 
         #notification {
@@ -206,10 +222,12 @@
                 <div class="score-box"><span id="scoreVal">0</span> m</div>
                 <div class="sub-text">Rekord: <span id="highScoreVal">0</span></div>
             </div>
-            <div class="currency-box">💎 <span id="coinsVal">0</span></div>
+            <div class="status-right">
+                <div class="currency-box">💎 <span id="coinsVal">0</span></div>
+                <div class="shield-box" id="hud-shield">🛡️ x<span id="shieldCount">0</span></div>
+            </div>
         </div>
-        <div id="shield-icon" style="opacity:0; color: #ff0055; font-weight: bold; text-shadow: 0 0 10px #ff0055; text-align: center; width: 100%; margin-top: 10px;">🛡️ TARCZA AKTYWNA</div>
-        <div style="text-align: center; margin-bottom: 20px; font-size: 12px; color: #aaa;">Neon Trip v2.5 (Stable Physics)</div>
+        <div style="text-align: center; margin-bottom: 20px; font-size: 12px; color: #aaa;">Neon Trip v2.6</div>
     </div>
 
     <div id="start-screen" class="screen">
@@ -231,7 +249,7 @@
         <p>Wynik: <span id="final-score">0</span></p>
         <div style="display:flex; flex-wrap: wrap; justify-content: center;">
             <button id="btn-restart">Jeszcze raz</button>
-            <button id="btn-share" class="secondary">Udostępnij</button>
+            <button id="btn-shop-over" class="secondary">Sklep</button> <button id="btn-share" class="secondary">Udostępnij</button>
         </div>
     </div>
 
@@ -240,13 +258,13 @@
 
 <script>
 /**
- * ARCHITEKTURA GRY (ZMODYFIKOWANA):
- * 1. Zastosowano Time-Based Spawning (niezależne od FPS).
- * 2. Zastosowano Sub-Stepping Physics (brak przenikania przez ściany).
- * 3. Zintegrowano audio i grafikę z poprzedniej wersji.
+ * ARCHITEKTURA GRY (ZAKTUALIZOWANA):
+ * 1. Time-Based Spawning (Interwał 2500ms).
+ * 2. Sub-Stepping Physics.
+ * 3. Stackowanie tarcz (Max 3).
+ * 4. Rozbudowany sklep.
  */
 
-// --- ZMIENNE GLOBALNE I KONFIGURACJA ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d', { alpha: false });
 
@@ -270,10 +288,10 @@ const state = {
     stage: 0, 
     muted: false,
     
-    // ZMIANY: Precyzyjne sterowanie czasem
+    // ZMIANY: Czas
     lastTime: 0,
-    nextSpawnTime: 0,    // Bezwzględny czas następnej przeszkody
-    spawnInterval: 2500, // Bazowy czas między przeszkodami (ms)
+    nextSpawnTime: 0,    
+    spawnInterval: 2500, // Zmiana na 2500ms zgodnie z życzeniem
 };
 
 // --- SYSTEM AUDIO ---
@@ -553,21 +571,20 @@ class Bubble {
         this.y = height / 2;
         this.radius = 15;
         this.velocity = 0;
-        this.hasShield = false;
+        this.shields = 0; // ZMIANA: Licznik tarcz zamiast boolean
         this.skinColor = this.getSkinColor();
         this.particles = [];
         this.trailTimer = 0;
     }
 
     getSkinColor() {
-        const skins = ['#00f2fe', '#ff0055', '#ffff00', '#00ff00'];
-        return skins[state.skinId] || skins[0];
+        return skinsData[state.skinId] ? skinsData[state.skinId].color : skinsData[0].color;
     }
 
     reset() {
         this.y = height / 2;
         this.velocity = 0;
-        this.hasShield = false;
+        this.shields = 0;
         this.skinColor = this.getSkinColor();
         this.particles = [];
     }
@@ -581,7 +598,6 @@ class Bubble {
     }
 
     update(dt) {
-        // Grawitacja (Delta Time)
         let g = (state.stage === 3 ? 0.15 : 0.35) * dt; 
         this.velocity += g;
         
@@ -600,7 +616,6 @@ class Bubble {
             this.trailTimer = 0;
         }
 
-        // Update cząsteczek
         for(let i = this.particles.length - 1; i >= 0; i--) {
             this.particles[i].update(dt);
             if(this.particles[i].life <= 0) this.particles.splice(i, 1);
@@ -613,8 +628,8 @@ class Bubble {
         ctx.shadowBlur = 20;
         ctx.shadowColor = this.skinColor;
         ctx.fillStyle = 'rgba(255,255,255,0.1)';
-        ctx.strokeStyle = this.hasShield ? '#fff' : this.skinColor;
-        ctx.lineWidth = this.hasShield ? 3 : 2; 
+        ctx.strokeStyle = this.shields > 0 ? '#fff' : this.skinColor;
+        ctx.lineWidth = this.shields > 0 ? 3 : 2; 
         
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
@@ -681,7 +696,7 @@ class Obstacle {
     }
 }
 
-// --- LOGIKA GŁÓWNA (ZMODYFIKOWANA) ---
+// --- LOGIKA GŁÓWNA ---
 
 let bubble;
 let obstacles = [];
@@ -693,7 +708,15 @@ function updateUI() {
     document.getElementById('scoreVal').innerText = Math.floor(state.score);
     document.getElementById('highScoreVal').innerText = state.highScore;
     document.getElementById('coinsVal').innerText = state.coins;
-    document.getElementById('shield-icon').style.opacity = bubble.hasShield ? '1' : '0';
+    
+    // ZMIANA: Obsługa ikony tarczy
+    const shieldEl = document.getElementById('hud-shield');
+    if (bubble.shields > 0) {
+        shieldEl.style.opacity = '1';
+        document.getElementById('shieldCount').innerText = bubble.shields;
+    } else {
+        shieldEl.style.opacity = '0';
+    }
     
     let progress = 0;
     if(state.score < 500) progress = (state.score / 500) * 100;
@@ -713,7 +736,7 @@ function init() {
     state.stage = 0;
     state.lastTime = 0;
     
-    // Reset czasu spawnowania (Time-Based)
+    // Reset czasu spawnowania
     state.nextSpawnTime = performance.now() + 1500;
     
     updateUI();
@@ -734,14 +757,11 @@ function gameOver() {
     setTimeout(() => cancelAnimationFrame(animationId), 1000);
 }
 
-// ZAAWANSOWANA PĘTLA Z OBSŁUGĄ CZASU I SUB-STEPPINGIEM
 function loop(timestamp) {
     if(!state.lastTime) state.lastTime = timestamp;
     const deltaTime = timestamp - state.lastTime;
     state.lastTime = timestamp;
 
-    // Normalizacja dt (1.0 = ~16ms)
-    // Cap na max 4 klatki, żeby uniknąć spirali śmierci przy pauzie/lagu
     let dt = Math.min(deltaTime / 16.666, 4);
 
     if(state.screen !== 'PLAY') {
@@ -754,52 +774,35 @@ function loop(timestamp) {
 
     ctx.clearRect(0, 0, width, height);
     
-    // Logika Etapów
     if(state.score > 500) state.stage = 1; 
     if(state.score > 1000) state.stage = 2; 
     if(state.score > 2000) state.stage = 3; 
 
     Audio.updateMusic(dt);
-
-    // 1. Tło
     bg.draw(dt);
 
-    // 2. Deszcz (etap 2)
     if(state.stage === 2 && Math.random() < 0.3 * dt) { 
         globalParticles.push(new Particle(0,0,'rain', '#fff'));
     }
 
-    // 3. Generowanie Przeszkód (TIME-BASED)
-    // Używamy bezwzględnego czasu gry (timestamp) zamiast licznika klatek
+    // ZMIANA: Spawnowanie z nowym interwałem
     if (timestamp > state.nextSpawnTime) {
         obstacles.push(new Obstacle());
-        
-        // Oblicz następny czas z uwzględnieniem trudności (minimalnie 1.2s)
         let difficultyMod = Math.max(0, Math.min(400, state.score * 0.5));
         let nextInterval = state.spawnInterval - difficultyMod; 
         state.nextSpawnTime = timestamp + nextInterval;
     }
 
-    // 4. FIZYKA I KOLIZJE (SUB-STEPPING)
-    // Dzielimy dt na mniejsze kroki, aby uniknąć przenikania przez ściany
-    // Jeśli dt wynosi 3.0 (duży lag), pętla wykona się 3 razy z krokiem 1.0
-    
     let steps = Math.ceil(dt); 
     let stepDt = dt / steps; 
     
     for(let s = 0; s < steps; s++) {
-        // A. Fizyka Bąbelka
         bubble.update(stepDt);
         
-        // B. Fizyka Przeszkód i Kolizje (w każdym pod-kroku)
         for(let i = 0; i < obstacles.length; i++) {
             let obs = obstacles[i];
-            
-            // Ruszamy tylko w pierwszym sub-kroku lub dzielimy ruch?
-            // Dzielimy ruch dla płynności
             obs.update(stepDt);
 
-            // Kolizja z Itemami
             if(obs.item) {
                 let dx = bubble.x - (obs.x + obs.w/2);
                 let dy = bubble.y - obs.item.y;
@@ -808,46 +811,46 @@ function loop(timestamp) {
                         state.coins++;
                         Audio.coin();
                     } else {
-                        bubble.hasShield = true;
-                        Audio.playTone(600, 'sine', 0.3);
+                        // ZMIANA: Stackowanie tarcz do 3
+                        if(bubble.shields < 3) {
+                            bubble.shields++;
+                            Audio.playTone(600, 'sine', 0.3);
+                        }
                     }
                     obs.item = null;
                     updateUI();
                 }
             }
 
-            // Precyzyjna Kolizja z Przeszkodą
             if (
                 bubble.x + bubble.radius > obs.x && 
                 bubble.x - bubble.radius < obs.x + obs.w && 
                 (bubble.y - bubble.radius < obs.topH || bubble.y + bubble.radius > height - (height - obs.gap - obs.topH))
             ) {
-                if(bubble.hasShield) {
-                    bubble.hasShield = false;
-                    obs.passed = true;
-                    bubble.velocity = 5;
-                    Audio.crash();
+                // ZMIANA: Logika zużywania tarczy
+                if(bubble.shields > 0) {
+                    if (!obs.passed) { // Zapobieganie wielokrotnemu odejmowaniu na jednej rurze
+                        bubble.shields--;
+                        obs.passed = true;
+                        bubble.velocity = 5;
+                        Audio.crash();
+                        updateUI();
+                    }
                 } else if (!obs.passed) {
-                    // Ponieważ jesteśmy w pętli sub-step, game over zatrzymuje wszystko natychmiast
                     gameOver();
-                    return; // Wychodzimy z funkcji loop
+                    return; 
                 }
             }
         }
         
-        // Usuwanie przeszkód (tylko w ostatnim kroku żeby nie mieszać indeksów)
         if (s === steps - 1) {
              obstacles = obstacles.filter(obs => obs.x + obs.w > -100);
         }
     }
 
-    // 5. Rysowanie Przeszkód (Raz na klatkę)
     obstacles.forEach(obs => obs.draw());
-
-    // 6. Rysowanie Bąbelka (Raz na klatkę)
     bubble.draw();
 
-    // 7. Globalne cząsteczki
     globalParticles.forEach((p, index) => {
         p.update(dt);
         p.draw();
@@ -860,7 +863,7 @@ function loop(timestamp) {
     animationId = requestAnimationFrame(loop);
 }
 
-// --- OBSŁUGA UI ---
+// --- SKLEP I UI ---
 
 function startGame() {
     Audio.init();
@@ -869,20 +872,23 @@ function startGame() {
     document.getElementById('gameover-screen').classList.add('hidden');
     document.getElementById('shop-screen').classList.add('hidden');
     init();
-    
-    // Reset timestamp dla pętli
     state.lastTime = performance.now();
     state.nextSpawnTime = state.lastTime + 1500;
-    
     loop(state.lastTime);
     bubble.flap();
 }
 
+// ZMIANA: Więcej skinów w sklepie
 const skinsData = [
     {color: '#00f2fe', price: 0},
     {color: '#ff0055', price: 50},
     {color: '#ffff00', price: 100},
-    {color: '#00ff00', price: 200}
+    {color: '#00ff00', price: 200},
+    {color: '#aa00ff', price: 300}, // Fiolet
+    {color: '#ff8800', price: 400}, // Pomarańcz
+    {color: '#ffffff', price: 500}, // Biały
+    {color: '#ff0000', price: 600}, // Czerwony
+    {color: '#ffd700', price: 1000} // Złoty
 ];
 
 function renderShop() {
@@ -922,6 +928,14 @@ function buySkin(index) {
     }
 }
 
+function openShop() {
+    state.screen = 'SHOP';
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('gameover-screen').classList.add('hidden');
+    document.getElementById('shop-screen').classList.remove('hidden');
+    renderShop();
+}
+
 document.getElementById('btn-share').onclick = async () => {
     const text = `Mój rekord w Neon Trip to ${state.highScore}m! Zagraj ze mną!`;
     if (navigator.share) {
@@ -937,12 +951,10 @@ document.getElementById('btn-share').onclick = async () => {
 document.getElementById('btn-start').onclick = startGame;
 document.getElementById('btn-restart').onclick = startGame;
 document.getElementById('mute-btn').onclick = () => Audio.toggleMute();
-document.getElementById('btn-shop').onclick = () => {
-    state.screen = 'SHOP';
-    document.getElementById('start-screen').classList.add('hidden');
-    document.getElementById('shop-screen').classList.remove('hidden');
-    renderShop();
-};
+document.getElementById('btn-shop').onclick = openShop;
+// ZMIANA: Obsługa przycisku sklepu na ekranie Game Over
+document.getElementById('btn-shop-over').onclick = openShop;
+
 document.getElementById('btn-back').onclick = () => {
     state.screen = 'START';
     document.getElementById('shop-screen').classList.add('hidden');

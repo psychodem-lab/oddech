@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neonowa Podróż PRO v2.5</title>
+    <title>Neonowa Podróż PRO v2.5 (Time-Based)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&display=swap');
 
@@ -24,14 +24,14 @@
             color: white;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: none; /* Blokuje domyślne gesty przeglądarki */
+            touch-action: none;
         }
 
         #game-wrapper {
             position: relative;
             width: 100%;
             height: 100%;
-            max-width: 600px; /* Zwiększona szerokość dla tabletów (Usprawnienie 29) */
+            max-width: 600px;
             margin: 0 auto;
             background: #000;
             overflow: hidden;
@@ -42,7 +42,6 @@
             display: block;
             width: 100%;
             height: 100%;
-            /* Bloom */
             filter: drop-shadow(0 0 4px rgba(255,255,255,0.3)); 
         }
 
@@ -56,7 +55,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: max(20px, env(safe-area-inset-top)) 20px 20px 20px; /* Bezpieczny margines na iPhone */
+            padding: max(20px, env(safe-area-inset-top)) 20px 20px 20px;
             box-sizing: border-box;
             z-index: 10;
         }
@@ -69,7 +68,6 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
-        /* Usprawnienie 19: Pasek Postępu */
         #progress-bar-container {
             position: absolute;
             top: 0;
@@ -87,7 +85,7 @@
             box-shadow: 0 0 10px var(--primary);
         }
 
-        .score-box { font-size: clamp(24px, 5vw, 32px); font-weight: bold; } /* Responsywna czcionka (Usprawnienie 29) */
+        .score-box { font-size: clamp(24px, 5vw, 32px); font-weight: bold; }
         .sub-text { font-size: 14px; opacity: 0.8; }
         
         .currency-box { 
@@ -119,7 +117,7 @@
         .hidden { opacity: 0; pointer-events: none; }
 
         h1 { 
-            font-size: clamp(30px, 8vw, 50px); /* Responsywna czcionka */
+            font-size: clamp(30px, 8vw, 50px);
             margin: 0 0 10px 0;
             text-transform: uppercase; letter-spacing: 3px; 
             background: linear-gradient(to right, #4facfe, #00f2fe); 
@@ -142,7 +140,6 @@
             border-radius: 30px;
             transition: all 0.2s;
             box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
-            /* Usprawnienie 29: Lepszy dotyk */
             min-width: 120px; 
             touch-action: manipulation;
         }
@@ -185,7 +182,6 @@
             width: 80%;
         }
         
-        /* Styl dla ikony głośnika */
         #mute-btn {
             position: absolute;
             bottom: 20px;
@@ -195,7 +191,6 @@
             cursor: pointer;
             z-index: 25;
         }
-
     </style>
 </head>
 <body>
@@ -214,7 +209,7 @@
             <div class="currency-box">💎 <span id="coinsVal">0</span></div>
         </div>
         <div id="shield-icon" style="opacity:0; color: #ff0055; font-weight: bold; text-shadow: 0 0 10px #ff0055; text-align: center; width: 100%; margin-top: 10px;">🛡️ TARCZA AKTYWNA</div>
-        <div style="text-align: center; margin-bottom: 20px; font-size: 12px; color: #aaa;">Neon Trip v2.5</div>
+        <div style="text-align: center; margin-bottom: 20px; font-size: 12px; color: #aaa;">Neon Trip v2.5 (Stable Physics)</div>
     </div>
 
     <div id="start-screen" class="screen">
@@ -246,14 +241,14 @@
 <script>
 /**
  * ARCHITEKTURA GRY (ZMODYFIKOWANA):
- * 1. Zastosowano Delta Time (dt) do fizyki.
- * 2. Dodano MusicSequencer.
- * 3. Dodano obsługę responsywności i interpolację kolorów.
+ * 1. Zastosowano Time-Based Spawning (niezależne od FPS).
+ * 2. Zastosowano Sub-Stepping Physics (brak przenikania przez ściany).
+ * 3. Zintegrowano audio i grafikę z poprzedniej wersji.
  */
 
 // --- ZMIENNE GLOBALNE I KONFIGURACJA ---
 const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d', { alpha: false }); // Optymalizacja
+const ctx = canvas.getContext('2d', { alpha: false });
 
 let width, height;
 function resize() {
@@ -275,20 +270,20 @@ const state = {
     stage: 0, 
     muted: false,
     
-    // Zmienne do logiki czasu
-    gameSpeed: 1.0,     // Mnożnik prędkości globalnej
+    // ZMIANY: Precyzyjne sterowanie czasem
     lastTime: 0,
-    obstacleTimer: 0
+    nextSpawnTime: 0,    // Bezwzględny czas następnej przeszkody
+    spawnInterval: 1600, // Bazowy czas między przeszkodami (ms)
 };
 
-// --- SYSTEM AUDIO (Usprawnienie 20: Muzyka) ---
+// --- SYSTEM AUDIO ---
 const Audio = {
     ctx: null,
     initialized: false,
     nextNoteTime: 0,
     noteIndex: 0,
-    tempo: 120, // BPM
-    sequence: [ // Prosta linia basowa
+    tempo: 120, 
+    sequence: [ 
         220, 220, 0, 220, 
         261.63, 261.63, 0, 261.63, 
         196, 196, 0, 196,
@@ -299,7 +294,7 @@ const Audio = {
         if(this.initialized) return;
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         this.initialized = true;
-        this.startAmbient(); // Szum wiatru
+        this.startAmbient();
     },
 
     toggleMute: function() {
@@ -326,18 +321,15 @@ const Audio = {
         osc.stop(this.ctx.currentTime + duration);
     },
 
-    // Sekwencer muzyczny (Usprawnienie 20)
     updateMusic: function(dt) {
         if(!this.ctx || state.screen !== 'PLAY' || state.muted) return;
         
-        // Zwiększ tempo w trudniejszych etapach
         let currentTempo = this.tempo + (state.stage * 20);
         let secondsPerBeat = 60.0 / currentTempo;
         
-        // Planowanie nut z wyprzedzeniem (lookahead)
         while (this.nextNoteTime < this.ctx.currentTime + 0.1) {
             this.scheduleNote(this.noteIndex, this.nextNoteTime);
-            this.nextNoteTime += secondsPerBeat / 4; // 16-tki
+            this.nextNoteTime += secondsPerBeat / 4; 
             this.noteIndex = (this.noteIndex + 1) % this.sequence.length;
         }
     },
@@ -345,7 +337,6 @@ const Audio = {
     scheduleNote: function(index, time) {
         const freq = this.sequence[index];
         if(freq > 0) {
-            // Zmiana brzmienia zależnie od etapu
             let type = state.stage === 3 ? 'sawtooth' : (state.stage === 2 ? 'square' : 'sine');
             let vol = state.stage === 3 ? 0.03 : 0.05;
             
@@ -354,7 +345,6 @@ const Audio = {
             osc.type = type;
             osc.frequency.setValueAtTime(freq, time);
             
-            // Envelope
             gain.gain.setValueAtTime(vol, time);
             gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
             
@@ -367,7 +357,6 @@ const Audio = {
 
     jump: function() { 
         this.playTone(300, 'triangle', 0.1, 0.1); 
-        // Pitch bend
         if(this.ctx && !state.muted) {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -407,12 +396,11 @@ const Audio = {
     }
 };
 
-// --- GRAFIKA (Usprawnienie 11 & 12) ---
+// --- GRAFIKA ---
 
 class Background {
     constructor() {
         this.stars = [];
-        // Warstwa 1: Gwiazdy
         for(let i=0; i<60; i++) {
             this.stars.push({
                 x: Math.random() * width,
@@ -422,7 +410,6 @@ class Background {
                 layer: 1
             });
         }
-        // Warstwa 2 (Usprawnienie 12): Odległe obiekty (wolniejsze)
         for(let i=0; i<15; i++) {
             this.stars.push({
                 x: Math.random() * width,
@@ -434,9 +421,8 @@ class Background {
             });
         }
 
-        // System kolorów (Usprawnienie 11)
         this.colors = {
-            top: [19, 84, 122], // RGB start
+            top: [19, 84, 122],
             bottom: [128, 208, 199]
         };
         this.targetColors = {
@@ -445,25 +431,22 @@ class Background {
         };
     }
     
-    // Funkcja lerp do płynnej zmiany
     lerp(start, end, t) {
         return start + (end - start) * t;
     }
 
     updateColor(dt) {
-        // Ustawianie celów w zależności od etapu
-        if(state.stage === 0) { // Ocean
+        if(state.stage === 0) { 
             this.targetColors = { top: [19, 84, 122], bottom: [128, 208, 199] };
-        } else if (state.stage === 1) { // Pustynia (Naprawa braku zmian)
+        } else if (state.stage === 1) { 
             this.targetColors = { top: [178, 69, 146], bottom: [241, 95, 121] };
-        } else if (state.stage === 2) { // Góry
+        } else if (state.stage === 2) { 
             this.targetColors = { top: [44, 62, 80], bottom: [76, 161, 175] };
-        } else { // Kosmos
+        } else { 
             this.targetColors = { top: [0, 0, 0], bottom: [26, 11, 46] };
         }
 
-        // Interpolacja
-        const speed = 1.0 * dt; // Prędkość zmiany koloru
+        const speed = 1.0 * dt; 
         for(let i=0; i<3; i++) {
             this.colors.top[i] = this.lerp(this.colors.top[i], this.targetColors.top[i], 0.01 * speed);
             this.colors.bottom[i] = this.lerp(this.colors.bottom[i], this.targetColors.bottom[i], 0.01 * speed);
@@ -473,7 +456,6 @@ class Background {
     draw(dt) {
         this.updateColor(dt);
         
-        // Budowanie stringa rgb
         const cTop = `rgb(${this.colors.top[0]},${this.colors.top[1]},${this.colors.top[2]})`;
         const cBot = `rgb(${this.colors.bottom[0]},${this.colors.bottom[1]},${this.colors.bottom[2]})`;
 
@@ -484,9 +466,8 @@ class Background {
         ctx.fillStyle = grad;
         ctx.fillRect(0,0, width, height);
 
-        // Rysowanie warstw (Usprawnienie 12)
         this.stars.forEach(s => {
-            s.x -= s.speed * dt; // Delta time movement
+            s.x -= s.speed * dt; 
             if(s.x < 0) {
                 s.x = width;
                 s.y = Math.random() * height;
@@ -521,12 +502,12 @@ class Particle {
         } else if (type === 'rain') { 
             this.x = Math.random() * width;
             this.y = Math.random() * height;
-            this.vx = -1; // Lekki wiatr
-            this.vy = 8;  // Prędkość spadania
+            this.vx = -1; 
+            this.vy = 8;  
             this.life = Math.random() * 0.5 + 0.5;
             this.decay = 0.01;
             this.radius = Math.random() * 2 + 1;
-        } else { // trail
+        } else { 
             this.vx = -2; this.vy = 0; this.decay = 0.05;
         }
     }
@@ -592,7 +573,7 @@ class Bubble {
     }
 
     flap() {
-        this.velocity = -6; // Lekko zwiększona siła skoku dla lepszego czucia
+        this.velocity = -6; 
         Audio.jump();
         for(let i=0; i<5; i++) {
             this.particles.push(new Particle(this.x, this.y + this.radius, 'jump', '#fff'));
@@ -604,20 +585,17 @@ class Bubble {
         let g = (state.stage === 3 ? 0.15 : 0.35) * dt; 
         this.velocity += g;
         
-        // Wiatr w górach
         if(state.stage === 2) {
             this.velocity += (Math.random() - 0.5) * 0.3 * dt;
         }
 
         this.y += this.velocity * dt;
 
-        // Kolizja z sufitem/podłogą
         if(this.y + this.radius > height) gameOver();
         if(this.y - this.radius < 0) { this.y = this.radius; this.velocity = 0; }
 
-        // Ślad generowany na podstawie czasu
         this.trailTimer += dt;
-        if(this.trailTimer > 5) { // Co ok. 5 klatek "standardowych"
+        if(this.trailTimer > 5) { 
             this.particles.push(new Particle(this.x, this.y, 'trail', this.skinColor));
             this.trailTimer = 0;
         }
@@ -661,7 +639,7 @@ class Bubble {
 class Obstacle {
     constructor() {
         this.w = 50;
-        this.gap = 180; // Stała szczelina dla balansu
+        this.gap = 180; 
         this.x = width;
         this.topH = Math.random() * (height - this.gap - 100) + 50;
         this.passed = false;
@@ -674,9 +652,7 @@ class Obstacle {
     }
 
     update(dt) {
-        this.x -= 3.5 * dt; // Prędkość przeszkód (skalowana przez dt)
-        
-        // Dynamiczne oświetlenie (zbliżenie)
+        this.x -= 3.5 * dt; 
         let dist = Math.abs(this.x - bubble.x);
         this.glow = (dist < 150);
     }
@@ -685,12 +661,9 @@ class Obstacle {
         ctx.fillStyle = this.glow ? '#ff4d4d' : '#444'; 
         ctx.strokeStyle = '#fff';
         
-        // Górna rura
         ctx.fillRect(this.x, 0, this.w, this.topH);
-        // Dolna rura
         ctx.fillRect(this.x, height - (height - this.gap - this.topH), this.w, height - this.gap - this.topH);
         
-        // Item
         if(this.item) {
             ctx.save();
             ctx.translate(this.x + this.w/2, this.item.y);
@@ -708,7 +681,7 @@ class Obstacle {
     }
 }
 
-// --- LOGIKA GŁÓWNA ---
+// --- LOGIKA GŁÓWNA (ZMODYFIKOWANA) ---
 
 let bubble;
 let obstacles = [];
@@ -722,13 +695,11 @@ function updateUI() {
     document.getElementById('coinsVal').innerText = state.coins;
     document.getElementById('shield-icon').style.opacity = bubble.hasShield ? '1' : '0';
     
-    // Usprawnienie 19: Pasek Postępu
     let progress = 0;
-    // Pasek liczy postęp do następnego "kamienia milowego" (500, 1000, 2000)
     if(state.score < 500) progress = (state.score / 500) * 100;
     else if(state.score < 1000) progress = ((state.score - 500) / 500) * 100;
     else if(state.score < 2000) progress = ((state.score - 1000) / 1000) * 100;
-    else progress = 100; // Po 2000 zawsze pełny (kosmos)
+    else progress = 100; 
     
     document.getElementById('progress-bar-fill').style.width = `${progress}%`;
 }
@@ -741,7 +712,10 @@ function init() {
     state.score = 0;
     state.stage = 0;
     state.lastTime = 0;
-    state.obstacleTimer = 0;
+    
+    // Reset czasu spawnowania (Time-Based)
+    state.nextSpawnTime = performance.now() + 1500;
+    
     updateUI();
     Audio.nextNoteTime = Audio.ctx ? Audio.ctx.currentTime + 0.1 : 0;
 }
@@ -757,24 +731,22 @@ function gameOver() {
     
     document.getElementById('final-score').innerText = Math.floor(state.score);
     document.getElementById('gameover-screen').classList.remove('hidden');
-    // Kontynuuj pętlę przez chwilę dla efektu wybuchu
     setTimeout(() => cancelAnimationFrame(animationId), 1000);
 }
 
-// PĘTLA GRY Z DELTA TIME
+// ZAAWANSOWANA PĘTLA Z OBSŁUGĄ CZASU I SUB-STEPPINGIEM
 function loop(timestamp) {
     if(!state.lastTime) state.lastTime = timestamp;
     const deltaTime = timestamp - state.lastTime;
     state.lastTime = timestamp;
 
-    // Normalizacja do 60 FPS (1.0 = normalna prędkość)
-    // Jeśli ekran ma 120Hz, dt wyniesie ok. 0.5. Jeśli 60Hz, ok. 1.0.
-    // Ograniczenie dt, żeby gra nie "skoczyła" przy lagu (max 3 klatki)
-    let dt = Math.min(deltaTime / 16.666, 3);
+    // Normalizacja dt (1.0 = ~16ms)
+    // Cap na max 4 klatki, żeby uniknąć spirali śmierci przy pauzie/lagu
+    let dt = Math.min(deltaTime / 16.666, 4);
 
     if(state.screen !== 'PLAY') {
         ctx.clearRect(0,0,width,height);
-        bg.draw(dt * 0.2); // Tło rusza się wolno w menu
+        bg.draw(dt * 0.2); 
         globalParticles.forEach(p => { p.update(dt); p.draw(); });
         animationId = requestAnimationFrame(loop);
         return;
@@ -783,87 +755,106 @@ function loop(timestamp) {
     ctx.clearRect(0, 0, width, height);
     
     // Logika Etapów
-    if(state.score > 500) state.stage = 1; // Pustynia
-    if(state.score > 1000) state.stage = 2; // Góry
-    if(state.score > 2000) state.stage = 3; // Kosmos
+    if(state.score > 500) state.stage = 1; 
+    if(state.score > 1000) state.stage = 2; 
+    if(state.score > 2000) state.stage = 3; 
 
-    // Audio
     Audio.updateMusic(dt);
 
     // 1. Tło
     bg.draw(dt);
 
-    // 2. Deszcz (tylko etap 2)
-    if(state.stage === 2 && Math.random() < 0.3 * dt) { // Prawdopodobieństwo skalowane czasem
+    // 2. Deszcz (etap 2)
+    if(state.stage === 2 && Math.random() < 0.3 * dt) { 
         globalParticles.push(new Particle(0,0,'rain', '#fff'));
     }
 
-    // 3. Generowanie przeszkód (na podstawie czasu, nie klatek)
-    state.obstacleTimer += dt;
-    // Generuj co ok. 100 jednostek czasu (ok 1.6 sekundy przy 60fps)
-    if (state.obstacleTimer > 100) {
+    // 3. Generowanie Przeszkód (TIME-BASED)
+    // Używamy bezwzględnego czasu gry (timestamp) zamiast licznika klatek
+    if (timestamp > state.nextSpawnTime) {
         obstacles.push(new Obstacle());
-        state.obstacleTimer = 0;
+        
+        // Oblicz następny czas z uwzględnieniem trudności (minimalnie 1.2s)
+        let difficultyMod = Math.max(0, Math.min(400, state.score * 0.5));
+        let nextInterval = state.spawnInterval - difficultyMod; 
+        state.nextSpawnTime = timestamp + nextInterval;
     }
 
-    // 4. Obsługa Przeszkód
-    for(let i = 0; i < obstacles.length; i++) {
-        let obs = obstacles[i];
-        obs.update(dt);
-        obs.draw();
+    // 4. FIZYKA I KOLIZJE (SUB-STEPPING)
+    // Dzielimy dt na mniejsze kroki, aby uniknąć przenikania przez ściany
+    // Jeśli dt wynosi 3.0 (duży lag), pętla wykona się 3 razy z krokiem 1.0
+    
+    let steps = Math.ceil(dt); 
+    let stepDt = dt / steps; 
+    
+    for(let s = 0; s < steps; s++) {
+        // A. Fizyka Bąbelka
+        bubble.update(stepDt);
+        
+        // B. Fizyka Przeszkód i Kolizje (w każdym pod-kroku)
+        for(let i = 0; i < obstacles.length; i++) {
+            let obs = obstacles[i];
+            
+            // Ruszamy tylko w pierwszym sub-kroku lub dzielimy ruch?
+            // Dzielimy ruch dla płynności
+            obs.update(stepDt);
 
-        // Kolizja z Itemami
-        if(obs.item) {
-            let dx = bubble.x - (obs.x + obs.w/2);
-            let dy = bubble.y - obs.item.y;
-            if(Math.sqrt(dx*dx + dy*dy) < bubble.radius + 15) {
-                if(obs.item.type === 'coin') {
-                    state.coins++;
-                    Audio.coin();
-                } else {
-                    bubble.hasShield = true;
-                    Audio.playTone(600, 'sine', 0.3);
+            // Kolizja z Itemami
+            if(obs.item) {
+                let dx = bubble.x - (obs.x + obs.w/2);
+                let dy = bubble.y - obs.item.y;
+                if(Math.sqrt(dx*dx + dy*dy) < bubble.radius + 15) {
+                    if(obs.item.type === 'coin') {
+                        state.coins++;
+                        Audio.coin();
+                    } else {
+                        bubble.hasShield = true;
+                        Audio.playTone(600, 'sine', 0.3);
+                    }
+                    obs.item = null;
+                    updateUI();
                 }
-                obs.item = null;
-                updateUI();
+            }
+
+            // Precyzyjna Kolizja z Przeszkodą
+            if (
+                bubble.x + bubble.radius > obs.x && 
+                bubble.x - bubble.radius < obs.x + obs.w && 
+                (bubble.y - bubble.radius < obs.topH || bubble.y + bubble.radius > height - (height - obs.gap - obs.topH))
+            ) {
+                if(bubble.hasShield) {
+                    bubble.hasShield = false;
+                    obs.passed = true;
+                    bubble.velocity = 5;
+                    Audio.crash();
+                } else if (!obs.passed) {
+                    // Ponieważ jesteśmy w pętli sub-step, game over zatrzymuje wszystko natychmiast
+                    gameOver();
+                    return; // Wychodzimy z funkcji loop
+                }
             }
         }
-
-        // Kolizja z Przeszkodą
-        if (
-            bubble.x + bubble.radius > obs.x && 
-            bubble.x - bubble.radius < obs.x + obs.w && 
-            (bubble.y - bubble.radius < obs.topH || bubble.y + bubble.radius > height - (height - obs.gap - obs.topH))
-        ) {
-            if(bubble.hasShield) {
-                bubble.hasShield = false;
-                obs.passed = true;
-                bubble.velocity = 5;
-                Audio.crash();
-            } else if (!obs.passed) {
-                gameOver();
-            }
-        }
-
-        // Usuwanie
-        if(obs.x + obs.w < 0) {
-            obstacles.shift();
-            i--;
+        
+        // Usuwanie przeszkód (tylko w ostatnim kroku żeby nie mieszać indeksów)
+        if (s === steps - 1) {
+             obstacles = obstacles.filter(obs => obs.x + obs.w > -100);
         }
     }
 
-    // 5. Bąbelek
-    bubble.update(dt);
+    // 5. Rysowanie Przeszkód (Raz na klatkę)
+    obstacles.forEach(obs => obs.draw());
+
+    // 6. Rysowanie Bąbelka (Raz na klatkę)
     bubble.draw();
 
-    // 6. Globalne cząsteczki
+    // 7. Globalne cząsteczki
     globalParticles.forEach((p, index) => {
         p.update(dt);
         p.draw();
         if(p.life <= 0) globalParticles.splice(index, 1);
     });
 
-    state.score += 0.15 * dt; // Wynik zależny od czasu
+    state.score += 0.15 * dt; 
     updateUI();
 
     animationId = requestAnimationFrame(loop);
@@ -878,7 +869,12 @@ function startGame() {
     document.getElementById('gameover-screen').classList.add('hidden');
     document.getElementById('shop-screen').classList.add('hidden');
     init();
-    loop(0); // Reset czasu
+    
+    // Reset timestamp dla pętli
+    state.lastTime = performance.now();
+    state.nextSpawnTime = state.lastTime + 1500;
+    
+    loop(state.lastTime);
     bubble.flap();
 }
 
@@ -938,7 +934,6 @@ document.getElementById('btn-share').onclick = async () => {
     }
 };
 
-// Event Listeners
 document.getElementById('btn-start').onclick = startGame;
 document.getElementById('btn-restart').onclick = startGame;
 document.getElementById('mute-btn').onclick = () => Audio.toggleMute();
@@ -958,7 +953,7 @@ window.addEventListener('mousedown', (e) => {
     if(state.screen === 'PLAY') bubble.flap();
 });
 window.addEventListener('keydown', (e) => {
-    if(e.code === 'Space' || e.code === 'ArrowUp') { // Dodano strzałkę
+    if(e.code === 'Space' || e.code === 'ArrowUp') { 
         if(state.screen === 'PLAY') bubble.flap();
         else if (state.screen !== 'SHOP') startGame();
     }

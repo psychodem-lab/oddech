@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Literak - Truth Hub V8 + Share</title>
+    <title>Literak - Truth Hub V9</title>
     <style>
         :root {
             --primary: #4a90e2; --success: #27ae60; --gold: #f1c40f; --danger: #e74c3c;
@@ -24,7 +24,6 @@
         
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 5px; font-size: 0.8rem; }
         
-        /* Styl przycisku rekordu */
         .score-pill { 
             background: var(--gold); 
             color: #000; 
@@ -37,7 +36,6 @@
             gap: 5px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .score-pill:active { transform: scale(0.95); }
 
         .letters-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
         .letter { background: var(--primary); color: white; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.4rem; font-weight: bold; box-shadow: 0 4px 0 #357abd; cursor: pointer; user-select: none; position: relative; }
@@ -61,7 +59,7 @@
         .bg-pwn { background: #004a99; }
         .bg-ency { background: #d35400; }
         .bg-wsjp { background: #27ae60; }
-        .bg-interia { background: #ffcc00; color: #000; }
+        .bg-sjp { background: #6c5ce7; } /* Fioletowy kolor dla sjp.pl */
     </style>
 </head>
 <body>
@@ -76,7 +74,7 @@
             <a id="link-pwn-ency" href="#" target="_blank" class="hub-btn bg-ency">ENCYKLOPEDIA PWN</a>
             <a id="link-pwn-sjp" href="#" target="_blank" class="hub-btn bg-pwn">SJP PWN</a>
             <a id="link-wsjp" href="#" target="_blank" class="hub-btn bg-wsjp">WSJP PAN</a>
-            <a id="link-interia" href="#" target="_blank" class="hub-btn bg-interia">ENCY. INTERIA</a>
+            <a id="link-sjp" href="#" target="_blank" class="hub-btn bg-sjp">SJP.PL</a>
         </div>
         
         <button onclick="closeModal()" style="margin-top:15px; width:100%; background:var(--primary); color:white; padding: 12px; font-size: 1rem;">POWRÓT</button>
@@ -95,7 +93,7 @@
     <header style="text-align:center">
         <h1 style="margin:5px 0; letter-spacing: 2px;">LITERAK</h1>
         <div style="font-size:1.1rem; color:var(--primary)">PUNKTY: <b id="currentScore">0</b></div>
-        <div id="msg">Kliknij w rekord, by udostępnić wynik!</div>
+        <div id="msg">Wszystkie źródła zweryfikowane!</div>
     </header>
 
     <div class="letters-pills" id="lettersGroup"></div>
@@ -107,7 +105,6 @@
     </div>
 
     <div class="results">
-        <div style="font-size:0.8rem; margin-bottom:5px; font-weight: bold;">ZNALEZIONE (<span id="count">0</span>):</div>
         <div id="foundList"></div>
     </div>
 
@@ -125,7 +122,8 @@
     let usedIndices = [];
     let db;
 
-    const request = indexedDB.open("LiterakV8_Expert", 1);
+    const request = indexedDB.open("LiterakV9_Expert", 1);
+    request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
 
     function init() {
@@ -134,25 +132,19 @@
         loadGame();
     }
 
-    // Funkcja Udostępniania
     async function shareResult() {
         const best = state.isDaily ? 'bestD' : 'bestT';
         const score = localStorage.getItem(best) || 0;
         const mode = state.isDaily ? "Dnia" : "Trening";
-        const text = `Mój rekord w Literaku (Tryb ${mode}) to ${score} pkt! 🧩 Potrafisz go pobić? #Literak #GraSłowna`;
-
+        const text = `Mój rekord w Literaku (Tryb ${mode}) to ${score} pkt! 🧩 #Literak #GraSłowna`;
         if (navigator.share) {
-            try {
-                await navigator.share({ title: 'Mój Wynik Literak', text: text });
-            } catch (err) { console.log("Udostępnianie przerwane"); }
+            try { await navigator.share({ title: 'Literak', text: text }); } catch (err) {}
         } else {
-            // Fallback: Kopiowanie do schowka
             navigator.clipboard.writeText(text);
-            updateMsg("Wynik skopiowany do schowka!", "var(--success)");
+            updateMsg("Wynik skopiowany!", "var(--success)");
         }
     }
 
-    // --- Reszta logiki bez zmian ---
     async function checkWord() {
         const word = document.getElementById('wordInput').value.toLowerCase().trim();
         if(word.length < 3) return;
@@ -167,7 +159,7 @@
                 if (data.type === "standard" || data.type === "disambiguation") { isValid = true; definition = data.extract; } else {
                     const checkRes = await fetch(`https://pl.wiktionary.org/w/api.php?action=parse&format=json&origin=*&page=${encodeURIComponent(word)}&prop=text`);
                     const checkData = await checkRes.json();
-                    if (checkData.parse && checkData.parse.text["*"].includes("język polski")) { isValid = true; definition = "Słowo poprawne. Sprawdź źródła PWN/WSJP."; }
+                    if (checkData.parse && checkData.parse.text["*"].includes("język polski")) { isValid = true; definition = "Słowo poprawne. Sprawdź źródła poniżej."; }
                 }
                 saveLocal(word, isValid, definition);
             } catch(e) { updateMsg("Błąd sieci.", "red"); return; }
@@ -188,7 +180,7 @@
         document.getElementById('link-pwn-ency').href = `https://encyklopedia.pwn.pl/szukaj/${encodeURIComponent(w)}.html`;
         document.getElementById('link-pwn-sjp').href = `https://sjp.pwn.pl/szukaj/${encodeURIComponent(w)}.html`;
         document.getElementById('link-wsjp').href = `https://www.wsjp.pl/szukaj/podstawowa?szukaj=${encodeURIComponent(w)}`;
-        document.getElementById('link-interia').href = `https://encyklopedia.interia.pl/szukaj/${encodeURIComponent(w)}`;
+        document.getElementById('link-sjp').href = `https://sjp.pl/${encodeURIComponent(w)}`;
         getLocal(w).then(cached => { document.getElementById('defBody').innerHTML = cached?.def || "Przetwarzanie..."; });
     }
 
@@ -204,19 +196,17 @@
         });
         document.getElementById('foundList').innerHTML = state.found.map(w => `<span class="word-tag" onclick="showDef('${w}')">${w}</span>`).reverse().join('');
         document.getElementById('currentScore').innerText = state.score;
-        document.getElementById('count').innerText = state.found.length;
-        document.getElementById('modeBadge').innerText = "Tryb: " + (state.isDaily ? "Dnia" : "Trening");
-        document.getElementById('btnNew').style.display = state.isDaily ? "none" : "block";
         const best = state.isDaily ? 'bestD' : 'bestT';
         if(state.score > (localStorage.getItem(best)||0)) localStorage.setItem(best, state.score);
         document.getElementById('highScore').innerText = localStorage.getItem(best) || 0;
+        document.getElementById('modeBadge').innerText = "Tryb: " + (state.isDaily ? "Dnia" : "Trening");
+        document.getElementById('btnNew').style.display = state.isDaily ? "none" : "block";
     }
 
     function calcPts(w) { let p = 0; for(let c of w) p += (letterScores[c]||1); return w.length >= 6 ? p + 15 : p; }
     function startNewGame() {
         state.found = []; state.score = 0;
-        let pool = [];
-        let seed = seedWords[Math.floor(Math.random()*seedWords.length)].split('');
+        let pool = []; let seed = seedWords[Math.floor(Math.random()*seedWords.length)].split('');
         for(let i=0; i<Math.min(7, seed.length); i++) pool.push(seed.splice(Math.floor(Math.random()*seed.length), 1)[0]);
         while(pool.length < 10) pool.push("AEEIOOZZRRSSNNWW".split('')[Math.floor(Math.random()*16)]);
         state.pool = pool.sort(() => 0.5 - Math.random()).map(c => ({ char: c.toUpperCase(), pts: letterScores[c.toUpperCase()] || 1 }));

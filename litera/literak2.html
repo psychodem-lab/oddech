@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Literak - Hybrid Edition</title>
+    <title>Literak - Pro Edition</title>
     <style>
         :root {
             --primary: #4a90e2; --success: #27ae60; --gold: #f1c40f; --danger: #e74c3c;
@@ -20,84 +20,79 @@
         .game-container { background: var(--panel-bg); width: 100%; max-width: 500px; height: 100vh; display: flex; flex-direction: column; padding: 10px; position: relative; }
         
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
-        .modal-content { background: var(--panel-bg); padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .modal-content { background: var(--panel-bg); padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; box-shadow: 0 15px-35px rgba(0,0,0,0.5); border: 2px solid var(--primary); }
         
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 5px; font-size: 0.8rem; }
         .letters-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
-        .letter { background: var(--primary); color: white; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.4rem; font-weight: bold; box-shadow: 0 4px 0 #357abd; cursor: pointer; position: relative; user-select: none; }
+        .letter { background: var(--primary); color: white; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.4rem; font-weight: bold; box-shadow: 0 4px 0 #357abd; cursor: pointer; user-select: none; }
         .letter.used { background: #bdc3c7; box-shadow: 0 0 0; opacity: 0.5; transform: translateY(4px); }
         .letter .pts { font-size: 0.6rem; position: absolute; bottom: 2px; right: 5px; }
 
         .input-area { display: flex; gap: 8px; height: 50px; margin-bottom: 10px; }
         input { flex: 2; border: 2px solid var(--border); border-radius: 8px; text-align: center; font-size: 1.2rem; background: var(--input-bg); color: var(--text-main); text-transform: uppercase; outline: none; }
         
-        .results { flex-grow: 1; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); padding: 8px; overflow-y: auto; margin-bottom: 10px; }
-        .word-tag { display: inline-block; background: var(--tag-bg); padding: 5px 10px; border-radius: 15px; margin: 3px; font-size: 0.85rem; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; }
+        .results { flex-grow: 1; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); padding: 10px; overflow-y: auto; margin-bottom: 10px; }
+        .word-tag { display: inline-block; background: var(--tag-bg); padding: 6px 12px; border-radius: 20px; margin: 4px; font-size: 0.9rem; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; animation: pop 0.3s ease; }
+        @keyframes pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         
         button { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; padding: 10px; }
         .btn-add { background: var(--success); color: white; flex: 1; }
         .btn-back { background: #e67e22; color: white; width: 50px; }
-        .btn-action { background: var(--primary); color: white; flex: 1; height: 45px; }
         
-        #msg { height: 20px; text-align: center; font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; }
-        .particle { position: absolute; pointer-events: none; border-radius: 50%; z-index: 100; }
+        #msg { height: 20px; text-align: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <div id="defModal" class="modal-overlay">
     <div class="modal-content">
-        <h3 id="defTitle" style="margin-top:0; color:var(--primary)">Słowo</h3>
-        <div id="defBody" style="max-height:250px; overflow-y:auto; line-height:1.5;">Pobieranie...</div>
-        <button onclick="closeModal()" style="margin-top:20px; width:100%; background:var(--primary); color:white;">ZAMKNIJ</button>
+        <h2 id="defTitle" style="margin-top:0; color:var(--primary); text-transform:uppercase; border-bottom: 2px solid var(--border); padding-bottom: 10px;">Słowo</h2>
+        <div id="defBody" style="max-height:300px; overflow-y:auto; line-height:1.6; font-size: 1rem; color: var(--text-main); margin-top: 15px;">Pobieranie...</div>
+        <button onclick="closeModal()" style="margin-top:20px; width:100%; background:var(--primary); color:white; padding: 12px; font-size: 1rem;">ROZUMIEM</button>
     </div>
 </div>
 
 <div class="game-container">
     <div class="top-bar">
-        <button onclick="toggleTheme()" style="background:none; border:1px solid var(--border); border-radius:50%; width:30px; height:30px; padding:0;">🌙</button>
-        <div id="modeBadge" onclick="toggleMode()" style="cursor:pointer; font-weight:bold; background:var(--border); padding:2px 10px; border-radius:10px;">Tryb: Trening</div>
+        <button onclick="toggleTheme()" style="background:none; border:1px solid var(--border); border-radius:50%; width:35px; height:35px;">🌙</button>
+        <div id="modeBadge" onclick="toggleMode()" style="cursor:pointer; font-weight:bold; background:var(--border); padding:4px 12px; border-radius:15px;">Tryb: Trening</div>
         <div>Rekord: <span id="highScore">0</span></div>
     </div>
 
     <header style="text-align:center">
-        <h2 style="margin:5px 0">Literak</h2>
-        <div style="font-size:1.1rem; color:var(--primary)">Wynik: <b id="currentScore">0</b></div>
-        <div id="msg"></div>
+        <h1 style="margin:5px 0; letter-spacing: 2px;">LITERAK</h1>
+        <div style="font-size:1.2rem; color:var(--primary)">PUNKTY: <b id="currentScore">0</b></div>
+        <div id="msg">Witaj w grze!</div>
     </header>
 
     <div class="letters-pills" id="lettersGroup"></div>
 
     <div class="input-area">
         <button class="btn-back" onclick="removeLast()">⌫</button>
-        <input type="text" id="wordInput" readonly placeholder="WPISZ...">
-        <button class="btn-add" onclick="checkWord()">OK</button>
+        <input type="text" id="wordInput" readonly placeholder="...">
+        <button class="btn-add" onclick="checkWord()">SPRAWDŹ</button>
     </div>
 
     <div class="results">
-        <div style="font-size:0.8rem; margin-bottom:5px; display:flex; justify-content:space-between">
-            <b>Słowa (<span id="count">0</span>):</b>
-            <span onclick="share()" style="cursor:pointer; color:var(--primary)">Udostępnij 📤</span>
-        </div>
+        <div style="font-size:0.85rem; margin-bottom:8px; font-weight: bold;">TWOJE SŁOWA (<span id="count">0</span>):</div>
         <div id="foundList"></div>
     </div>
 
     <div style="display:flex; gap:10px;">
-        <button class="btn-action" style="background:#9b59b6" onclick="shufflePool()">MIESZAJ</button>
-        <button id="btnNew" class="btn-action" onclick="startNewGame()">NOWE LITERY</button>
+        <button style="background:#9b59b6; color:white; flex:1;" onclick="shufflePool()">MIESZAJ</button>
+        <button id="btnNew" style="background:var(--primary); color:white; flex:1;" onclick="startNewGame()">NOWE LITERY</button>
     </div>
 </div>
 
 <script>
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
-    const seedWords = ["KLAWIATURA", "CZEKOLADA", "SAMOCHÓD", "POZIOMKA", "PRZYGODA", "TELEWIZOR", "KINO", "LINA", "DNO", "WODA", "DOM", "KOT"];
+    const seedWords = ["KLAWIATURA", "CZEKOLADA", "SAMOCHÓD", "POZIOMKA", "PRZYGODA", "TELEWIZOR", "RESTAURACJA", "KALEJDOSKOP"];
     
     let state = { pool: [], found: [], score: 0, isDaily: false };
     let usedIndices = [];
     let db;
 
-    // NOWA BAZA V5
-    const request = indexedDB.open("LiterakV5", 1);
+    const request = indexedDB.open("LiterakFinal", 1);
     request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
 
@@ -108,14 +103,12 @@
     }
 
     async function checkWord() {
-        const inputVal = document.getElementById('wordInput').value;
-        const word = inputVal.toLowerCase().trim();
-        if(word.length < 3) return;
+        const word = document.getElementById('wordInput').value.toLowerCase().trim();
+        if(word.length < 3) { updateMsg("Za krótkie!", "var(--danger)"); return; }
         if(state.found.includes(word.toUpperCase())) { updateMsg("Już ułożone!", "orange"); return; }
 
-        updateMsg("Sprawdzanie...", "var(--primary)");
+        updateMsg("Łączenie z Wikisłownikiem...", "var(--primary)");
 
-        // 1. Sprawdź Cache
         const cached = await getLocal(word);
         let isValid = false;
         let definition = "";
@@ -124,53 +117,45 @@
             isValid = cached.valid;
             definition = cached.def;
         } else {
-            // 2. Bardziej niezawodne API Wikisłownika (Search API)
             try {
-                // Szukamy dokładnie tego słowa
-                const searchRes = await fetch(`https://pl.wiktionary.org/w/api.php?action=query&format=json&origin=*&list=search&srsearch=intitle:${encodeURIComponent(word)}&srlimit=1`);
-                const searchData = await searchRes.json();
+                // NAJBARDZIEJ PRECYZYJNE API: Pobiera sformatowaną treść strony
+                const res = await fetch(`https://pl.wiktionary.org/w/api.php?action=parse&format=json&origin=*&page=${encodeURIComponent(word)}&prop=text|sections`);
+                const data = await res.json();
                 
-                // Jeśli znaleziono tytuł identyczny ze słowem
-                if(searchData.query && searchData.query.search.length > 0) {
+                if (data.parse) {
                     isValid = true;
-                    // Próbujemy pobrać definicję, ale nawet jak nie wyjdzie, słowo jest uznane
-                    try {
-                        const defRes = await fetch(`https://pl.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`);
-                        if(defRes.ok) {
-                            const defData = await defRes.json();
-                            definition = defData.extract;
-                        }
-                    } catch(e) {}
-                    if(!definition) definition = "Słowo poprawne (potwierdzone w bazie Wikisłownika).";
+                    // Wyciąganie definicji z HTML (szukamy pierwszej listy numerowanej)
+                    const html = data.parse.text["*"];
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Szukamy znaczeń w polskiej sekcji
+                    const definitions = doc.querySelectorAll('ol > li');
+                    if (definitions.length > 0) {
+                        definition = Array.from(definitions).slice(0, 3)
+                            .map(li => li.innerText.replace(/\[.*\]/g, '').trim())
+                            .join('<br><br>');
+                    } else {
+                        definition = "Słowo istnieje, ale nie udało się pobrać czytelnej definicji.";
+                    }
                 }
                 saveLocal(word, isValid, definition);
-            } catch(e) { updateMsg("Błąd sieci!", "red"); return; }
+            } catch(e) { 
+                updateMsg("Błąd połączenia.", "red"); 
+                return; 
+            }
         }
 
         if(isValid) {
             const pts = calcPts(word.toUpperCase());
             state.score += pts;
             state.found.push(word.toUpperCase());
-            updateMsg(`+${pts} PKT!`, "var(--success)");
-            saveGame();
-            renderAll();
-            usedIndices.forEach(i => explode(document.getElementById('tile-'+i)));
+            updateMsg(`Świetnie! +${pts} PKT`, "var(--success)");
+            saveGame(); renderAll();
         } else {
-            updateMsg("Brak słowa w słowniku.", "var(--danger)");
+            updateMsg("Brak takiego słowa.", "var(--danger)");
         }
         resetInput();
-    }
-
-    // --- LOGIKA GRY ---
-    function startNewGame() {
-        const rnd = state.isDaily ? mulberry32(parseInt(new Date().toISOString().slice(0,10).replace(/-/g,''))) : Math.random;
-        state.found = []; state.score = 0;
-        let pool = [];
-        let seed = seedWords[Math.floor(rnd()*seedWords.length)].split('');
-        for(let i=0; i<Math.min(7, seed.length); i++) pool.push(seed.splice(Math.floor(rnd()*seed.length), 1)[0]);
-        while(pool.length < 10) pool.push("AEEIOOZZRRSSNNWWBCDD".split('')[Math.floor(rnd()*20)]);
-        state.pool = pool.sort(() => rnd()-0.5).map(c => ({ char: c.toUpperCase(), pts: letterScores[c.toUpperCase()] || 1 }));
-        saveGame(); renderAll();
     }
 
     function renderAll() {
@@ -179,7 +164,6 @@
         state.pool.forEach((item, i) => {
             const div = document.createElement('div');
             div.className = 'letter' + (usedIndices.includes(i) ? ' used' : '');
-            div.id = 'tile-' + i;
             div.innerHTML = `${item.char}<span class="pts">${item.pts}</span>`;
             div.onclick = () => { if(!usedIndices.includes(i)) { usedIndices.push(i); document.getElementById('wordInput').value += item.char; renderAll(); } };
             group.appendChild(div);
@@ -198,12 +182,27 @@
         document.getElementById('defTitle').innerText = word;
         document.getElementById('defModal').style.display = 'flex';
         const cached = await getLocal(word.toLowerCase());
-        document.getElementById('defBody').innerHTML = cached?.def || "Brak opisu.";
+        document.getElementById('defBody').innerHTML = cached?.def || "Brak definicji.";
+    }
+
+    function calcPts(w) { 
+        let p = 0; for(let c of w) p += (letterScores[c]||1); 
+        return w.length >= 6 ? p + 15 : p; 
+    }
+
+    function startNewGame() {
+        const rnd = state.isDaily ? (a=>{var t=a+=2147483647;t=Math.imul(t^t>>>15,t|1);return((t^=t+Math.imul(t^t>>>7,t|61))>>>0)/4294967296})(parseInt(new Date().toISOString().slice(0,10).replace(/-/g,''))) : Math.random;
+        state.found = []; state.score = 0;
+        let pool = [];
+        let seed = seedWords[Math.floor(Math.random()*seedWords.length)].split('');
+        for(let i=0; i<Math.min(7, seed.length); i++) pool.push(seed.splice(Math.floor(Math.random()*seed.length), 1)[0]);
+        while(pool.length < 10) pool.push("AEEIOOZZRRSSNNWW".split('')[Math.floor(Math.random()*16)]);
+        state.pool = pool.sort(() => 0.5 - Math.random()).map(c => ({ char: c.toUpperCase(), pts: letterScores[c.toUpperCase()] || 1 }));
+        saveGame(); renderAll();
     }
 
     function saveLocal(w, v, d) { if(db) db.transaction("words", "readwrite").objectStore("words").put({valid:v, def:d}, w); }
     function getLocal(w) { return new Promise(r => { if(!db) return r(null); const req = db.transaction("words").objectStore("words").get(w); req.onsuccess = () => r(req.result); }); }
-    function calcPts(w) { let p = 0; for(let c of w) p += (letterScores[c]||1); return w.length > 5 ? p + 10 : p; }
     function saveGame() { localStorage.setItem(state.isDaily?'sD':'sT', JSON.stringify(state)); localStorage.setItem('lastMode', state.isDaily?'daily':'training'); }
     function loadGame() { const s = localStorage.getItem(state.isDaily?'sD':'sT'); if(s) { state = JSON.parse(s); renderAll(); } else startNewGame(); }
     function toggleMode() { state.isDaily = !state.isDaily; loadGame(); }
@@ -213,9 +212,6 @@
     function closeModal() { document.getElementById('defModal').style.display = 'none'; }
     function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem('dark', document.body.classList.contains('dark-mode')); }
     function shufflePool() { state.pool.sort(() => Math.random()-0.5); renderAll(); }
-    function mulberry32(a) { return function() { var t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
-    function explode(el) { if(!el) return; const r = el.getBoundingClientRect(); const cx = r.left + r.width/2, cy = r.top + r.height/2; for(let i=0;i<8;i++){ const p = document.createElement('div'); p.className='particle'; p.style.width='6px'; p.style.height='6px'; p.style.background='var(--success)'; document.body.appendChild(p); const a = (i/8)*Math.PI*2; p.animate([{transform:`translate(${cx}px,${cy}px) scale(1)`,opacity:1},{transform:`translate(${cx+Math.cos(a)*50}px,${cy+Math.sin(a)*50}px) scale(0)`,opacity:0}],{duration:500}).onfinish=()=>p.remove(); } }
-    function share() { const t = `Literak: ${state.score} pkt! 🧩`; if(navigator.share) navigator.share({text:t}); else alert(t); }
 </script>
 </body>
 </html>

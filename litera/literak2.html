@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Literak - Expert Edition</title>
+    <title>Literak - Polish Only</title>
     <style>
         :root {
             --primary: #4a90e2; --success: #27ae60; --gold: #f1c40f; --danger: #e74c3c;
@@ -61,7 +61,7 @@
     <header style="text-align:center">
         <h1 style="margin:5px 0; letter-spacing: 2px;">LITERAK</h1>
         <div style="font-size:1.2rem; color:var(--primary)">PUNKTY: <b id="currentScore">0</b></div>
-        <div id="msg">Powodzenia!</div>
+        <div id="msg">Tylko polskie słowa!</div>
     </header>
 
     <div class="letters-pills" id="lettersGroup"></div>
@@ -85,14 +85,14 @@
 
 <script>
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
-    const seedWords = ["KLAWIATURA", "CZEKOLADA", "SAMOCHÓD", "POZIOMKA", "PRZYGODA", "TELEWIZOR", "RESTAURACJA", "KINO", "LINA", "DNO", "WODA", "DOM", "KOT"];
+    const seedWords = ["KLAWIATURA", "CZEKOLADA", "SAMOCHÓD", "POZIOMKA", "PRZYGODA", "RESTAURACJA", "KINO", "DAR", "DOM"];
     
     let state = { pool: [], found: [], score: 0, isDaily: false };
     let usedIndices = [];
     let db;
 
-    // Zmieniona nazwa bazy, aby wymusić odświeżenie definicji
-    const request = indexedDB.open("LiterakExpert_V1", 1);
+    // V2: Wymuszamy nowe pobieranie danych
+    const request = indexedDB.open("LiterakPolishOnly_V2", 1);
     request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
 
@@ -107,7 +107,7 @@
         if(word.length < 3) return;
         if(state.found.includes(word.toUpperCase())) { updateMsg("Już ułożone!", "orange"); return; }
 
-        updateMsg("Szukanie znaczenia...", "var(--primary)");
+        updateMsg("Szukanie...", "var(--primary)");
 
         const cached = await getLocal(word);
         let isValid = false;
@@ -118,37 +118,55 @@
             definition = cached.def;
         } else {
             try {
+                // Pobieramy sekcje, aby wiedzieć gdzie jest język polski
                 const res = await fetch(`https://pl.wiktionary.org/w/api.php?action=parse&format=json&origin=*&page=${encodeURIComponent(word)}&prop=text|sections`);
                 const data = await res.json();
                 
                 if (data.parse) {
-                    isValid = true;
-                    const html = data.parse.text["*"];
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    
-                    // --- USPRAWNIONE WYCIĄGANIE DEFINICJI ---
-                    // 1. Próba znalezienia listy (ol)
-                    let definitions = Array.from(doc.querySelectorAll('ol > li'));
-                    
-                    if (definitions.length > 0) {
-                        definition = definitions.slice(0, 4)
-                            .map(li => {
-                                let t = li.innerText.replace(/\[.*?\]/g, '').trim();
-                                return t.charAt(0).toUpperCase() + t.slice(1);
-                            }).join('<br><br>');
-                    } else {
-                        // 2. Jeśli brak listy, szukamy pierwszego znaczącego akapitu (np. dla form odmienionych)
-                        const p = Array.from(doc.querySelectorAll('p')).find(el => el.innerText.length > 10);
-                        if (p) {
-                            definition = p.innerText.replace(/\[.*?\]/g, '').trim();
+                    const sections = data.parse.sections;
+                    const polishSection = sections.find(s => s.line === "język polski");
+
+                    if (polishSection) {
+                        isValid = true;
+                        const html = data.parse.text["*"];
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+
+                        // Izolujemy tylko polską sekcję (szukamy po nagłówku h2 i bierzemy treść do następnego h2)
+                        const allNodes = Array.from(doc.body.childNodes);
+                        let inPolish = false;
+                        let polishContent = document.createElement('div');
+
+                        for (let node of allNodes) {
+                            if (node.nodeName === 'H2' || (node.classList && node.classList.contains('mw-heading'))) {
+                                if (node.innerText.includes('język polski')) inPolish = true;
+                                else if (inPolish) break; // Kolejny język, kończymy
+                            }
+                            if (inPolish) polishContent.appendChild(node.cloneNode(true));
+                        }
+
+                        // Szukamy definicji (li) TYLKO wewnątrz polskiego bloku
+                        let defNodes = Array.from(polishContent.querySelectorAll('ol > li'));
+                        
+                        if (defNodes.length > 0) {
+                            definition = defNodes.slice(0, 4)
+                                .map(li => {
+                                    // Usuwamy cytaty i przypisy (↑)
+                                    let t = li.innerText.replace(/\[.*?\]/g, '').replace(/↑/g, '').trim();
+                                    return t.charAt(0).toUpperCase() + t.slice(1);
+                                })
+                                .filter(t => t.length > 5 && !t.includes('Mały słownik')) // Dodatkowy filtr na słowniki obcet
+                                .join('<br><br>');
+                        }
+                        
+                        if (!definition) {
+                            const p = polishContent.querySelector('p');
+                            if (p) definition = p.innerText.replace(/↑/g, '').trim();
                         }
                     }
-
-                    if (!definition || definition.length < 5) {
-                        definition = "Słowo poprawne, brak szczegółowego opisu w wybranej sekcji.";
-                    }
                 }
+                
+                if (!definition) definition = "Słowo polskie, brak opisu.";
                 saveLocal(word, isValid, definition);
             } catch(e) { updateMsg("Błąd sieci.", "red"); return; }
         }
@@ -160,12 +178,11 @@
             updateMsg(`+${pts} PKT`, "var(--success)");
             saveGame(); renderAll();
         } else {
-            updateMsg("Brak słowa w bazie.", "var(--danger)");
+            updateMsg("To nie jest polskie słowo.", "var(--danger)");
         }
         resetInput();
     }
 
-    // Pozostałe funkcje pomocnicze bez zmian...
     function renderAll() {
         const group = document.getElementById('lettersGroup');
         group.innerHTML = "";
@@ -190,7 +207,7 @@
         document.getElementById('defTitle').innerText = word;
         document.getElementById('defModal').style.display = 'flex';
         const cached = await getLocal(word.toLowerCase());
-        document.getElementById('defBody').innerHTML = cached?.def || "Słowo poprawne.";
+        document.getElementById('defBody').innerHTML = cached?.def || "Słowo polskie.";
     }
 
     function calcPts(w) { 

@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Literak - PWN & Wiki Edition</title>
+    <title>Literak - Truth Hub V8</title>
     <style>
         :root {
             --primary: #4a90e2; --success: #27ae60; --gold: #f1c40f; --danger: #e74c3c;
             --bg: #f0f2f5; --panel-bg: #ffffff; --text-main: #2c3e50; --text-sub: #7f8c8d;
             --border: #eeeeee; --input-bg: #ffffff; --tag-bg: #e1f5fe;
-            --modal-overlay: rgba(0,0,0,0.8);
+            --modal-overlay: rgba(0,0,0,0.85);
         }
         body.dark-mode {
             --bg: #121212; --panel-bg: #1e1e1e; --text-main: #e0e0e0; --text-sub: #b0b0b0;
@@ -19,8 +19,8 @@
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; height: 100vh; display: flex; justify-content: center; overflow: hidden; }
         .game-container { background: var(--panel-bg); width: 100%; max-width: 500px; height: 100vh; display: flex; flex-direction: column; padding: 10px; position: relative; }
         
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
-        .modal-content { background: var(--panel-bg); padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); border: 2px solid var(--primary); position: relative; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); z-index: 9999; justify-content: center; align-items: center; padding: 15px; }
+        .modal-content { background: var(--panel-bg); padding: 20px; border-radius: 15px; width: 100%; max-width: 450px; box-shadow: 0 15px 40px rgba(0,0,0,0.6); border: 1px solid var(--primary); }
         
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 5px; font-size: 0.8rem; }
         .letters-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
@@ -40,17 +40,32 @@
         
         #msg { height: 20px; text-align: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; }
         
-        .btn-pwn { display: block; margin-top: 15px; background: #004a99; color: white; text-align: center; text-decoration: none; padding: 10px; border-radius: 8px; font-size: 0.9rem; }
+        /* Expert Hub Styles */
+        .expert-hub { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; }
+        .hub-btn { display: block; color: white; text-align: center; text-decoration: none; padding: 10px 5px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; transition: opacity 0.2s; }
+        .hub-btn:active { opacity: 0.7; }
+        .bg-pwn { background: #004a99; }
+        .bg-ency { background: #d35400; }
+        .bg-wsjp { background: #27ae60; }
+        .bg-interia { background: #ffcc00; color: #000; }
     </style>
 </head>
 <body>
 
 <div id="defModal" class="modal-overlay">
     <div class="modal-content">
-        <h2 id="defTitle" style="margin-top:0; color:var(--primary); text-transform:uppercase; border-bottom: 2px solid var(--border); padding-bottom: 10px;">ZNACZENIE</h2>
-        <div id="defBody" style="max-height:300px; overflow-y:auto; line-height:1.6; font-size: 1.05rem; color: var(--text-main); margin-top: 15px;">Pobieranie...</div>
-        <a id="pwnLink" href="#" target="_blank" class="btn-pwn">Zobacz pełną definicję w SJP PWN</a>
-        <button onclick="closeModal()" style="margin-top:10px; width:100%; background:var(--primary); color:white; padding: 12px; font-size: 1rem;">OK</button>
+        <h2 id="defTitle" style="margin-top:0; color:var(--primary); text-transform:uppercase; border-bottom: 2px solid var(--border); padding-bottom: 10px; font-size: 1.2rem;">ZNACZENIE</h2>
+        <div id="defBody" style="max-height:200px; overflow-y:auto; line-height:1.5; font-size: 0.95rem; color: var(--text-main); margin-top: 10px;">Pobieranie...</div>
+        
+        <div style="font-size: 0.7rem; color: var(--text-sub); margin-top: 15px; font-weight: bold;">WERYFIKACJA W ŹRÓDŁACH:</div>
+        <div class="expert-hub">
+            <a id="link-pwn-ency" href="#" target="_blank" class="hub-btn bg-ency">ENCYKLOPEDIA PWN</a>
+            <a id="link-pwn-sjp" href="#" target="_blank" class="hub-btn bg-pwn">SJP PWN</a>
+            <a id="link-wsjp" href="#" target="_blank" class="hub-btn bg-wsjp">WSJP PAN</a>
+            <a id="link-interia" href="#" target="_blank" class="hub-btn bg-interia">ENCY. INTERIA</a>
+        </div>
+        
+        <button onclick="closeModal()" style="margin-top:15px; width:100%; background:var(--primary); color:white; padding: 12px; font-size: 1rem;">POWRÓT</button>
     </div>
 </div>
 
@@ -63,8 +78,8 @@
 
     <header style="text-align:center">
         <h1 style="margin:5px 0; letter-spacing: 2px;">LITERAK</h1>
-        <div style="font-size:1.2rem; color:var(--primary)">PUNKTY: <b id="currentScore">0</b></div>
-        <div id="msg">Powodzenia!</div>
+        <div style="font-size:1.1rem; color:var(--primary)">PUNKTY: <b id="currentScore">0</b></div>
+        <div id="msg">Źródła: PWN, WSJP, Wikipedia, Interia</div>
     </header>
 
     <div class="letters-pills" id="lettersGroup"></div>
@@ -76,26 +91,26 @@
     </div>
 
     <div class="results">
-        <div style="font-size:0.85rem; margin-bottom:8px; font-weight: bold;">TWOJE SŁOWA (<span id="count">0</span>):</div>
+        <div style="font-size:0.8rem; margin-bottom:5px; font-weight: bold;">ZNAZIONE (<span id="count">0</span>):</div>
         <div id="foundList"></div>
     </div>
 
     <div style="display:flex; gap:10px;">
         <button style="background:#9b59b6; color:white; flex:1;" onclick="shufflePool()">MIESZAJ</button>
-        <button id="btnNew" style="background:var(--primary); color:white; flex:1;" onclick="startNewGame()">NOWE LITERY</button>
+        <button id="btnNew" style="background:var(--primary); color:white; flex:1;" onclick="startNewGame()">NOWA GRA</button>
     </div>
 </div>
 
 <script>
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
-    const seedWords = ["KLAWIATURA", "WODA", "ROSA", "WINA", "DOM", "KOT", "DAR"];
+    const seedWords = ["KLAWIATURA", "ROSA", "WODA", "NAUKA", "POWIETRZE", "LOGIKA", "ZIEMIA"];
     
     let state = { pool: [], found: [], score: 0, isDaily: false };
     let usedIndices = [];
     let db;
 
-    // V6: Wikipedia + PWN Link Engine
-    const request = indexedDB.open("LiterakV6_PWN", 1);
+    // V8: Expert Hub Engine
+    const request = indexedDB.open("LiterakV8_Expert", 1);
     request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
 
@@ -110,7 +125,7 @@
         if(word.length < 3) return;
         if(state.found.includes(word.toUpperCase())) { updateMsg("Już ułożone!", "orange"); return; }
 
-        updateMsg("Weryfikacja...", "var(--primary)");
+        updateMsg("Weryfikacja w bazach...", "var(--primary)");
 
         const cached = await getLocal(word);
         let isValid = false;
@@ -121,7 +136,6 @@
             definition = cached.def;
         } else {
             try {
-                // 1. Wikipedia jako główne źródło opisu
                 const res = await fetch(`https://pl.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`);
                 const data = await res.json();
                 
@@ -129,15 +143,13 @@
                     isValid = true;
                     definition = data.extract;
                 } else {
-                    // 2. Fallback na Wikisłownik (tylko do sprawdzenia czy słowo istnieje)
                     const checkRes = await fetch(`https://pl.wiktionary.org/w/api.php?action=parse&format=json&origin=*&page=${encodeURIComponent(word)}&prop=text`);
                     const checkData = await checkRes.json();
                     if (checkData.parse && checkData.parse.text["*"].includes("język polski")) {
                         isValid = true;
-                        definition = "Słowo poprawne językowo.";
+                        definition = "Słowo poprawne. Brak rozbudowanego opisu w Wikipedii – sprawdź linki poniżej.";
                     }
                 }
-                
                 saveLocal(word, isValid, definition);
             } catch(e) { updateMsg("Błąd sieci.", "red"); return; }
         }
@@ -149,25 +161,28 @@
             updateMsg(`+${pts} PKT`, "var(--success)");
             saveGame(); renderAll();
         } else {
-            updateMsg("Brak słowa w bazie.", "var(--danger)");
+            updateMsg("Brak słowa w słownikach.", "var(--danger)");
         }
         resetInput();
     }
 
     function showDef(word) {
+        const w = word.toLowerCase();
         document.getElementById('defTitle').innerText = word;
         document.getElementById('defModal').style.display = 'flex';
         
-        // Link do SJP PWN
-        const pwnLink = document.getElementById('pwnLink');
-        pwnLink.href = `https://sjp.pwn.pl/szukaj/${encodeURIComponent(word.toLowerCase())}.html`;
+        // Expert Hub Links
+        document.getElementById('link-pwn-ency').href = `https://encyklopedia.pwn.pl/szukaj/${encodeURIComponent(w)}.html`;
+        document.getElementById('link-pwn-sjp').href = `https://sjp.pwn.pl/szukaj/${encodeURIComponent(w)}.html`;
+        document.getElementById('link-wsjp').href = `https://www.wsjp.pl/szukaj/podstawowa?szukaj=${encodeURIComponent(w)}`;
+        document.getElementById('link-interia').href = `https://encyklopedia.interia.pl/szukaj/${encodeURIComponent(w)}`;
 
-        getLocal(word.toLowerCase()).then(cached => {
-            document.getElementById('defBody').innerHTML = cached?.def || "Przetwarzanie...";
+        getLocal(w).then(cached => {
+            document.getElementById('defBody').innerHTML = cached?.def || "Przetwarzanie danych...";
         });
     }
 
-    // Pozostałe funkcje logiki gry (bez zmian)
+    // Interfejs (bez zmian)
     function renderAll() {
         const group = document.getElementById('lettersGroup');
         group.innerHTML = "";

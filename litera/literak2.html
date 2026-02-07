@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Literak - Truth Hub V8</title>
+    <title>Literak - Truth Hub V8 + Share</title>
     <style>
         :root {
             --primary: #4a90e2; --success: #27ae60; --gold: #f1c40f; --danger: #e74c3c;
@@ -23,6 +23,22 @@
         .modal-content { background: var(--panel-bg); padding: 20px; border-radius: 15px; width: 100%; max-width: 450px; box-shadow: 0 15px 40px rgba(0,0,0,0.6); border: 1px solid var(--primary); }
         
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 5px; font-size: 0.8rem; }
+        
+        /* Styl przycisku rekordu */
+        .score-pill { 
+            background: var(--gold); 
+            color: #000; 
+            padding: 5px 12px; 
+            border-radius: 15px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .score-pill:active { transform: scale(0.95); }
+
         .letters-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
         .letter { background: var(--primary); color: white; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.4rem; font-weight: bold; box-shadow: 0 4px 0 #357abd; cursor: pointer; user-select: none; position: relative; }
         .letter.used { background: #bdc3c7; box-shadow: 0 0 0; opacity: 0.5; transform: translateY(4px); }
@@ -40,10 +56,8 @@
         
         #msg { height: 20px; text-align: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; }
         
-        /* Expert Hub Styles */
         .expert-hub { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; }
-        .hub-btn { display: block; color: white; text-align: center; text-decoration: none; padding: 10px 5px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; transition: opacity 0.2s; }
-        .hub-btn:active { opacity: 0.7; }
+        .hub-btn { display: block; color: white; text-align: center; text-decoration: none; padding: 10px 5px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
         .bg-pwn { background: #004a99; }
         .bg-ency { background: #d35400; }
         .bg-wsjp { background: #27ae60; }
@@ -73,13 +87,15 @@
     <div class="top-bar">
         <button onclick="toggleTheme()" style="background:none; border:1px solid var(--border); border-radius:50%; width:35px; height:35px;">🌙</button>
         <div id="modeBadge" onclick="toggleMode()" style="cursor:pointer; font-weight:bold; background:var(--border); padding:4px 12px; border-radius:15px;">Tryb: Trening</div>
-        <div>Rekord: <span id="highScore">0</span></div>
+        <div class="score-pill" onclick="shareResult()">
+            🏆 Rekord: <span id="highScore">0</span> 🔗
+        </div>
     </div>
 
     <header style="text-align:center">
         <h1 style="margin:5px 0; letter-spacing: 2px;">LITERAK</h1>
         <div style="font-size:1.1rem; color:var(--primary)">PUNKTY: <b id="currentScore">0</b></div>
-        <div id="msg">Źródła: PWN, WSJP, Wikipedia, Interia</div>
+        <div id="msg">Kliknij w rekord, by udostępnić wynik!</div>
     </header>
 
     <div class="letters-pills" id="lettersGroup"></div>
@@ -91,7 +107,7 @@
     </div>
 
     <div class="results">
-        <div style="font-size:0.8rem; margin-bottom:5px; font-weight: bold;">ZNAZIONE (<span id="count">0</span>):</div>
+        <div style="font-size:0.8rem; margin-bottom:5px; font-weight: bold;">ZNALEZIONE (<span id="count">0</span>):</div>
         <div id="foundList"></div>
     </div>
 
@@ -103,15 +119,13 @@
 
 <script>
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
-    const seedWords = ["KLAWIATURA", "ROSA", "WODA", "NAUKA", "POWIETRZE", "LOGIKA", "ZIEMIA"];
+    const seedWords = ["KLAWIATURA", "ROSA", "WODA", "NAUKA", "ZIEMIA", "LOGIKA", "FAKT"];
     
     let state = { pool: [], found: [], score: 0, isDaily: false };
     let usedIndices = [];
     let db;
 
-    // V8: Expert Hub Engine
     const request = indexedDB.open("LiterakV8_Expert", 1);
-    request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
 
     function init() {
@@ -120,49 +134,50 @@
         loadGame();
     }
 
+    // Funkcja Udostępniania
+    async function shareResult() {
+        const best = state.isDaily ? 'bestD' : 'bestT';
+        const score = localStorage.getItem(best) || 0;
+        const mode = state.isDaily ? "Dnia" : "Trening";
+        const text = `Mój rekord w Literaku (Tryb ${mode}) to ${score} pkt! 🧩 Potrafisz go pobić? #Literak #GraSłowna`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'Mój Wynik Literak', text: text });
+            } catch (err) { console.log("Udostępnianie przerwane"); }
+        } else {
+            // Fallback: Kopiowanie do schowka
+            navigator.clipboard.writeText(text);
+            updateMsg("Wynik skopiowany do schowka!", "var(--success)");
+        }
+    }
+
+    // --- Reszta logiki bez zmian ---
     async function checkWord() {
         const word = document.getElementById('wordInput').value.toLowerCase().trim();
         if(word.length < 3) return;
         if(state.found.includes(word.toUpperCase())) { updateMsg("Już ułożone!", "orange"); return; }
-
-        updateMsg("Weryfikacja w bazach...", "var(--primary)");
-
+        updateMsg("Weryfikacja...", "var(--primary)");
         const cached = await getLocal(word);
-        let isValid = false;
-        let definition = "";
-
-        if (cached) {
-            isValid = cached.valid;
-            definition = cached.def;
-        } else {
+        let isValid = false; let definition = "";
+        if (cached) { isValid = cached.valid; definition = cached.def; } else {
             try {
                 const res = await fetch(`https://pl.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`);
                 const data = await res.json();
-                
-                if (data.type === "standard" || data.type === "disambiguation") {
-                    isValid = true;
-                    definition = data.extract;
-                } else {
+                if (data.type === "standard" || data.type === "disambiguation") { isValid = true; definition = data.extract; } else {
                     const checkRes = await fetch(`https://pl.wiktionary.org/w/api.php?action=parse&format=json&origin=*&page=${encodeURIComponent(word)}&prop=text`);
                     const checkData = await checkRes.json();
-                    if (checkData.parse && checkData.parse.text["*"].includes("język polski")) {
-                        isValid = true;
-                        definition = "Słowo poprawne. Brak rozbudowanego opisu w Wikipedii – sprawdź linki poniżej.";
-                    }
+                    if (checkData.parse && checkData.parse.text["*"].includes("język polski")) { isValid = true; definition = "Słowo poprawne. Sprawdź źródła PWN/WSJP."; }
                 }
                 saveLocal(word, isValid, definition);
             } catch(e) { updateMsg("Błąd sieci.", "red"); return; }
         }
-
         if(isValid) {
             const pts = calcPts(word.toUpperCase());
-            state.score += pts;
-            state.found.push(word.toUpperCase());
+            state.score += pts; state.found.push(word.toUpperCase());
             updateMsg(`+${pts} PKT`, "var(--success)");
             saveGame(); renderAll();
-        } else {
-            updateMsg("Brak słowa w słownikach.", "var(--danger)");
-        }
+        } else { updateMsg("Brak w słownikach.", "var(--danger)"); }
         resetInput();
     }
 
@@ -170,19 +185,13 @@
         const w = word.toLowerCase();
         document.getElementById('defTitle').innerText = word;
         document.getElementById('defModal').style.display = 'flex';
-        
-        // Expert Hub Links
         document.getElementById('link-pwn-ency').href = `https://encyklopedia.pwn.pl/szukaj/${encodeURIComponent(w)}.html`;
         document.getElementById('link-pwn-sjp').href = `https://sjp.pwn.pl/szukaj/${encodeURIComponent(w)}.html`;
         document.getElementById('link-wsjp').href = `https://www.wsjp.pl/szukaj/podstawowa?szukaj=${encodeURIComponent(w)}`;
         document.getElementById('link-interia').href = `https://encyklopedia.interia.pl/szukaj/${encodeURIComponent(w)}`;
-
-        getLocal(w).then(cached => {
-            document.getElementById('defBody').innerHTML = cached?.def || "Przetwarzanie danych...";
-        });
+        getLocal(w).then(cached => { document.getElementById('defBody').innerHTML = cached?.def || "Przetwarzanie..."; });
     }
 
-    // Interfejs (bez zmian)
     function renderAll() {
         const group = document.getElementById('lettersGroup');
         group.innerHTML = "";

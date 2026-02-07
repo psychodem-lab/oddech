@@ -136,8 +136,12 @@
 </div>
 
 <script>
+    // 1. Deklaracja zmiennych globalnych (TU BYŁ BŁĄD - brakowało 'state')
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
     const seedWords = ["ABSTRAKCJA", "ANTYPATIA", "ATMOSFERA", "AUTORYTET", "BALUSTRADA", "BIBLIOTEKA", "BŁYSKAWICA", "CZEKOLADA", "DELIKATNIE", "DYSCYPLINA", "EKSPEDYCJA", "ENTUZJAZM", "FILANTROPIA", "FOTOGRAFIA", "FUNDAMENTY", "GIMNASTYKA", "ILUSTRACJA", "INSPIRACJA", "INTELIGENT", "KATEDRALNY", "KILOMETRÓW", "KOMENTARZE", "KONKURENCJA", "KORZYSTNIE", "KRAJOBRAZY", "LEGITYMACJA", "LITERATURA", "MATEMATYKA", "MECHANIZMY", "MOTYWACJA", "NAUCZYCIEL", "PARLAMENTY", "PLANOWANIE", "PODRĘCZNIK", "POPULARNOŚĆ", "POWIETRZNY", "PROPOZYCJA", "PRZYSZŁOŚĆ", "RESTAURACJA", "SCENARIUSZ", "TECHNOLOGIA", "WŁAŚCIWIE", "WYOBRAŹNIA", "DEKORACJA", "DYREKTORZY", "EKSPERTYZA", "KOMPUTERÓW", "PRACOWNICY", "PRZYJACIEL", "WIDOWISKOW"];
+    
+    let state = { pool: [], found: [], score: 0, isDaily: false };
+    let usedIndices = [];
     let db;
 
     // Funkcja generująca liczby pseudolosowe na podstawie ziarna (seed)
@@ -146,6 +150,7 @@
         return x - Math.floor(x);
     }
 
+    // Inicjalizacja bazy danych IndexedDB
     const request = indexedDB.open("LiterakV9_Expert", 1);
     request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
@@ -208,6 +213,7 @@
 
     function renderAll() {
         const group = document.getElementById('lettersGroup');
+        if (!group) return;
         group.innerHTML = "";
         state.pool.forEach((item, i) => {
             const div = document.createElement('div');
@@ -227,10 +233,8 @@
 
     function calcPts(w) { let p = 0; for(let c of w) p += (letterScores[c]||1); return w.length >= 6 ? p + 15 : p; }
 
-function startNewGame() {
+    function startNewGame() {
         state.found = []; state.score = 0;
-        
-        // Generujemy seed na podstawie daty (np. 20260207) dla trybu Daily
         let seed = state.isDaily ? parseInt(new Date().toISOString().slice(0,10).replace(/-/g, '')) : Math.random() * 1000000;
         let rngCounter = 0;
         
@@ -240,19 +244,14 @@ function startNewGame() {
 
         let pool = []; 
         let fullSeedList = [...seedWords];
-        
-        // 1. Wybieramy jedno 10-literowe słowo z listy
         let seedWordIndex = Math.floor(getNextRnd() * fullSeedList.length);
         let baseLetters = fullSeedList[seedWordIndex].split('');
         
-        // 2. Pobieramy WSZYSTKIE 10 liter z tego słowa
-        // Zmieniliśmy pętlę, aby brała wszystkie znaki słowa bazowego
         while(baseLetters.length > 0) {
             let idx = Math.floor(getNextRnd() * baseLetters.length);
             pool.push(baseLetters.splice(idx, 1)[0]);
         }
         
-        // 3. Mieszanie końcowe (żeby litery nie leżały w kolejności słowa)
         state.pool = pool
             .map(c => ({ 
                 char: c.toUpperCase(), 

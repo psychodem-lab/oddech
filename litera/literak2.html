@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Literak - Sterile Edition</title>
+    <title>Literak - Wikipedia Edition</title>
     <style>
         :root {
             --primary: #4a90e2; --success: #27ae60; --gold: #f1c40f; --danger: #e74c3c;
@@ -20,7 +20,7 @@
         .game-container { background: var(--panel-bg); width: 100%; max-width: 500px; height: 100vh; display: flex; flex-direction: column; padding: 10px; position: relative; }
         
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
-        .modal-content { background: var(--panel-bg); padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); border: 2px solid var(--primary); }
+        .modal-content { background: var(--panel-bg); padding: 25px; border-radius: 15px; width: 90%; max-width: 450px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); border: 2px solid var(--primary); }
         
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 5px; font-size: 0.8rem; }
         .letters-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
@@ -46,7 +46,7 @@
 <div id="defModal" class="modal-overlay">
     <div class="modal-content">
         <h2 id="defTitle" style="margin-top:0; color:var(--primary); text-transform:uppercase; border-bottom: 2px solid var(--border); padding-bottom: 10px;">ZNACZENIE</h2>
-        <div id="defBody" style="max-height:300px; overflow-y:auto; line-height:1.6; font-size: 1.05rem; color: var(--text-main); margin-top: 15px;">Pobieranie...</div>
+        <div id="defBody" style="max-height:350px; overflow-y:auto; line-height:1.6; font-size: 1.05rem; color: var(--text-main); margin-top: 15px;">Pobieranie...</div>
         <button onclick="closeModal()" style="margin-top:20px; width:100%; background:var(--primary); color:white; padding: 12px; font-size: 1rem;">OK</button>
     </div>
 </div>
@@ -61,7 +61,7 @@
     <header style="text-align:center">
         <h1 style="margin:5px 0; letter-spacing: 2px;">LITERAK</h1>
         <div style="font-size:1.2rem; color:var(--primary)">PUNKTY: <b id="currentScore">0</b></div>
-        <div id="msg">Czyste definicje!</div>
+        <div id="msg">Wpisz polskie słowo!</div>
     </header>
 
     <div class="letters-pills" id="lettersGroup"></div>
@@ -85,14 +85,14 @@
 
 <script>
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
-    const seedWords = ["KLAWIATURA", "WINA", "WODA", "DOM", "KOT", "DAR", "LINA"];
+    const seedWords = ["KLAWIATURA", "ROSA", "WODA", "NAUKA", "FILOZOFIA", "LOGIKA", "PRZYRODA"];
     
     let state = { pool: [], found: [], score: 0, isDaily: false };
     let usedIndices = [];
     let db;
 
-    // V4: Reset bazy, by usunąć biblijne "wina"
-    const request = indexedDB.open("LiterakSterile_V4", 1);
+    // V5: Wikipedia API Engine
+    const request = indexedDB.open("LiterakWiki_V5", 1);
     request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
 
@@ -107,7 +107,7 @@
         if(word.length < 3) return;
         if(state.found.includes(word.toUpperCase())) { updateMsg("Już ułożone!", "orange"); return; }
 
-        updateMsg("Szukanie definicji...", "var(--primary)");
+        updateMsg("Szukanie w Wikipedii...", "var(--primary)");
 
         const cached = await getLocal(word);
         let isValid = false;
@@ -118,42 +118,23 @@
             definition = cached.def;
         } else {
             try {
-                const res = await fetch(`https://pl.wiktionary.org/w/api.php?action=parse&format=json&origin=*&page=${encodeURIComponent(word)}&prop=text`);
+                // Korzystamy z REST API Wikipedii, które zwraca czysty ekstrakt (intro)
+                const res = await fetch(`https://pl.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`);
                 const data = await res.json();
                 
-                if (data.parse) {
-                    const html = data.parse.text["*"];
-                    if (html.toLowerCase().includes("język polski")) {
+                if (data.type === "standard" || data.type === "disambiguation") {
+                    isValid = true;
+                    definition = data.extract;
+                } else {
+                    // Jeśli brak w Wikipedii, sprawdzamy czy słowo jest chociaż poprawne gramatycznie w Wikisłowniku
+                    const checkRes = await fetch(`https://pl.wiktionary.org/w/api.php?action=parse&format=json&origin=*&page=${encodeURIComponent(word)}&prop=text`);
+                    const checkData = await checkRes.json();
+                    if (checkData.parse && checkData.parse.text["*"].includes("język polski")) {
                         isValid = true;
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-
-                        // FILTR PANCERNY: Usuwamy wszystko co jest cytatem lub przypisem
-                        doc.querySelectorAll('span.reference, span.citation, .refbegin, .reflist').forEach(el => el.remove());
-
-                        let defNodes = Array.from(doc.querySelectorAll('ol > li'));
-                        
-                        // Kryteria odrzucania śmieci
-                        let cleanDefs = defNodes
-                            .map(li => li.innerText.replace(/\[.*?\]/g, '').replace(/↑/g, '').trim())
-                            .filter(t => {
-                                const forbidden = ["biblia", "poznań", "wyd.", "red.", "tłum.", "str.", "tom", "psalmy", "esej", "w: ", "hasło „"];
-                                return t.length > 5 && !forbidden.some(f => t.toLowerCase().includes(f));
-                            });
-
-                        if (cleanDefs.length > 0) {
-                            definition = cleanDefs.slice(0, 3).join('<br><br>');
-                        } else {
-                            // Jeśli brak ładnej listy, bierzemy pierwszy paragraf ale tylko jeśli nie brzmi jak źródło
-                            const p = doc.querySelector('p');
-                            if (p && p.innerText.length > 10 && !p.innerText.includes("Poznań")) {
-                                definition = p.innerText.replace(/↑/g, '').trim();
-                            }
-                        }
+                        definition = "Słowo poprawne, ale Wikipedia nie posiada dla niego obszernej encyklopedycznej definicji.";
                     }
                 }
                 
-                if (isValid && (!definition || definition.length < 5)) definition = "Słowo poprawne (brak czystego opisu).";
                 saveLocal(word, isValid, definition);
             } catch(e) { updateMsg("Błąd sieci.", "red"); return; }
         }
@@ -165,11 +146,12 @@
             updateMsg(`+${pts} PKT`, "var(--success)");
             saveGame(); renderAll();
         } else {
-            updateMsg("Brak w słowniku polskim.", "var(--danger)");
+            updateMsg("Brak słowa w bazie danych.", "var(--danger)");
         }
         resetInput();
     }
 
+    // --- Funkcje bez zmian (Interfejs) ---
     function renderAll() {
         const group = document.getElementById('lettersGroup');
         group.innerHTML = "";
@@ -194,7 +176,7 @@
         document.getElementById('defTitle').innerText = word;
         document.getElementById('defModal').style.display = 'flex';
         const cached = await getLocal(word.toLowerCase());
-        document.getElementById('defBody').innerHTML = cached?.def || "Znaleziono w słowniku.";
+        document.getElementById('defBody').innerHTML = cached?.def || "Brak szczegółowego opisu.";
     }
 
     function calcPts(w) { 

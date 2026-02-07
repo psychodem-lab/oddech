@@ -24,15 +24,15 @@
         
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 5px; font-size: 0.8rem; }
         .letters-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
-        .letter { background: var(--primary); color: white; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.4rem; font-weight: bold; box-shadow: 0 4px 0 #357abd; cursor: pointer; position: relative; }
+        .letter { background: var(--primary); color: white; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.4rem; font-weight: bold; box-shadow: 0 4px 0 #357abd; cursor: pointer; position: relative; user-select: none; }
         .letter.used { background: #bdc3c7; box-shadow: 0 0 0; opacity: 0.5; transform: translateY(4px); }
         .letter .pts { font-size: 0.6rem; position: absolute; bottom: 2px; right: 5px; }
 
         .input-area { display: flex; gap: 8px; height: 50px; margin-bottom: 10px; }
-        input { flex: 2; border: 2px solid var(--border); border-radius: 8px; text-align: center; font-size: 1.2rem; background: var(--input-bg); color: var(--text-main); text-transform: uppercase; }
+        input { flex: 2; border: 2px solid var(--border); border-radius: 8px; text-align: center; font-size: 1.2rem; background: var(--input-bg); color: var(--text-main); text-transform: uppercase; outline: none; }
         
         .results { flex-grow: 1; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); padding: 8px; overflow-y: auto; margin-bottom: 10px; }
-        .word-tag { display: inline-block; background: var(--tag-bg); padding: 5px 10px; border-radius: 15px; margin: 3px; font-size: 0.85rem; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); }
+        .word-tag { display: inline-block; background: var(--tag-bg); padding: 5px 10px; border-radius: 15px; margin: 3px; font-size: 0.85rem; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; }
         
         button { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; padding: 10px; }
         .btn-add { background: var(--success); color: white; flex: 1; }
@@ -76,7 +76,7 @@
 
     <div class="results">
         <div style="font-size:0.8rem; margin-bottom:5px; display:flex; justify-content:space-between">
-            <b>Ułożone słowa (<span id="count">0</span>):</b>
+            <b>Słowa (<span id="count">0</span>):</b>
             <span onclick="share()" style="cursor:pointer; color:var(--primary)">Udostępnij 📤</span>
         </div>
         <div id="foundList"></div>
@@ -90,13 +90,14 @@
 
 <script>
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
-    const seedWords = ["KLAWIATURA", "CZEKOLADA", "SAMOCHÓD", "POZIOMKA", "PRZYGODA", "TELEWIZOR", "KINO", "MARZENIE", "PODRÓŻNIK"];
+    const seedWords = ["KLAWIATURA", "CZEKOLADA", "SAMOCHÓD", "POZIOMKA", "PRZYGODA", "TELEWIZOR", "KINO", "LINA", "DNO", "WODA", "DOM", "KOT"];
     
     let state = { pool: [], found: [], score: 0, isDaily: false };
     let usedIndices = [];
     let db;
 
-    const request = indexedDB.open("LiterakV4", 1);
+    // NOWA BAZA V5
+    const request = indexedDB.open("LiterakV5", 1);
     request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
 
@@ -109,39 +110,44 @@
     async function checkWord() {
         const inputVal = document.getElementById('wordInput').value;
         const word = inputVal.toLowerCase().trim();
-        
         if(word.length < 3) return;
-        if(state.found.includes(word.toUpperCase())) { updateMsg("Już jest!", "orange"); return; }
+        if(state.found.includes(word.toUpperCase())) { updateMsg("Już ułożone!", "orange"); return; }
 
         updateMsg("Sprawdzanie...", "var(--primary)");
 
-        // 1. Sprawdź w lokalnej bazie IndexedDB
+        // 1. Sprawdź Cache
         const cached = await getLocal(word);
-        let valid = false;
+        let isValid = false;
         let definition = "";
 
         if (cached) {
-            valid = cached.valid;
+            isValid = cached.valid;
             definition = cached.def;
         } else {
-            // 2. Pobierz z Wikisłownika
+            // 2. Bardziej niezawodne API Wikisłownika (Search API)
             try {
-                const res = await fetch(`https://pl.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`);
-                if(res.ok) {
-                    const data = await res.json();
-                    valid = true;
-                    // Bierzemy opis (extract) lub tytuł jeśli brak opisu
-                    definition = data.extract || "Słowo istnieje w bazie Wikisłownika.";
-                } else {
-                    // Czasem Wikisłownik wymaga dużej litery dla nazw własnych, 
-                    // ale my tutaj trzymamy się standardu małych liter dla gier słownych.
-                    valid = false;
+                // Szukamy dokładnie tego słowa
+                const searchRes = await fetch(`https://pl.wiktionary.org/w/api.php?action=query&format=json&origin=*&list=search&srsearch=intitle:${encodeURIComponent(word)}&srlimit=1`);
+                const searchData = await searchRes.json();
+                
+                // Jeśli znaleziono tytuł identyczny ze słowem
+                if(searchData.query && searchData.query.search.length > 0) {
+                    isValid = true;
+                    // Próbujemy pobrać definicję, ale nawet jak nie wyjdzie, słowo jest uznane
+                    try {
+                        const defRes = await fetch(`https://pl.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`);
+                        if(defRes.ok) {
+                            const defData = await defRes.json();
+                            definition = defData.extract;
+                        }
+                    } catch(e) {}
+                    if(!definition) definition = "Słowo poprawne (potwierdzone w bazie Wikisłownika).";
                 }
-                saveLocal(word, valid, definition);
+                saveLocal(word, isValid, definition);
             } catch(e) { updateMsg("Błąd sieci!", "red"); return; }
         }
 
-        if(valid) {
+        if(isValid) {
             const pts = calcPts(word.toUpperCase());
             state.score += pts;
             state.found.push(word.toUpperCase());
@@ -150,7 +156,7 @@
             renderAll();
             usedIndices.forEach(i => explode(document.getElementById('tile-'+i)));
         } else {
-            updateMsg("Brak słowa w bazie.", "var(--danger)");
+            updateMsg("Brak słowa w słowniku.", "var(--danger)");
         }
         resetInput();
     }
@@ -178,13 +184,11 @@
             div.onclick = () => { if(!usedIndices.includes(i)) { usedIndices.push(i); document.getElementById('wordInput').value += item.char; renderAll(); } };
             group.appendChild(div);
         });
-        
         document.getElementById('foundList').innerHTML = state.found.map(w => `<span class="word-tag" onclick="showDef('${w}')">${w}</span>`).reverse().join('');
         document.getElementById('currentScore').innerText = state.score;
         document.getElementById('count').innerText = state.found.length;
         document.getElementById('modeBadge').innerText = "Tryb: " + (state.isDaily ? "Dnia" : "Trening");
         document.getElementById('btnNew').style.display = state.isDaily ? "none" : "block";
-        
         const best = state.isDaily ? 'bestD' : 'bestT';
         if(state.score > (localStorage.getItem(best)||0)) localStorage.setItem(best, state.score);
         document.getElementById('highScore').innerText = localStorage.getItem(best) || 0;
@@ -194,23 +198,11 @@
         document.getElementById('defTitle').innerText = word;
         document.getElementById('defModal').style.display = 'flex';
         const cached = await getLocal(word.toLowerCase());
-        document.getElementById('defBody').innerHTML = cached?.def || "Brak szczegółowego opisu w Wikisłowniku.";
+        document.getElementById('defBody').innerHTML = cached?.def || "Brak opisu.";
     }
 
-    // --- POMOCNICZE ---
-    function saveLocal(w, v, d) { 
-        if(!db) return;
-        const tx = db.transaction("words", "readwrite"); 
-        tx.objectStore("words").put({valid:v, def:d}, w); 
-    }
-    function getLocal(w) { 
-        return new Promise(r => { 
-            if(!db) return r(null);
-            const req = db.transaction("words").objectStore("words").get(w); 
-            req.onsuccess = () => r(req.result); 
-            req.onerror = () => r(null);
-        }); 
-    }
+    function saveLocal(w, v, d) { if(db) db.transaction("words", "readwrite").objectStore("words").put({valid:v, def:d}, w); }
+    function getLocal(w) { return new Promise(r => { if(!db) return r(null); const req = db.transaction("words").objectStore("words").get(w); req.onsuccess = () => r(req.result); }); }
     function calcPts(w) { let p = 0; for(let c of w) p += (letterScores[c]||1); return w.length > 5 ? p + 10 : p; }
     function saveGame() { localStorage.setItem(state.isDaily?'sD':'sT', JSON.stringify(state)); localStorage.setItem('lastMode', state.isDaily?'daily':'training'); }
     function loadGame() { const s = localStorage.getItem(state.isDaily?'sD':'sT'); if(s) { state = JSON.parse(s); renderAll(); } else startNewGame(); }

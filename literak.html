@@ -43,30 +43,28 @@
         .letter .pts { font-size: 0.6rem; position: absolute; bottom: 2px; right: 5px; }
 
         .input-area { display: flex; gap: 8px; height: 50px; margin-bottom: 10px; }
-        input { flex: 2; border: 2px solid var(--border); border-radius: 8px; text-align: center; font-size: 1.2rem; background: var(--input-bg); color: var(--text-main); text-transform: uppercase; outline: none; }
         
-        /* POPRAWKA DLA URZĄDZEŃ MOBILNYCH */
+        /* Zmiana proporcji: input nieco mniejszy (1.5 zamiast 2) */
+        input { flex: 1.5; border: 2px solid var(--border); border-radius: 8px; text-align: center; font-size: 1.1rem; background: var(--input-bg); color: var(--text-main); text-transform: uppercase; outline: none; width: 0; }
+        
+        /* Skrócony panel wyników */
         .results { 
-            flex-grow: 1; 
+            flex: 0 1 120px; /* Stała bazowa wysokość 120px, może się kurczyć */
             border: 1px solid var(--border); 
             border-radius: 8px; 
             background: var(--bg); 
-            padding: 10px; 
+            padding: 8px; 
             overflow-y: auto; 
             margin-bottom: 10px;
-            min-height: 0; /* Zapobiega wypychaniu kontenera przez flexbox */
+            min-height: 0;
         }
-        #foundList {
-            display: flex;
-            flex-wrap: wrap; /* Wymusza zawijanie słów w nowej linii */
-            gap: 4px;
-        }
+        #foundList { display: flex; flex-wrap: wrap; gap: 4px; }
         .word-tag { 
             display: inline-block; 
             background: var(--tag-bg); 
-            padding: 6px 12px; 
+            padding: 4px 10px; 
             border-radius: 20px; 
-            font-size: 0.9rem; 
+            font-size: 0.85rem; 
             cursor: pointer; 
             border: 1px solid rgba(0,0,0,0.1); 
             font-weight: bold;
@@ -74,8 +72,10 @@
         }
         
         button { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; padding: 10px; }
-        .btn-add { background: var(--success); color: white; flex: 1; }
-        .btn-back { background: #e67e22; color: white; width: 50px; }
+        
+        /* Przycisk sprawdź: mniejszy padding i font, by nie wychodził poza ramy */
+        .btn-add { background: var(--success); color: white; flex: 1; font-size: 0.85rem; padding: 10px 5px; }
+        .btn-back { background: #e67e22; color: white; width: 45px; }
         
         #msg { height: 20px; text-align: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; }
         
@@ -112,8 +112,8 @@
     </div>
 
     <header style="text-align:center">
-        <h1 style="margin:5px 0; letter-spacing: 2px;">Słownikowy Ninja</h1>
-        <div style="font-size:1.1rem; color:var(--primary)">PUNKTY: <b id="currentScore">0</b></div>
+        <h1 style="margin:5px 0; letter-spacing: 2px; font-size: 1.5rem;">Słownikowy Ninja</h1>
+        <div style="font-size:1rem; color:var(--primary)">PUNKTY: <b id="currentScore">0</b></div>
         <div id="msg">Ułóż jak najwięcej słów!</div>
     </header>
 
@@ -136,6 +136,7 @@
 </div>
 
 <script>
+    // Reszta skryptu pozostaje bez zmian
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
     const seedWords = ["KLAWIATURA", "ROSA", "WODA", "NAUKA", "ZIEMIA", "LOGIKA", "FAKT", "ABDYKOWANO", "BABECZKOWE"];
     

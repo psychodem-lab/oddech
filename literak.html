@@ -230,7 +230,7 @@
 
     function calcPts(w) { let p = 0; for(let c of w) p += (letterScores[c]||1); return w.length >= 6 ? p + 15 : p; }
 
-    function startNewGame() {
+function startNewGame() {
         state.found = []; state.score = 0;
         
         // Generujemy seed na podstawie daty (np. 20260207) dla trybu Daily
@@ -243,24 +243,29 @@
 
         let pool = []; 
         let fullSeedList = [...seedWords];
+        
+        // 1. Wybieramy jedno 10-literowe słowo z listy
         let seedWordIndex = Math.floor(getNextRnd() * fullSeedList.length);
         let baseLetters = fullSeedList[seedWordIndex].split('');
         
-        for(let i=0; i<Math.min(7, baseLetters.length); i++) {
+        // 2. Pobieramy WSZYSTKIE 10 liter z tego słowa
+        // Zmieniliśmy pętlę, aby brała wszystkie znaki słowa bazowego
+        while(baseLetters.length > 0) {
             let idx = Math.floor(getNextRnd() * baseLetters.length);
             pool.push(baseLetters.splice(idx, 1)[0]);
         }
         
-        const extra = "AEEIOOZZRRSSNNWW";
-        while(pool.length < 10) {
-            pool.push(extra[Math.floor(getNextRnd() * extra.length)]);
-        }
-        
+        // 3. Mieszanie końcowe (żeby litery nie leżały w kolejności słowa)
         state.pool = pool
-            .map(c => ({ char: c.toUpperCase(), pts: letterScores[c.toUpperCase()] || 1, sort: getNextRnd() }))
+            .map(c => ({ 
+                char: c.toUpperCase(), 
+                pts: letterScores[c.toUpperCase()] || 1, 
+                sort: getNextRnd() 
+            }))
             .sort((a, b) => a.sort - b.sort);
 
-        saveGame(); renderAll();
+        saveGame(); 
+        renderAll();
     }
 
     function saveLocal(w, v, d) { if(db) db.transaction("words", "readwrite").objectStore("words").put({valid:v, def:d}, w); }

@@ -116,7 +116,7 @@
 
 <script>
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
-    const seedWords = ["KLAWIATURA", "ROSA", "WODA", "NAUKA", "ZIEMIA", "LOGIKA", "FAKT"];
+    const seedWords = ["KLAWIATURA", "ROSA", "WODA", "NAUKA", "ZIEMIA", "LOGIKA", "FAKT", "ABDYKOWANO", "BABECZKOWE"];
     
     let state = { pool: [], found: [], score: 0, isDaily: false };
     let usedIndices = [];
@@ -177,9 +177,7 @@
         const w = word.toLowerCase();
         document.getElementById('defTitle').innerText = word;
         document.getElementById('defModal').style.display = 'flex';
-        document.getElementById('link-pwn-ency').href = `https://encyklopedia.pwn.pl/szukaj/${encodeURIComponent(w)}.html`;
         document.getElementById('link-pwn-sjp').href = `https://sjp.pwn.pl/szukaj/${encodeURIComponent(w)}.html`;
-        document.getElementById('link-wsjp').href = `https://www.wsjp.pl/szukaj/podstawowa?szukaj=${encodeURIComponent(w)}`;
         document.getElementById('link-sjp').href = `https://sjp.pl/${encodeURIComponent(w)}`;
         getLocal(w).then(cached => { document.getElementById('defBody').innerHTML = cached?.def || "Przetwarzanie..."; });
     }

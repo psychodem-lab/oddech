@@ -136,13 +136,18 @@
 </div>
 
 <script>
-    // Reszta skryptu pozostaje bez zmian
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
     const seedWords = ["KLAWIATURA", "ROSA", "WODA", "NAUKA", "ZIEMIA", "LOGIKA", "FAKT", "ABDYKOWANO", "BABECZKOWE"];
     
     let state = { pool: [], found: [], score: 0, isDaily: false };
     let usedIndices = [];
     let db;
+
+    // Funkcja generująca liczby pseudolosowe na podstawie ziarna (seed)
+    function seededRandom(seed) {
+        const x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+    }
 
     const request = indexedDB.open("LiterakV9_Expert", 1);
     request.onupgradeneeded = e => e.target.result.createObjectStore("words");
@@ -224,14 +229,40 @@
     }
 
     function calcPts(w) { let p = 0; for(let c of w) p += (letterScores[c]||1); return w.length >= 6 ? p + 15 : p; }
+
     function startNewGame() {
         state.found = []; state.score = 0;
-        let pool = []; let seed = seedWords[Math.floor(Math.random()*seedWords.length)].split('');
-        for(let i=0; i<Math.min(7, seed.length); i++) pool.push(seed.splice(Math.floor(Math.random()*seed.length), 1)[0]);
-        while(pool.length < 10) pool.push("AEEIOOZZRRSSNNWW".split('')[Math.floor(Math.random()*16)]);
-        state.pool = pool.sort(() => 0.5 - Math.random()).map(c => ({ char: c.toUpperCase(), pts: letterScores[c.toUpperCase()] || 1 }));
+        
+        // Generujemy seed na podstawie daty (np. 20260207) dla trybu Daily
+        let seed = state.isDaily ? parseInt(new Date().toISOString().slice(0,10).replace(/-/g, '')) : Math.random() * 1000000;
+        let rngCounter = 0;
+        
+        function getNextRnd() {
+            return state.isDaily ? seededRandom(seed + (rngCounter++)) : Math.random();
+        }
+
+        let pool = []; 
+        let fullSeedList = [...seedWords];
+        let seedWordIndex = Math.floor(getNextRnd() * fullSeedList.length);
+        let baseLetters = fullSeedList[seedWordIndex].split('');
+        
+        for(let i=0; i<Math.min(7, baseLetters.length); i++) {
+            let idx = Math.floor(getNextRnd() * baseLetters.length);
+            pool.push(baseLetters.splice(idx, 1)[0]);
+        }
+        
+        const extra = "AEEIOOZZRRSSNNWW";
+        while(pool.length < 10) {
+            pool.push(extra[Math.floor(getNextRnd() * extra.length)]);
+        }
+        
+        state.pool = pool
+            .map(c => ({ char: c.toUpperCase(), pts: letterScores[c.toUpperCase()] || 1, sort: getNextRnd() }))
+            .sort((a, b) => a.sort - b.sort);
+
         saveGame(); renderAll();
     }
+
     function saveLocal(w, v, d) { if(db) db.transaction("words", "readwrite").objectStore("words").put({valid:v, def:d}, w); }
     function getLocal(w) { return new Promise(r => { if(!db) return r(null); const req = db.transaction("words").objectStore("words").get(w); req.onsuccess = () => r(req.result); }); }
     function saveGame() { localStorage.setItem(state.isDaily?'sD':'sT', JSON.stringify(state)); localStorage.setItem('lastMode', state.isDaily?'daily':'training'); }

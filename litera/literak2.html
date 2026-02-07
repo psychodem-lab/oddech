@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Literak - Pancerna Edycja</title>
+    <title>Literak - Sterile Edition</title>
     <style>
         :root {
             --primary: #4a90e2; --success: #27ae60; --gold: #f1c40f; --danger: #e74c3c;
@@ -61,7 +61,7 @@
     <header style="text-align:center">
         <h1 style="margin:5px 0; letter-spacing: 2px;">LITERAK</h1>
         <div style="font-size:1.2rem; color:var(--primary)">PUNKTY: <b id="currentScore">0</b></div>
-        <div id="msg">Wpisz słowo!</div>
+        <div id="msg">Czyste definicje!</div>
     </header>
 
     <div class="letters-pills" id="lettersGroup"></div>
@@ -85,14 +85,14 @@
 
 <script>
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
-    const seedWords = ["KLAWIATURA", "CZEKOLADA", "SAMOCHÓD", "POZIOMKA", "WODA", "DOM", "KOT", "DAR", "LINA"];
+    const seedWords = ["KLAWIATURA", "WINA", "WODA", "DOM", "KOT", "DAR", "LINA"];
     
     let state = { pool: [], found: [], score: 0, isDaily: false };
     let usedIndices = [];
     let db;
 
-    // V3: Resetujemy bazę, by wyczyścić błędy "WODA to nie polskie"
-    const request = indexedDB.open("LiterakArmored_V3", 1);
+    // V4: Reset bazy, by usunąć biblijne "wina"
+    const request = indexedDB.open("LiterakSterile_V4", 1);
     request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
 
@@ -107,7 +107,7 @@
         if(word.length < 3) return;
         if(state.found.includes(word.toUpperCase())) { updateMsg("Już ułożone!", "orange"); return; }
 
-        updateMsg("Sprawdzanie...", "var(--primary)");
+        updateMsg("Szukanie definicji...", "var(--primary)");
 
         const cached = await getLocal(word);
         let isValid = false;
@@ -123,31 +123,37 @@
                 
                 if (data.parse) {
                     const html = data.parse.text["*"];
-                    // Kryterium 1: Czy na stronie w ogóle pada fraza "język polski"
                     if (html.toLowerCase().includes("język polski")) {
                         isValid = true;
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(html, 'text/html');
 
-                        // Kryterium 2: Pobieramy definicje, ale filtrujemy te, które są przypisami (mają ↑)
+                        // FILTR PANCERNY: Usuwamy wszystko co jest cytatem lub przypisem
+                        doc.querySelectorAll('span.reference, span.citation, .refbegin, .reflist').forEach(el => el.remove());
+
                         let defNodes = Array.from(doc.querySelectorAll('ol > li'));
                         
-                        // Próbujemy znaleźć definicje, które nie są śmieciami z innych języków
+                        // Kryteria odrzucania śmieci
                         let cleanDefs = defNodes
                             .map(li => li.innerText.replace(/\[.*?\]/g, '').replace(/↑/g, '').trim())
-                            .filter(t => t.length > 5 && !t.includes("Hasło „") && !t.includes("red. O. Trubaczow"));
+                            .filter(t => {
+                                const forbidden = ["biblia", "poznań", "wyd.", "red.", "tłum.", "str.", "tom", "psalmy", "esej", "w: ", "hasło „"];
+                                return t.length > 5 && !forbidden.some(f => t.toLowerCase().includes(f));
+                            });
 
                         if (cleanDefs.length > 0) {
                             definition = cleanDefs.slice(0, 3).join('<br><br>');
                         } else {
-                            // Jeśli nie ma listy, weź pierwszy lepszy akapit z tekstem
+                            // Jeśli brak ładnej listy, bierzemy pierwszy paragraf ale tylko jeśli nie brzmi jak źródło
                             const p = doc.querySelector('p');
-                            definition = p ? p.innerText.replace(/↑/g, '').trim() : "Słowo poprawne.";
+                            if (p && p.innerText.length > 10 && !p.innerText.includes("Poznań")) {
+                                definition = p.innerText.replace(/↑/g, '').trim();
+                            }
                         }
                     }
                 }
                 
-                if (isValid && (!definition || definition.length < 5)) definition = "Słowo polskie (potwierdzone).";
+                if (isValid && (!definition || definition.length < 5)) definition = "Słowo poprawne (brak czystego opisu).";
                 saveLocal(word, isValid, definition);
             } catch(e) { updateMsg("Błąd sieci.", "red"); return; }
         }
@@ -159,12 +165,11 @@
             updateMsg(`+${pts} PKT`, "var(--success)");
             saveGame(); renderAll();
         } else {
-            updateMsg("Brak słowa w słowniku polskim.", "var(--danger)");
+            updateMsg("Brak w słowniku polskim.", "var(--danger)");
         }
         resetInput();
     }
 
-    // --- Reszta funkcji pomocniczych ---
     function renderAll() {
         const group = document.getElementById('lettersGroup');
         group.innerHTML = "";

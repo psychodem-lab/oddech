@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Literak - Pure Edition</title>
+    <title>Literak - Expert Edition</title>
     <style>
         :root {
             --primary: #4a90e2; --success: #27ae60; --gold: #f1c40f; --danger: #e74c3c;
@@ -32,7 +32,7 @@
         input { flex: 2; border: 2px solid var(--border); border-radius: 8px; text-align: center; font-size: 1.2rem; background: var(--input-bg); color: var(--text-main); text-transform: uppercase; outline: none; }
         
         .results { flex-grow: 1; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); padding: 10px; overflow-y: auto; margin-bottom: 10px; }
-        .word-tag { display: inline-block; background: var(--tag-bg); padding: 6px 12px; border-radius: 20px; margin: 4px; font-size: 0.9rem; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; animation: pop 0.3s ease; }
+        .word-tag { display: inline-block; background: var(--tag-bg); padding: 6px 12px; border-radius: 20px; margin: 4px; font-size: 0.9rem; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); font-weight: bold; }
         
         button { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; padding: 10px; }
         .btn-add { background: var(--success); color: white; flex: 1; }
@@ -91,7 +91,8 @@
     let usedIndices = [];
     let db;
 
-    const request = indexedDB.open("LiterakPure", 1);
+    // Zmieniona nazwa bazy, aby wymusić odświeżenie definicji
+    const request = indexedDB.open("LiterakExpert_V1", 1);
     request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
 
@@ -106,7 +107,7 @@
         if(word.length < 3) return;
         if(state.found.includes(word.toUpperCase())) { updateMsg("Już ułożone!", "orange"); return; }
 
-        updateMsg("Sprawdzanie...", "var(--primary)");
+        updateMsg("Szukanie znaczenia...", "var(--primary)");
 
         const cached = await getLocal(word);
         let isValid = false;
@@ -117,7 +118,7 @@
             definition = cached.def;
         } else {
             try {
-                const res = await fetch(`https://pl.wiktionary.org/w/api.php?action=parse&format=json&origin=*&page=${encodeURIComponent(word)}&prop=text`);
+                const res = await fetch(`https://pl.wiktionary.org/w/api.php?action=parse&format=json&origin=*&page=${encodeURIComponent(word)}&prop=text|sections`);
                 const data = await res.json();
                 
                 if (data.parse) {
@@ -126,18 +127,26 @@
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     
-                    // Wyciąganie czystych definicji (li) z polskiej sekcji
-                    const definitions = Array.from(doc.querySelectorAll('ol > li')).slice(0, 4);
+                    // --- USPRAWNIONE WYCIĄGANIE DEFINICJI ---
+                    // 1. Próba znalezienia listy (ol)
+                    let definitions = Array.from(doc.querySelectorAll('ol > li'));
+                    
                     if (definitions.length > 0) {
-                        definition = definitions
+                        definition = definitions.slice(0, 4)
                             .map(li => {
-                                // Usuwanie nawiasów kwadratowych, technicznych linków i zbędnych spacji
-                                let txt = li.innerText.replace(/\[.*?\]/g, '').trim();
-                                return txt.charAt(0).toUpperCase() + txt.slice(1);
-                            })
-                            .join('<br><br>');
+                                let t = li.innerText.replace(/\[.*?\]/g, '').trim();
+                                return t.charAt(0).toUpperCase() + t.slice(1);
+                            }).join('<br><br>');
                     } else {
-                        definition = "Brak szczegółowego opisu dla tego słowa.";
+                        // 2. Jeśli brak listy, szukamy pierwszego znaczącego akapitu (np. dla form odmienionych)
+                        const p = Array.from(doc.querySelectorAll('p')).find(el => el.innerText.length > 10);
+                        if (p) {
+                            definition = p.innerText.replace(/\[.*?\]/g, '').trim();
+                        }
+                    }
+
+                    if (!definition || definition.length < 5) {
+                        definition = "Słowo poprawne, brak szczegółowego opisu w wybranej sekcji.";
                     }
                 }
                 saveLocal(word, isValid, definition);
@@ -156,6 +165,7 @@
         resetInput();
     }
 
+    // Pozostałe funkcje pomocnicze bez zmian...
     function renderAll() {
         const group = document.getElementById('lettersGroup');
         group.innerHTML = "";

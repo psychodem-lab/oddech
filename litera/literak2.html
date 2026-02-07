@@ -6,259 +6,54 @@
     <title>Literak</title>
     <style>
         :root {
-            --primary: #4a90e2;
-            --success: #27ae60;
-            --gold: #f1c40f;
-            --danger: #e74c3c;
-            --dark: #2c3e50;
-            --bg: #f0f2f5;
-            --panel-bg: #ffffff;
-            --text-main: #2c3e50;
-            --text-sub: #7f8c8d;
-            --border: #eeeeee;
-            --input-bg: #ffffff;
-            --tag-bg: #e1f5fe;
-            --tag-text: #0277bd;
-            --tag-border: #b3e5fc;
+            --primary: #4a90e2; --success: #27ae60; --gold: #f1c40f; --danger: #e74c3c;
+            --dark: #2c3e50; --bg: #f0f2f5; --panel-bg: #ffffff; --text-main: #2c3e50;
+            --text-sub: #7f8c8d; --border: #eeeeee; --input-bg: #ffffff;
+            --tag-bg: #e1f5fe; --tag-text: #0277bd; --tag-border: #b3e5fc;
             --modal-overlay: rgba(0,0,0,0.7);
         }
 
         body.dark-mode {
-            --bg: #121212;
-            --panel-bg: #1e1e1e;
-            --text-main: #e0e0e0;
-            --text-sub: #b0b0b0;
-            --border: #333333;
-            --input-bg: #2c2c2c;
-            --tag-bg: #263238;
-            --tag-text: #81d4fa;
-            --tag-border: #37474f;
-            --disabled: #424242;
-            --modal-overlay: rgba(0,0,0,0.85);
+            --bg: #121212; --panel-bg: #1e1e1e; --text-main: #e0e0e0; --text-sub: #b0b0b0;
+            --border: #333333; --input-bg: #2c2c2c; --tag-bg: #263238; --tag-text: #81d4fa;
+            --tag-border: #37474f; --disabled: #424242; --modal-overlay: rgba(0,0,0,0.85);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: background-color 0.3s, color 0.3s; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; height: 100vh; display: flex; justify-content: center; overflow: hidden; }
+        .game-container { background: var(--panel-bg); width: 100%; max-width: 500px; height: 100vh; display: flex; flex-direction: column; padding: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.3); position: relative; }
+        
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: var(--panel-bg); padding: 20px; border-radius: 12px; max-width: 400px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.5); color: var(--text-main); }
+        #defTitle { font-weight: bold; font-size: 1.2rem; color: var(--primary); margin-bottom: 10px; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        #defBody { font-size: 0.95rem; line-height: 1.6; max-height: 300px; overflow-y: auto; }
 
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .game-container {
-            background: var(--panel-bg);
-            width: 100%;
-            max-width: 500px;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.3);
-            position: relative;
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--modal-overlay);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .modal-content {
-            background: var(--panel-bg);
-            padding: 20px;
-            border-radius: 12px;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            color: var(--text-main);
-        }
-
-        #defTitle {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: var(--primary);
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 5px;
-        }
-
-        #defBody {
-            font-size: 0.95rem;
-            line-height: 1.6;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-            color: var(--text-sub);
-        }
-
-        .toggle-btn {
-            background: none;
-            border: 1px solid var(--border);
-            border-radius: 15px;
-            padding: 4px 10px;
-            cursor: pointer;
-            color: var(--text-main);
-            font-size: 0.8rem;
-        }
-
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 0.9rem; color: var(--text-sub); }
+        .toggle-btn { background: none; border: 1px solid var(--border); border-radius: 15px; padding: 4px 10px; cursor: pointer; color: var(--text-main); font-size: 0.8rem; }
         header { text-align: center; padding-bottom: 5px; flex-shrink: 0; }
         h1 { font-size: 1.2rem; margin: 2px 0; }
         
-        .mode-badge {
-            font-size: 0.75rem;
-            padding: 2px 8px;
-            border-radius: 10px;
-            background: var(--border);
-            display: inline-block;
-            margin-bottom: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
+        .mode-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; background: var(--border); display: inline-block; margin-bottom: 5px; cursor: pointer; font-weight: bold; }
         .mode-badge.daily { background: linear-gradient(45deg, #f1c40f, #e67e22); color: white; }
-
-        .score-board {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            font-size: 0.9rem;
-            margin-bottom: 5px;
-        }
+        .score-board { display: flex; justify-content: center; gap: 15px; font-size: 0.9rem; margin-bottom: 5px; }
         .score-val { font-weight: bold; color: var(--primary); }
 
-        .letters-pills {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            margin-bottom: 10px;
-            flex-shrink: 0;
-        }
+        .letters-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 10px; flex-shrink: 0; }
+        .letter { background: var(--primary); color: white; aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.3rem; font-weight: bold; box-shadow: 0 3px 0 #357abd; cursor: pointer; position: relative; }
+        .letter .pts { font-size: 0.6rem; font-weight: normal; position: absolute; bottom: 2px; right: 4px; opacity: 0.8; }
+        .letter.used { background: #bdc3c7; box-shadow: 0 3px 0 rgba(0,0,0,0.1); opacity: 0.5; transform: translateY(2px); }
 
-        .letter {
-            background: var(--primary);
-            color: white;
-            aspect-ratio: 1 / 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            box-shadow: 0 3px 0 #357abd;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .letter .pts {
-            font-size: 0.6rem;
-            font-weight: normal;
-            position: absolute;
-            bottom: 2px;
-            right: 4px;
-            opacity: 0.8;
-        }
-
-        .letter.used {
-            background: #bdc3c7;
-            box-shadow: 0 3px 0 rgba(0,0,0,0.1);
-            opacity: 0.5;
-            transform: translateY(2px);
-        }
-
-        .input-area {
-            display: flex;
-            gap: 6px;
-            height: 50px;
-            margin-bottom: 8px;
-            flex-shrink: 0;
-        }
-
-        input {
-            flex: 2;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 1.2rem;
-            text-transform: uppercase;
-            outline: none;
-            text-align: center;
-            background: var(--input-bg);
-            color: var(--text-main);
-        }
-
+        .input-area { display: flex; gap: 6px; height: 50px; margin-bottom: 8px; flex-shrink: 0; }
+        input { flex: 2; border: 2px solid var(--border); border-radius: 8px; font-size: 1.2rem; text-transform: uppercase; outline: none; text-align: center; background: var(--input-bg); color: var(--text-main); }
         button { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-
         .btn-add { background: var(--success); color: white; flex: 1; font-size: 1rem; }
         .btn-back { background: #e67e22; color: white; width: 50px; font-size: 1.2rem; }
-        
-        .btn-share {
-            background: var(--primary);
-            color: white;
-            padding: 5px 12px;
-            font-size: 0.75rem;
-            border-radius: 15px;
-        }
+        .btn-share { background: var(--primary); color: white; padding: 5px 12px; font-size: 0.75rem; border-radius: 15px; }
 
-        #msg { 
-            height: 18px;
-            text-align: center; 
-            font-weight: 600; 
-            font-size: 0.8rem;
-            margin-bottom: 3px;
-        }
-
-        .results {
-            flex-grow: 1;
-            min-height: 100px;
-            max-height: 30%;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg);
-            padding: 8px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-        }
-
-        .word-tag {
-            display: inline-block;
-            background: var(--tag-bg);
-            color: var(--tag-text);
-            padding: 4px 10px;
-            border-radius: 12px;
-            margin: 2px;
-            font-size: 0.8rem;
-            border: 1px solid var(--tag-border);
-            cursor: pointer;
-        }
-
-        .word-tag.gold {
-            background: #fff9c4;
-            color: #f57f17;
-            border: 1px solid #fbc02d;
-            font-weight: bold;
-        }
-        
+        #msg { height: 18px; text-align: center; font-weight: 600; font-size: 0.8rem; margin-bottom: 3px; }
+        .results { flex-grow: 1; min-height: 100px; max-height: 30%; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); padding: 8px; overflow-y: auto; margin-bottom: 10px; }
+        .word-tag { display: inline-block; background: var(--tag-bg); color: var(--tag-text); padding: 4px 10px; border-radius: 12px; margin: 2px; font-size: 0.8rem; border: 1px solid var(--tag-border); cursor: pointer; }
+        .word-tag.gold { background: #fff9c4; color: #f57f17; border: 1px solid #fbc02d; font-weight: bold; }
         body.dark-mode .word-tag.gold { background: #4a4103; color: #fdd835; border-color: #f9a825; }
 
         .bottom-actions { display: flex; gap: 10px; width: 100%; flex-shrink: 0; }
@@ -285,32 +80,25 @@
         <div onclick="toggleGameMode()" class="mode-badge" id="modeBadge">Trening</div>
         <div style="font-size: 0.8rem">Rekord: <span id="highScore">0</span></div>
     </div>
-
     <header>
         <h1>Literak</h1>
-        <div class="score-board">
-            <span>Wynik: <span id="currentScore" class="score-val">0</span></span>
-        </div>
+        <div class="score-board"><span>Wynik: <span id="currentScore" class="score-val">0</span></span></div>
         <div id="msg"></div>
-        <div id="loader" class="loader">Inicjalizacja bazy danych...</div>
+        <div id="loader" class="loader">Inicjalizacja...</div>
     </header>
-
     <div class="letters-pills" id="lettersGroup"></div>
-
     <div class="input-area">
         <button class="btn-back" onclick="removeLastLetter()">⌫</button>
         <input type="text" id="wordInput" readonly placeholder="...">
         <button class="btn-add" onclick="processWord()">OK</button>
     </div>
-
     <div class="results">
         <div style="margin-bottom: 8px; font-size: 0.85rem; display:flex; justify-content:space-between; align-items:center;">
             <strong>Słowa (<span id="count">0</span>):</strong>
-            <button class="btn-share" onclick="shareResult()">Udostępnij wynik 📤</button>
+            <button class="btn-share" onclick="shareResult()">📤</button>
         </div>
         <div id="foundList"></div>
     </div>
-
     <div class="bottom-actions">
         <button class="btn-shuffle" onclick="shufflePool()">⟳ MIESZAJ</button>
         <button class="btn-new" id="btnNew" onclick="startNewGame()">NOWE LITERY</button>
@@ -320,101 +108,147 @@
 <script>
     const vowelsWeighted = "AAAAAAAAAEEEEEEEEIIIIIIOOOOOOÓUUYY"; 
     const consonantsWeighted = "BBCCCCDDDDFFGGHHHHJJKKKLLLLŁŁŁMMMMNNNNNNPPPPPRRRRRSSSSSTTTTTWWWWWWZZZZZ";
-    
     const seedWords = ["KLAWIATURA", "CZEKOLADA", "KOMPUTER", "POZIOMKA", "PRZYGODA", "SŁONECZKO", "TELEWIZOR", "PIELĘGNACJA", "WSZECHŚWIAT", "PROJEKTANT", "MIESZKANIE", "TRUSKAWKA", "PAMIĘTNIK", "SAMOCHÓD", "RESTAURACJA", "KRAJOBRAZ", "PODRÓŻNIK", "FILIŻANKA", "BALONIK", "DRZEWO", "GIMNASTYKA", "KALEJDOSKOP", "MARCHEWKA", "POWIETRZE", "DINOZAURY", "PROMIENIE", "CIEKAWOŚĆ", "DŁUGOPISY", "KOLOROWANKA", "SŁUCHAWKI", "BIEGNIEMY", "PIERŚCIONEK", "ZAKAMAREK", "WYOBRAŹNIA", "HULAJNOGA", "PRZYSTANEK", "STOKROTKA", "BŁYSKAWICA", "CUKIERNICTWO", "AKWARIUM", "KRAKOWIAK", "NALEŚNIKI", "DESZCZOWO", "SKRZYNKA", "WĘDRÓWKA", "PRZYJACIEL", "KOMINKOWY", "JAGODOWY", "KOSZYKÓWKA", "MALARSTWO", "PODRĘCZNIK", "ASTRONAUTA", "BIEDRONKA", "CZEKOLADKI", "DŁUGOFALOWY", "ELEKTRYCZNY", "FOTOGRAFIA", "GRZECHOTKA", "HISTORIA", "INSTRUMENT", "JADŁOSPIS", "KAPELUSZNIK", "LATARKA", "ŁAMIGŁÓWKA", "MARZENIE", "NARCIARSTWO", "OBRAZOWY", "PŁOMIENIE", "RADIOWY", "SŁOWNIK", "TRAMWAJE", "UŚMIECHNIĘTY", "WAKACYJNY", "ZAWODNIK", "ŻONKILE", "DOWÓDCA", "PRZYSZŁOŚĆ", "BOHATEROWIE", "CUDOWNY", "DOBRANOCKA", "EKSPEDYCJA", "FARBY", "GÓRSKI", "HARCERZE", "IGRZYSKA", "JESIENNY", "KOLOROWY", "LEŚNICZY", "MOTYLKI", "NIEBIESKI", "OGRODOWY", "PIERNIKOWY", "RADOŚNIE", "SŁONECZNY", "TULIPANY", "ULUBIONY", "WIECZORNY", "ZIMOWY", "SŁODYCZE", "PARASOLKA", "WYCIECZKA", "PAŹDZIERZE"];
-
     const letterScores = {'A':1, 'I':1, 'E':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
 
     let state = { pool: [], found: [], score: 0, isDaily: false, date: "" };
     let usedIndices = [];
     let dictionary = new Set();
-    const DB_NAME = 'LiterakDB';
-    const STORE_NAME = 'dictionaryStore';
+    let isDictionaryReady = false;
 
-    // --- BAZA DANYCH (Słownik lokalny) ---
+    const DB_NAME = 'LiterakDB';
+    const STORES = { FILES: 'files', WORDS: 'wordCache' };
+
+    // --- BAZA DANYCH INDEXEDDB ---
     function openDB() {
         return new Promise((resolve) => {
-            const request = indexedDB.open(DB_NAME, 1);
-            request.onupgradeneeded = (e) => e.target.result.createObjectStore(STORE_NAME);
+            const request = indexedDB.open(DB_NAME, 2);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(STORES.FILES)) db.createObjectStore(STORES.FILES);
+                if (!db.objectStoreNames.contains(STORES.WORDS)) db.createObjectStore(STORES.WORDS);
+            };
             request.onsuccess = (e) => resolve(e.target.result);
         });
     }
 
-    async function getStoredDictionary() {
+    async function dbGet(store, key) {
         const db = await openDB();
-        return new Promise((resolve) => {
-            const transaction = db.transaction(STORE_NAME, 'readonly');
-            const request = transaction.objectStore(STORE_NAME).get('odm');
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => resolve(null);
+        return new Promise((r) => {
+            const req = db.transaction(store, 'readonly').objectStore(store).get(key);
+            req.onsuccess = () => r(req.result);
+            req.onerror = () => r(null);
         });
     }
 
-    async function saveDictionaryLocally(data) {
+    async function dbPut(store, key, val) {
         const db = await openDB();
-        const transaction = db.transaction(STORE_NAME, 'readwrite');
-        transaction.objectStore(STORE_NAME).put(data, 'odm');
+        const tx = db.transaction(store, 'readwrite');
+        tx.objectStore(store).put(val, key);
     }
 
+    // --- ŁADOWANIE SŁOWNIKA ---
     async function loadDictionary() {
         const loader = document.getElementById('loader');
         loader.style.display = "block";
         try {
-            let data = await getStoredDictionary();
+            let data = await dbGet(STORES.FILES, 'odm');
             if (!data) {
-                loader.innerText = "Pobieranie bazy słów (tylko raz)...";
+                loader.innerText = "Pobieranie słownika (ok. 13MB)...";
                 const dropboxUrl = "https://dl.dropboxusercontent.com/scl/fi/p2i6qii08zudt5rsf6n63/odm.txt?rlkey=y66p7eombazxax4nyaxkk0ha1";
-                const response = await fetch("https://corsproxy.io/?" + encodeURIComponent(dropboxUrl));
+                // Próba pobrania przez proxy
+                const response = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(dropboxUrl));
+                if (!response.ok) throw new Error("Błąd pobierania");
                 data = await response.text();
-                await saveDictionaryLocally(data);
+                await dbPut(STORES.FILES, 'odm', data);
                 updateMsg("Słownik zapisany!", "var(--success)");
             }
             const words = data.split(/[,\s\n\r]+/).map(w => w.trim().toLowerCase()).filter(w => w.length >= 3);
             dictionary = new Set(words);
+            isDictionaryReady = true;
             loader.style.display = "none";
         } catch (e) {
             console.error(e);
-            loader.innerText = "Błąd słownika.";
+            loader.innerText = "Tryb Online (brak pliku słownika)";
+            isDictionaryReady = false;
         }
     }
 
-    // --- DEFINICJE (Wiktionary API) ---
+    // --- PROCESOWANIE SŁOWA ---
+    async function processWord() {
+        const input = document.getElementById('wordInput');
+        const word = input.value.toLowerCase();
+        if (word.length < 3) { updateMsg("Min. 3 litery!", "var(--danger)"); return; }
+        if (state.found.includes(word.toUpperCase())) { updateMsg("Już ułożone!", "orange"); resetSelection(); return; }
+
+        let exists = false;
+
+        if (isDictionaryReady) {
+            exists = dictionary.has(word);
+        } else {
+            // Tryb Online z Cachem
+            const cached = await dbGet(STORES.WORDS, word);
+            if (cached) {
+                exists = cached.exists;
+            } else {
+                updateMsg("Sprawdzanie online...", "var(--primary)");
+                exists = await checkWordOnline(word);
+                await dbPut(STORES.WORDS, word, { exists, definition: null });
+            }
+        }
+
+        if (exists) {
+            const p = calculateScore(word.toUpperCase());
+            state.score += p;
+            state.found.push(word.toUpperCase());
+            usedIndices.forEach(idx => createExplosion(document.getElementById('tile-' + idx), word.length >= 6));
+            updateMsg(`+${p} PKT!`, word.length >= 6 ? "var(--gold)" : "var(--success)");
+            saveGameState(); renderAll();
+        } else {
+            updateMsg("Nie ma w słowniku.", "var(--danger)");
+        }
+        resetSelection();
+    }
+
+    async function checkWordOnline(word) {
+        try {
+            const url = `https://pl.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`;
+            const response = await fetch(url);
+            return response.ok;
+        } catch { return false; }
+    }
+
+    // --- DEFINICJE Z CACHEM ---
     async function showDefinition(word) {
         const modal = document.getElementById('defModal');
-        const title = document.getElementById('defTitle');
         const body = document.getElementById('defBody');
-        title.innerText = word.toUpperCase();
-        body.innerHTML = "<em>Szukam w Wikisłowniku...</em>";
+        document.getElementById('defTitle').innerText = word.toUpperCase();
+        body.innerHTML = "<em>Pobieranie...</em>";
         modal.style.display = "flex";
 
-        try {
-            // Oficjalne API Wiktionary REST
-            const url = `https://pl.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(word.toLowerCase())}`;
-            const response = await fetch(url);
-            
-            if (!response.ok) throw new Error();
-            
-            const data = await response.json();
-            if (data.extract) {
-                body.innerHTML = data.extract;
-            } else {
-                body.innerHTML = "Słowo poprawne, ale brak szczegółowego opisu w Wikisłowniku.";
-            }
-        } catch (e) {
-            body.innerHTML = "Nie znaleziono definicji (brak w wolnej bazie Wikisłownika).";
+        const cached = await dbGet(STORES.WORDS, word.toLowerCase());
+        if (cached && cached.definition) {
+            body.innerHTML = cached.definition;
+            return;
         }
+
+        try {
+            const url = `https://pl.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(word.toLowerCase())}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            const definition = data.extract || "Brak opisu w Wikisłowniku.";
+            body.innerHTML = definition;
+            // Zapisz definicję do cache
+            await dbPut(STORES.WORDS, word.toLowerCase(), { exists: true, definition });
+        } catch { body.innerText = "Błąd połączenia."; }
     }
 
+    // --- RESZTA LOGIKI ---
     function init() {
-        if(localStorage.getItem('darkMode') === 'true') {
-            document.body.classList.add('dark-mode');
-            document.getElementById('themeToggle').innerText = '☀️';
-        }
+        if(localStorage.getItem('darkMode') === 'true') { document.body.classList.add('dark-mode'); document.getElementById('themeToggle').innerText = '☀️'; }
         document.addEventListener('keydown', handleKeyboard);
         state.isDaily = localStorage.getItem('lastMode') === 'daily';
-        updateModeUI();
-        loadGameState();
-        loadDictionary();
+        updateModeUI(); loadGameState(); loadDictionary();
     }
 
     function saveGameState() {
@@ -428,180 +262,77 @@
         const saved = localStorage.getItem(key);
         if (saved) {
             const data = JSON.parse(saved);
-            if (state.isDaily) {
-                const today = new Date().toISOString().slice(0,10);
-                if (data.date !== today) { startNewGame(); return; }
-            }
-            state = data;
-            renderAll();
+            if (state.isDaily && data.date !== new Date().toISOString().slice(0,10)) { startNewGame(); return; }
+            state = data; renderAll();
         } else { startNewGame(); }
     }
 
     function renderAll() {
-        renderPool();
-        renderFoundList();
+        renderPool(); renderFoundList();
         document.getElementById('currentScore').innerText = state.score;
         document.getElementById('count').innerText = state.found.length;
         updateHighScoreDisplay();
     }
 
     function renderFoundList() {
-        const list = document.getElementById('foundList');
-        list.innerHTML = "";
+        const list = document.getElementById('foundList'); list.innerHTML = "";
         state.found.forEach(word => {
-            const wordPts = calculateScore(word);
             const span = document.createElement('span');
             span.className = 'word-tag' + (word.length >= 6 ? ' gold' : '');
-            span.innerHTML = `${word} <small>(${wordPts})</small>`;
+            span.innerHTML = `${word} <small>(${calculateScore(word)})</small>`;
             span.onclick = () => showDefinition(word);
             list.prepend(span);
         });
     }
 
-    function closeModal() { document.getElementById('defModal').style.display = "none"; }
-
     function startNewGame() {
-        const todayStr = new Date().toISOString().slice(0,10);
-        let randomFunc = Math.random;
-        if (state.isDaily) {
-            const seed = parseInt(todayStr.replace(/-/g,''));
-            randomFunc = mulberry32(seed);
+        const today = new Date().toISOString().slice(0,10);
+        let rnd = state.isDaily ? mulberry32(parseInt(today.replace(/-/g,''))) : Math.random;
+        state.found = []; state.score = 0; state.date = today;
+        let temp = [];
+        const seed = seedWords[Math.floor(rnd() * seedWords.length)].toUpperCase().split('');
+        for(let i=0; i<7; i++) temp.push(seed.splice(Math.floor(rnd()*seed.length), 1)[0]);
+        while(temp.length < 10) {
+            let v = rnd() > 0.6;
+            temp.push((v ? vowelsWeighted : consonantsWeighted)[Math.floor(rnd()*(v?vowelsWeighted:consonantsWeighted).length)]);
         }
-        state.found = []; state.score = 0; state.date = todayStr;
-        let tempPool = [];
-        const seedWord = seedWords[Math.floor(randomFunc() * seedWords.length)];
-        const charsFromSeed = seedWord.toUpperCase().split('');
-        for(let i=0; i<7; i++) {
-            const idx = Math.floor(randomFunc() * charsFromSeed.length);
-            tempPool.push(charsFromSeed.splice(idx, 1)[0]);
-        }
-        while(tempPool.length < 10) {
-            const isVowel = randomFunc() > 0.6;
-            tempPool.push((isVowel ? vowelsWeighted : consonantsWeighted)[Math.floor(randomFunc() * (isVowel ? vowelsWeighted.length : consonantsWeighted.length))]);
-        }
-        tempPool.sort(() => randomFunc() - 0.5);
-        state.pool = tempPool.map(char => ({ char, pts: letterScores[char] || 1 }));
+        state.pool = temp.sort(() => rnd()-0.5).map(c => ({ char: c, pts: letterScores[c] || 1 }));
         usedIndices = []; saveGameState(); renderAll();
     }
 
     function renderPool() {
-        const container = document.getElementById('lettersGroup');
-        container.innerHTML = "";
-        state.pool.forEach((item, index) => {
+        const c = document.getElementById('lettersGroup'); c.innerHTML = "";
+        state.pool.forEach((item, i) => {
             const div = document.createElement('div');
-            div.className = 'letter' + (usedIndices.includes(index) ? ' used' : '');
-            div.id = 'tile-' + index;
+            div.className = 'letter' + (usedIndices.includes(i) ? ' used' : '');
+            div.id = 'tile-' + i;
             div.innerHTML = `<span>${item.char}</span><span class="pts">${item.pts}</span>`;
-            div.onclick = () => addLetter(item.char, index);
-            container.appendChild(div);
+            div.onclick = () => { if(!usedIndices.includes(i)) { usedIndices.push(i); document.getElementById('wordInput').value += item.char; renderPool(); if(navigator.vibrate) navigator.vibrate(15); } };
+            c.appendChild(div);
         });
     }
 
-    async function processWord() {
-        const input = document.getElementById('wordInput');
-        const word = input.value;
-        if (word.length < 3) { updateMsg("Min. 3 litery!", "var(--danger)"); return; }
-        if (state.found.includes(word)) { updateMsg("Już ułożone!", "orange"); resetSelection(); return; }
-        
-        if (dictionary.size === 0) { updateMsg("Trwa ładowanie słownika...", "orange"); return; }
-        
-        if (dictionary.has(word.toLowerCase())) {
-            const p = calculateScore(word);
-            state.score += p;
-            state.found.push(word);
-            usedIndices.forEach(idx => createExplosion(document.getElementById('tile-' + idx), word.length >= 6));
-            updateMsg(`+${p} PKT!`, word.length >= 6 ? "var(--gold)" : "var(--success)");
-            saveGameState(); renderAll();
-        } else {
-            updateMsg("Nie ma w słowniku.", "var(--danger)");
-        }
-        resetSelection();
-    }
-
-    function shareResult() {
-        const text = `🧩 Literak: ${state.isDaily ? 'Dnia' : 'Trening'}\n🏆 ${state.score} pkt | ✍️ ${state.found.length} słów\n🔗 ${window.location.href}`;
-        if (navigator.share) navigator.share({ title: 'Mój Literak', text: text });
-        else navigator.clipboard.writeText(text).then(() => updateMsg("Skopiowano!", "var(--primary)"));
-    }
-
-    function toggleGameMode() { state.isDaily = !state.isDaily; updateModeUI(); loadGameState(); }
-    function updateModeUI() {
-        const b = document.getElementById('modeBadge');
-        b.innerText = state.isDaily ? "Wyzwanie Dnia" : "Trening";
-        b.className = 'mode-badge' + (state.isDaily ? ' daily' : '');
-        document.getElementById('btnNew').style.display = state.isDaily ? "none" : "block";
+    function removeLastLetter() { 
+        if(usedIndices.length) { usedIndices.pop(); const inp = document.getElementById('wordInput'); inp.value = inp.value.slice(0,-1); renderPool(); }
     }
 
     function calculateScore(word) {
-        let pts = 0;
-        for(let c of word) pts += (letterScores[c] || 1);
-        if(word.length >= 5) pts += (word.length * 2);
-        return pts;
+        let pts = 0; for(let c of word) pts += (letterScores[c] || 1);
+        if(word.length >= 5) pts += (word.length * 2); return pts;
     }
 
-    function mulberry32(a) {
-        return function() {
-            var t = a += 0x6D2B79F5;
-            t = Math.imul(t ^ t >>> 15, t | 1);
-            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-            return ((t ^ t >>> 14) >>> 0) / 4294967296;
-        }
-    }
-
-    function handleKeyboard(e) {
-        if(e.key === "Backspace") removeLastLetter();
-        else if(e.key === "Enter") processWord();
-        else {
-            const char = e.key.toUpperCase();
-            const idx = state.pool.findIndex((item, i) => item.char === char && !usedIndices.includes(i));
-            if(idx !== -1) addLetter(char, idx);
-        }
-    }
-
-    function toggleTheme() {
-        document.body.classList.toggle('dark-mode');
-        localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-        document.getElementById('themeToggle').innerText = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
-    }
-
-    function updateHighScoreDisplay() {
-        const key = state.isDaily ? 'bestDaily' : 'bestPractice';
-        if (state.score > (localStorage.getItem(key) || 0)) localStorage.setItem(key, state.score);
-        document.getElementById('highScore').innerText = localStorage.getItem(key) || 0;
-    }
-
-    function addLetter(l, index) {
-        if (usedIndices.includes(index)) return;
-        usedIndices.push(index);
-        document.getElementById('wordInput').value += l;
-        renderPool();
-        if (window.navigator.vibrate) window.navigator.vibrate(15);
-    }
-
-    function removeLastLetter() {
-        const input = document.getElementById('wordInput');
-        if (input.value.length === 0) return;
-        input.value = input.value.slice(0, -1);
-        usedIndices.pop(); renderPool();
-    }
-
-    function shufflePool() { resetSelection(); state.pool.sort(() => Math.random() - 0.5); saveGameState(); renderPool(); }
+    function mulberry32(a) { return function() { var t = a += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
+    function toggleTheme() { document.body.classList.toggle('dark-mode'); localStorage.setItem('darkMode', document.body.classList.contains('dark-mode')); document.getElementById('themeToggle').innerText = document.body.classList.contains('dark-mode') ? '☀️' : '🌙'; }
+    function closeModal() { document.getElementById('defModal').style.display = "none"; }
     function resetSelection() { document.getElementById('wordInput').value = ""; usedIndices = []; renderPool(); }
     function updateMsg(t, c) { const m = document.getElementById('msg'); m.innerText = t; m.style.color = c; }
-
-    function createExplosion(el, gold) {
-        if(!el) return;
-        const r = el.getBoundingClientRect();
-        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-        for (let i = 0; i < (gold ? 12 : 6); i++) {
-            const p = document.createElement('div');
-            p.className = 'particle';
-            p.style.width = '6px'; p.style.height = '6px'; p.style.background = gold ? '#f1c40f' : '#27ae60';
-            document.body.appendChild(p);
-            const a = (i / (gold ? 12 : 6)) * Math.PI * 2;
-            p.animate([{ transform: `translate(${cx}px, ${cy}px) scale(1)`, opacity: 1 }, { transform: `translate(${cx + Math.cos(a)*70}px, ${cy + Math.sin(a)*70}px) scale(0)`, opacity: 0 }], { duration: 500 }).onfinish = () => p.remove();
-        }
-    }
+    function shufflePool() { resetSelection(); state.pool.sort(() => Math.random() - 0.5); saveGameState(); renderPool(); }
+    function toggleGameMode() { state.isDaily = !state.isDaily; updateModeUI(); loadGameState(); }
+    function updateModeUI() { const b = document.getElementById('modeBadge'); b.innerText = state.isDaily ? "Wyzwanie Dnia" : "Trening"; b.className = 'mode-badge' + (state.isDaily ? ' daily' : ''); document.getElementById('btnNew').style.display = state.isDaily ? "none" : "block"; }
+    function updateHighScoreDisplay() { const k = state.isDaily ? 'bestDaily' : 'bestPractice'; if (state.score > (localStorage.getItem(k) || 0)) localStorage.setItem(k, state.score); document.getElementById('highScore').innerText = localStorage.getItem(k) || 0; }
+    function shareResult() { const t = `🧩 Literak: ${state.isDaily?'Dnia':'Trening'}\n🏆 ${state.score} pkt\n✍️ ${state.found.length} słów\n🔗 ${window.location.href}`; if (navigator.share) navigator.share({ title: 'Literak', text: t }); else { navigator.clipboard.writeText(t); updateMsg("Skopiowano!", "var(--primary)"); } }
+    function handleKeyboard(e) { if(e.key === "Backspace") removeLastLetter(); else if(e.key === "Enter") processWord(); else { const c = e.key.toUpperCase(); const i = state.pool.findIndex((it, idx) => it.char === c && !usedIndices.includes(idx)); if(i !== -1) { usedIndices.push(i); document.getElementById('wordInput').value += c; renderPool(); } } }
+    function createExplosion(el, gold) { if(!el) return; const r = el.getBoundingClientRect(); const cx = r.left + r.width/2, cy = r.top + r.height/2; for (let i = 0; i < (gold?12:6); i++) { const p = document.createElement('div'); p.className = 'particle'; p.style.width = '6px'; p.style.height = '6px'; p.style.background = gold ? '#f1c40f' : '#27ae60'; document.body.appendChild(p); const a = (i/(gold?12:6))*Math.PI*2; p.animate([{ transform: `translate(${cx}px, ${cy}px) scale(1)`, opacity: 1 }, { transform: `translate(${cx+Math.cos(a)*70}px, ${cy+Math.sin(a)*70}px) scale(0)`, opacity: 0 }], { duration: 500 }).onfinish = () => p.remove(); } }
 
     init();
 </script>

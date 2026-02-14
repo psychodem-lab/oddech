@@ -6,26 +6,32 @@
     <title>Słownikowy Ninja</title>
     <style>
         :root {
-            --primary: #4a90e2; --success: #27ae60; --gold: #f1c40f; --danger: #e74c3c;
+            --primary: #4a90e2;
+            --success: #27ae60; --gold: #f1c40f; --danger: #e74c3c;
             --bg: #f0f2f5; --panel-bg: #ffffff; --text-main: #2c3e50; --text-sub: #7f8c8d;
             --border: #eeeeee; --input-bg: #ffffff; --tag-bg: #e1f5fe;
             --modal-overlay: rgba(0,0,0,0.85);
         }
         body.dark-mode {
-            --bg: #121212; --panel-bg: #1e1e1e; --text-main: #e0e0e0; --text-sub: #b0b0b0;
+            --bg: #121212;
+            --panel-bg: #1e1e1e; --text-main: #e0e0e0; --text-sub: #b0b0b0;
             --border: #333333; --input-bg: #2c2c2c; --tag-bg: #263238;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; height: 100vh; display: flex; justify-content: center; overflow: hidden; }
-        .game-container { background: var(--panel-bg); width: 100%; max-width: 500px; height: 100vh; display: flex; flex-direction: column; padding: 10px; position: relative; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0;
+        height: 100vh; display: flex; justify-content: center; overflow: hidden; }
+        .game-container { background: var(--panel-bg);
+        width: 100%; max-width: 500px; height: 100vh; display: flex; flex-direction: column; padding: 10px; position: relative; }
         
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); z-index: 9999; justify-content: center; align-items: center; padding: 15px; }
-        .modal-content { background: var(--panel-bg); padding: 20px; border-radius: 15px; width: 100%; max-width: 450px; box-shadow: 0 15px 40px rgba(0,0,0,0.6); border: 1px solid var(--primary); }
+        .modal-overlay { display: none;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-overlay); z-index: 9999; justify-content: center; align-items: center; padding: 15px; }
+        .modal-content { background: var(--panel-bg); padding: 20px; border-radius: 15px; width: 100%; max-width: 450px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.6); border: 1px solid var(--primary); }
         
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 5px; font-size: 0.8rem; }
         
         .score-pill { 
-            background: var(--gold); 
+            background: var(--gold);
             color: #000; 
             padding: 5px 12px; 
             border-radius: 15px; 
@@ -38,19 +44,20 @@
         }
 
         .letters-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 10px 0; }
-        .letter { background: var(--primary); color: white; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.4rem; font-weight: bold; box-shadow: 0 4px 0 #357abd; cursor: pointer; user-select: none; position: relative; }
+        .letter { background: var(--primary); color: white;
+        aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.4rem; font-weight: bold;
+        box-shadow: 0 4px 0 #357abd; cursor: pointer; user-select: none; position: relative; }
         .letter.used { background: #bdc3c7; box-shadow: 0 0 0; opacity: 0.5; transform: translateY(4px); }
         .letter .pts { font-size: 0.6rem; position: absolute; bottom: 2px; right: 5px; }
 
         .input-area { display: flex; gap: 8px; height: 50px; margin-bottom: 10px; }
         
-        /* Zmiana proporcji: input nieco mniejszy (1.5 zamiast 2) */
-        input { flex: 1.5; border: 2px solid var(--border); border-radius: 8px; text-align: center; font-size: 1.1rem; background: var(--input-bg); color: var(--text-main); text-transform: uppercase; outline: none; width: 0; }
+        input { flex: 1.5;
+        border: 2px solid var(--border); border-radius: 8px; text-align: center; font-size: 1.1rem; background: var(--input-bg); color: var(--text-main); text-transform: uppercase; outline: none; width: 0; }
         
-        /* Skrócony panel wyników */
         .results { 
-            flex: 0 1 120px; /* Stała bazowa wysokość 120px, może się kurczyć */
-            border: 1px solid var(--border); 
+            flex: 0 1 120px;
+            border: 1px solid var(--border);
             border-radius: 8px; 
             background: var(--bg); 
             padding: 8px; 
@@ -60,7 +67,7 @@
         }
         #foundList { display: flex; flex-wrap: wrap; gap: 4px; }
         .word-tag { 
-            display: inline-block; 
+            display: inline-block;
             background: var(--tag-bg); 
             padding: 4px 10px; 
             border-radius: 20px; 
@@ -68,19 +75,19 @@
             cursor: pointer; 
             border: 1px solid rgba(0,0,0,0.1); 
             font-weight: bold;
-            white-space: nowrap; 
+            white-space: nowrap;
         }
         
         button { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; padding: 10px; }
         
-        /* Przycisk sprawdź: mniejszy padding i font, by nie wychodził poza ramy */
         .btn-add { background: var(--success); color: white; flex: 1; font-size: 0.85rem; padding: 10px 5px; }
         .btn-back { background: #e67e22; color: white; width: 45px; }
         
         #msg { height: 20px; text-align: center; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; }
         
         .expert-hub { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; }
-        .hub-btn { display: block; color: white; text-align: center; text-decoration: none; padding: 10px 5px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
+        .hub-btn { display: block; color: white; text-align: center; text-decoration: none;
+        padding: 10px 5px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
         .bg-pwn { background: #004a99; }
         .bg-sjp { background: #6c5ce7; }
     </style>
@@ -136,21 +143,19 @@
 </div>
 
 <script>
-    // 1. Deklaracja zmiennych globalnych (TU BYŁ BŁĄD - brakowało 'state')
     const letterScores = {'A':1, 'E':1, 'I':1, 'O':1, 'N':1, 'Z':1, 'R':1, 'S':1, 'W':1, 'Y':2, 'C':2, 'D':2, 'K':2, 'L':2, 'M':2, 'P':2, 'T':2, 'B':3, 'G':3, 'H':3, 'J':3, 'Ł':3, 'U':3, 'Ą':5, 'Ę':5, 'F':5, 'Ó':5, 'Ś':5, 'Ż':5, 'Ć':6, 'Ń':7, 'Ź':9};
-const seedWords = ["ABSTRAKCJA", "ANTYPATIA", "ATMOSFERA", "AUTORYTET", "BALUSTRADA", "BIBLIOTEKA", "BŁYSKAWICA", "CZEKOLADA", "DELIKATNIE", "DYSCYPLINA", "EKSPEDYCJA", "ENTUZJAZM", "FILANTROPIA", "FOTOGRAFIA", "FUNDAMENTY", "GIMNASTYKA", "ILUSTRACJA", "INSPIRACJA", "INTELIGENT", "KATEDRALNY", "KILOMETRÓW", "KOMENTARZE", "KONKURENCJA", "KORZYSTNIE", "KRAJOBRAZY", "LITERATURA", "MATEMATYKA", "MECHANIZMY", "MOTYWACJA", "NAUCZYCIEL", "PARLAMENTY", "PLANOWANIE", "PODRĘCZNIK", "POPULARNOŚĆ", "POWIETRZNY", "PROPOZYCJA", "PRZYSZŁOŚĆ", "RESTAURACJA", "SCENARIUSZ", "TECHNOLOGIA", "WŁAŚCIWIE", "WYOBRAŹNIA", "DEKORACJA", "DYREKTORZY", "EKSPERTYZA", "KOMPUTERÓW", "PRACOWNICY", "PRZYJACIEL", "WIDOWISKOWY", "WSPÓŁPRACA"];
+    const seedWords = ["ABSTRAKCJA", "ANTYPATIA", "ATMOSFERA", "AUTORYTET", "BALUSTRADA", "BIBLIOTEKA", "BŁYSKAWICA", "CZEKOLADA", "DELIKATNIE", "DYSCYPLINA", "EKSPEDYCJA", "ENTUZJAZM", "FILANTROPIA", "FOTOGRAFIA", "FUNDAMENTY", "GIMNASTYKA", "ILUSTRACJA", "INSPIRACJA", "INTELIGENT", "KATEDRALNY", "KILOMETRÓW", "KOMENTARZE", "KONKURENCJA", "KORZYSTNIE", "KRAJOBRAZY", "LITERATURA", "MATEMATYKA", "MECHANIZMY", "MOTYWACJA", "NAUCZYCIEL", "PARLAMENTY", "PLANOWANIE", "PODRĘCZNIK", "POPULARNOŚĆ", "POWIETRZNY", "PROPOZYCJA", "PRZYSZŁOŚĆ", "RESTAURACJA", "SCENARIUSZ", "TECHNOLOGIA", "WŁAŚCIWIE", "WYOBRAŹNIA", "DEKORACJA", "DYREKTORZY", "EKSPERTYZA", "KOMPUTERÓW", "PRACOWNICY", "PRZYJACIEL", "WIDOWISKOWY", "WSPÓŁPRACA"];
     
-    let state = { pool: [], found: [], score: 0, isDaily: false };
+    // Dodano pole dateStr do śledzenia dnia zapisu
+    let state = { pool: [], found: [], score: 0, isDaily: false, dateStr: "" };
     let usedIndices = [];
     let db;
 
-    // Funkcja generująca liczby pseudolosowe na podstawie ziarna (seed)
     function seededRandom(seed) {
         const x = Math.sin(seed++) * 10000;
         return x - Math.floor(x);
     }
 
-    // Inicjalizacja bazy danych IndexedDB
     const request = indexedDB.open("LiterakV9_Expert", 1);
     request.onupgradeneeded = e => e.target.result.createObjectStore("words");
     request.onsuccess = e => { db = e.target.result; init(); };
@@ -161,33 +166,23 @@ const seedWords = ["ABSTRAKCJA", "ANTYPATIA", "ATMOSFERA", "AUTORYTET", "BALUSTR
         loadGame();
     }
 
-        async function shareResult() {
+    async function shareResult() {
         const best = state.isDaily ? 'bestD' : 'bestT';
         const score = localStorage.getItem(best) || 0;
         const mode = state.isDaily ? "Dnia" : "Trening";
-        
-        // Pobiera aktualny link do Twojej strony
-        const gameUrl = window.location.href; 
-        
+        const gameUrl = window.location.href;
         const text = `Mój rekord w Literaku (Tryb ${mode}) to ${score} pkt! 🧩 Spróbuj mnie pobić:`;
-        
         if (navigator.share) {
             try { 
-                await navigator.share({ 
-                    title: 'Słownikowy Ninja', 
-                    text: text,
-                    url: gameUrl // Przekazuje link jako osobny parametr dla lepszego wyglądu w Social Media
-                }); 
+                await navigator.share({ title: 'Słownikowy Ninja', text: text, url: gameUrl });
             } catch (err) {
                 console.log("Anulowano udostępnianie");
             }
         } else {
-            // Jeśli przeglądarka nie wspiera navigator.share, kopiujemy tekst + link do schowka
             navigator.clipboard.writeText(`${text} ${gameUrl}`);
             updateMsg("Wynik i link skopiowany!", "var(--success)");
         }
     }
-
 
     async function checkWord() {
         const word = document.getElementById('wordInput').value.toLowerCase().trim();
@@ -196,24 +191,36 @@ const seedWords = ["ABSTRAKCJA", "ANTYPATIA", "ATMOSFERA", "AUTORYTET", "BALUSTR
         updateMsg("Weryfikacja...", "var(--primary)");
         const cached = await getLocal(word);
         let isValid = false; let definition = "";
-        if (cached) { isValid = cached.valid; definition = cached.def; } else {
+        
+        if (cached) { 
+            isValid = cached.valid;
+            definition = cached.def; 
+        } else {
             try {
                 const res = await fetch(`https://pl.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`);
                 const data = await res.json();
-                if (data.type === "standard" || data.type === "disambiguation") { isValid = true; definition = data.extract; } else {
+                if (data.type === "standard" || data.type === "disambiguation") { 
+                    isValid = true; definition = data.extract;
+                } else {
                     const checkRes = await fetch(`https://pl.wiktionary.org/w/api.php?action=parse&format=json&origin=*&page=${encodeURIComponent(word)}&prop=text`);
                     const checkData = await checkRes.json();
-                    if (checkData.parse && checkData.parse.text["*"].includes("język polski")) { isValid = true; definition = "Słowo poprawne. Sprawdź źródła poniżej."; }
+                    if (checkData.parse && checkData.parse.text["*"].includes("język polski")) { 
+                        isValid = true;
+                        definition = "Słowo poprawne. Sprawdź źródła poniżej."; 
+                    }
                 }
                 saveLocal(word, isValid, definition);
             } catch(e) { updateMsg("Błąd sieci.", "red"); return; }
         }
+        
         if(isValid) {
             const pts = calcPts(word.toUpperCase());
             state.score += pts; state.found.push(word.toUpperCase());
             updateMsg(`+${pts} PKT`, "var(--success)");
             saveGame(); renderAll();
-        } else { updateMsg("Brak w słownikach.", "var(--danger)"); }
+        } else { 
+            updateMsg("Brak w słownikach.", "var(--danger)");
+        }
         resetInput();
     }
 
@@ -246,57 +253,77 @@ const seedWords = ["ABSTRAKCJA", "ANTYPATIA", "ATMOSFERA", "AUTORYTET", "BALUSTR
         document.getElementById('btnNew').style.display = state.isDaily ? "none" : "block";
     }
 
-    function calcPts(w) { let p = 0; for(let c of w) p += (letterScores[c]||1); return w.length >= 6 ? p + 15 : p; }
+    function calcPts(w) { 
+        let p = 0; for(let c of w) p += (letterScores[c]||1);
+        return w.length >= 6 ? p + 15 : p;
+    }
 
     function startNewGame() {
-    // 1. Resetujemy wszystko, by uniknąć błędów w wyświetlaniu
-    state.found = []; 
-    state.score = 0;
-    usedIndices = [];
-    document.getElementById('wordInput').value = "";
-    
-    // 2. Ustalamy ziarno (Daily lub Losowe)
-    let seed = state.isDaily ? parseInt(new Date().toISOString().slice(0,10).replace(/-/g, '')) : Math.random() * 1000000;
-    let rngCounter = 0;
-    
-    function getNextRnd() {
-        return state.isDaily ? seededRandom(seed + (rngCounter++)) : Math.random();
+        state.found = [];
+        state.score = 0;
+        // Rejestrowanie daty przy tworzeniu nowej gry
+        state.dateStr = new Date().toISOString().slice(0,10); 
+        usedIndices = [];
+        document.getElementById('wordInput').value = "";
+        
+        let seed = state.isDaily ? parseInt(state.dateStr.replace(/-/g, '')) : Math.random() * 1000000;
+        let rngCounter = 0;
+        function getNextRnd() { return state.isDaily ? seededRandom(seed + (rngCounter++)) : Math.random(); }
+
+        // Odfiltrowanie słów z bazy by zawierały dokładnie 10 liter
+        let fullSeedList = seedWords.filter(w => w.length === 10);
+        let seedWordIndex = Math.floor(getNextRnd() * fullSeedList.length);
+        let originalWord = fullSeedList[seedWordIndex].toUpperCase();
+        let baseLetters = originalWord.split('');
+
+        let pool = [];
+        let tempLetters = [...baseLetters];
+        while(tempLetters.length > 0) {
+            let idx = Math.floor(getNextRnd() * tempLetters.length);
+            pool.push(tempLetters.splice(idx, 1)[0]);
+        }
+
+        state.pool = pool.slice(0, 10).map(c => ({ 
+            char: c, 
+            pts: letterScores[c] || 1, 
+            sort: getNextRnd() 
+        })).sort((a, b) => a.sort - b.sort);
+
+        saveGame(); 
+        renderAll();
     }
-
-    // 3. Wybieramy słowo (upewniamy się, że mamy kopię liter)
-    let fullSeedList = [...seedWords];
-    let seedWordIndex = Math.floor(getNextRnd() * fullSeedList.length);
-    let originalWord = fullSeedList[seedWordIndex].toUpperCase();
-    let baseLetters = originalWord.split('');
-    
-    // 4. Budujemy pulę dokładnie 10 liter
-    let pool = [];
-    // Mieszamy litery ze słowa bazowego do puli
-    let tempLetters = [...baseLetters];
-    while(tempLetters.length > 0) {
-        let idx = Math.floor(getNextRnd() * tempLetters.length);
-        pool.push(tempLetters.splice(idx, 1)[0]);
-    }
-
-    // 5. Ostateczne przemieszanie kafelków i przypisanie punktów
-    // Używamy .slice(0, 10) dla absolutnej pewności, że nie będzie 11 liter
-    state.pool = pool.slice(0, 10).map(c => ({ 
-        char: c, 
-        pts: letterScores[c] || 1, 
-        sort: getNextRnd() 
-    })).sort((a, b) => a.sort - b.sort);
-
-    // 6. Zapis i odświeżenie widoku
-    saveGame(); 
-    renderAll();
-}
 
     function saveLocal(w, v, d) { if(db) db.transaction("words", "readwrite").objectStore("words").put({valid:v, def:d}, w); }
     function getLocal(w) { return new Promise(r => { if(!db) return r(null); const req = db.transaction("words").objectStore("words").get(w); req.onsuccess = () => r(req.result); }); }
-    function saveGame() { localStorage.setItem(state.isDaily?'sD':'sT', JSON.stringify(state)); localStorage.setItem('lastMode', state.isDaily?'daily':'training'); }
-    function loadGame() { const s = localStorage.getItem(state.isDaily?'sD':'sT'); if(s) { state = JSON.parse(s); renderAll(); } else startNewGame(); }
+    
+    function saveGame() { 
+        localStorage.setItem(state.isDaily?'sD':'sT', JSON.stringify(state)); 
+        localStorage.setItem('lastMode', state.isDaily?'daily':'training');
+    }
+    
+    function loadGame() { 
+        const reqDaily = state.isDaily;
+        const s = localStorage.getItem(reqDaily ? 'sD' : 'sT'); 
+        if(s) { 
+            const loadedState = JSON.parse(s); 
+            const today = new Date().toISOString().slice(0,10);
+            
+            // Weryfikacja: jeśli to tryb dnia i inna data, resetujemy
+            if(reqDaily && loadedState.dateStr !== today) {
+                startNewGame();
+            } else {
+                state = loadedState; 
+                state.isDaily = reqDaily;
+                renderAll(); 
+            }
+        } else {
+            startNewGame();
+        }
+    }
+    
     function toggleMode() { state.isDaily = !state.isDaily; loadGame(); }
-    function removeLast() { usedIndices.pop(); document.getElementById('wordInput').value = document.getElementById('wordInput').value.slice(0,-1); renderAll(); }
+    function removeLast() { usedIndices.pop();
+    document.getElementById('wordInput').value = document.getElementById('wordInput').value.slice(0,-1); renderAll(); }
     function resetInput() { usedIndices = []; document.getElementById('wordInput').value = ""; renderAll(); }
     function updateMsg(t, c) { const m = document.getElementById('msg'); m.innerText = t; m.style.color = c; }
     function closeModal() { document.getElementById('defModal').style.display = 'none'; }

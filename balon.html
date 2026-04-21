@@ -12,6 +12,7 @@
             --primary-text: #f8fafc;
             --secondary-text: #64748b;
             --accent: #10b981;
+            --card-bg: rgba(255, 255, 255, 0.05);
         }
 
         body {
@@ -20,7 +21,6 @@
             color: var(--primary-text);
             font-family: system-ui, -apple-system, sans-serif;
             overflow: hidden;
-            /* Usunięto touch-action z body, aby suwaki działały poprawnie na innych ekranach */
         }
 
         /* Zarządzanie ekranami (SPA) */
@@ -50,14 +50,23 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Typografia i UI ekranów pobocznych */
         h1 { font-weight: 300; letter-spacing: 1px; text-align: center; margin-bottom: 10px; }
         p { color: var(--secondary-text); text-align: center; max-width: 400px; line-height: 1.5; margin-bottom: 25px;}
-        .cbt-note { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid var(--oval-color); font-size: 0.95rem; line-height: 1.4;}
+        
+        .cbt-note { 
+            background: var(--card-bg); 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin: 20px 0; 
+            border-left: 4px solid var(--oval-color); 
+            font-size: 0.95rem; 
+            line-height: 1.4;
+        }
         
         /* Ulepszony Slider UX */
         .slider-container { width: 100%; max-width: 320px; margin: 10px 0 40px 0; position: relative; }
@@ -71,20 +80,13 @@
         }
         input[type=range]:focus { outline: none; }
         input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 8px;
-            cursor: pointer;
-            background: rgba(255,255,255,0.1);
-            border-radius: 4px;
+            width: 100%; height: 8px; cursor: pointer;
+            background: rgba(255,255,255,0.1); border-radius: 4px;
         }
         input[type=range]::-webkit-slider-thumb {
-            height: 28px;
-            width: 28px;
-            border-radius: 50%;
-            background: var(--oval-color);
-            cursor: pointer;
-            -webkit-appearance: none;
-            margin-top: -10px;
+            height: 28px; width: 28px; border-radius: 50%;
+            background: var(--oval-color); cursor: pointer;
+            -webkit-appearance: none; margin-top: -10px;
             box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
             transition: transform 0.1s;
         }
@@ -93,19 +95,42 @@
         }
 
         button {
-            background-color: var(--oval-color);
-            color: white;
-            border: none;
-            padding: 16px 40px;
-            font-size: 1.1rem;
-            border-radius: 30px;
-            cursor: pointer;
+            background-color: var(--oval-color); color: white;
+            border: none; padding: 16px 40px; font-size: 1.1rem;
+            border-radius: 30px; cursor: pointer;
             transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+            font-weight: 600; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
         }
         button:hover { transform: translateY(-2px); background-color: #7c3aed; box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4); }
         button:active { transform: translateY(1px); }
+
+        /* Karta podsumowania (Glassmorphism) */
+        .summary-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            padding: 25px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 320px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 1.05rem;
+        }
+        .stat-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .stat-row span { color: var(--secondary-text); }
+        .stat-row strong { color: var(--primary-text); font-size: 1.2rem; }
+        .stat-highlight { color: var(--oval-color) !important; font-weight: 700; }
 
         /* Elementy ekranu głównego */
         #progress-bar-container { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: rgba(255,255,255,0.05); }
@@ -184,23 +209,47 @@
             <div class="slider-label"><span>Pełny spokój (1)</span><span>Silny lęk (10)</span></div>
         </div>
 
-        <p id="result-text" style="color: var(--accent); font-weight: bold; margin-bottom: 25px; min-height: 40px; text-align: center;"></p>
-        <button onclick="location.reload()">Zakończ i Zapisz</button>
+        <button onclick="showSummary()">Zapisz i podsumuj</button>
+    </div>
+
+    <div id="screen-summary" class="screen">
+        <h1>Twój Raport</h1>
+        <p>Oto twarde dane z Twojej dzisiejszej praktyki.</p>
+        
+        <div class="summary-card">
+            <div class="stat-row">
+                <span>Czas treningu:</span>
+                <strong id="sum-time">0:00</strong>
+            </div>
+            <div class="stat-row">
+                <span>Ukończone cykle:</span>
+                <strong id="sum-cycles" class="stat-highlight">0</strong>
+            </div>
+            <div class="stat-row">
+                <span>Napięcie PRZED:</span>
+                <strong id="sum-pre">5/10</strong>
+            </div>
+            <div class="stat-row">
+                <span>Napięcie PO:</span>
+                <strong id="sum-post">5/10</strong>
+            </div>
+        </div>
+
+        <p id="sum-feedback" style="font-weight: 500; margin-bottom: 30px; text-align: center;"></p>
+        
+        <button onclick="location.reload()" style="background-color: transparent; border: 2px solid var(--oval-color); color: var(--primary-text);">Zakończ Trening</button>
     </div>
 
     <script>
-        // --- Aktualizacja widoku suwaka ---
+        // --- Interfejs Suwaków ---
         function updateSliderValue(elementId, value) {
             const display = document.getElementById(elementId);
             display.innerText = value;
-            
-            // Wizualna informacja zwrotna (zmiana koloru przy wyższym lęku, koncepcja ostrzegawcza CBT)
-            if (value <= 3) display.style.color = "#10b981"; // Zielony
-            else if (value <= 7) display.style.color = "#8b5cf6"; // Fioletowy
-            else display.style.color = "#f43f5e"; // Czerwony
+            if (value <= 3) display.style.color = "#10b981";
+            else if (value <= 7) display.style.color = "#8b5cf6";
+            else display.style.color = "#f43f5e";
         }
 
-        // Inicjalizacja kolorów suwaków na start
         updateSliderValue('pre-value-display', 5);
         updateSliderValue('post-value-display', 5);
 
@@ -232,43 +281,80 @@
         let animationFrameId = null;
         let particleInterval = null;
         let sessionStartTime = 0;
+        let actualSessionDurationMs = 0; // Przechowuje realny czas trwania ćwiczenia
         let wakeLock = null;
         const sessionDurationMs = 120 * 1000; // 2 minuty
         const affirmations = ["Rozluźnij barki", "Opuść ramiona", "Zwolnij napięcie twarzy", "Poczuj oparcie", "Jesteś tu i teraz"];
 
-        // --- Wake Lock API ---
         async function requestWakeLock() {
             try {
                 if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
             } catch (err) {}
         }
 
-        // --- Inicjalizacja Sesji ---
+        // --- Logika Nawigacji ---
         function startSession() {
             document.getElementById('screen-pre').classList.remove('active');
             mainScreen.classList.add('active');
             requestWakeLock();
             sessionStartTime = Date.now();
+            phaseStartTime = 0; 
             updateSessionProgress();
+            updateLogic();
         }
 
         function endSession() {
+            actualSessionDurationMs = Date.now() - sessionStartTime; // Zapisz dokładny czas
             mainScreen.classList.remove('active');
             document.getElementById('screen-post').classList.add('active');
+            
             if (wakeLock) wakeLock.release();
             cancelAnimationFrame(animationFrameId);
-            
-            const preVal = parseInt(document.getElementById('pre-score').value);
-            const postVal = parseInt(document.getElementById('post-score').value);
-            const diff = preVal - postVal;
-            const resText = document.getElementById('result-text');
-            
-            if (diff > 0) resText.innerText = `Twój poziom napięcia spadł o ${diff} punkt(y). Widzisz? Masz na to wpływ.`;
-            else if (diff === 0) resText.innerText = `Twój poziom napięcia utrzymał się. Praktyka uczy układ nerwowy nowej reakcji z czasem.`;
-            else resText.innerText = `Napięcie chwilowo wzrosło. To normalna reakcja na skupienie się na ciele.`;
         }
 
-        // --- Pasek postępu sesji ---
+        function showSummary() {
+            document.getElementById('screen-post').classList.remove('active');
+            document.getElementById('screen-summary').classList.add('active');
+
+            // Pobierz wartości
+            const preVal = parseInt(document.getElementById('pre-score').value);
+            const postVal = parseInt(document.getElementById('post-score').value);
+            
+            // Formatuj czas
+            const totalSeconds = Math.floor(actualSessionDurationMs / 1000);
+            const mins = Math.floor(totalSeconds / 60);
+            const secs = totalSeconds % 60;
+            const timeFormatted = `${mins} min ${secs < 10 ? '0' : ''}${secs} s`;
+
+            // Wstrzyknij dane do widoku
+            document.getElementById('sum-time').innerText = timeFormatted;
+            document.getElementById('sum-cycles').innerText = cycleCount;
+            document.getElementById('sum-pre').innerText = `${preVal} / 10`;
+            document.getElementById('sum-post').innerText = `${postVal} / 10`;
+
+            // Kolorowanie wyników napięcia w podsumowaniu
+            const sumPostEl = document.getElementById('sum-post');
+            if(postVal <= 3) sumPostEl.style.color = "#10b981";
+            else if(postVal <= 7) sumPostEl.style.color = "#8b5cf6";
+            else sumPostEl.style.color = "#f43f5e";
+
+            // Logika Feedbacku CBT
+            const diff = preVal - postVal;
+            const feedbackEl = document.getElementById('sum-feedback');
+            
+            if (diff > 0) {
+                feedbackEl.style.color = "#10b981";
+                feedbackEl.innerText = `Udało Ci się obniżyć napięcie o ${diff} pkt. To dowód z Twojego ciała, że oddychanie działa.`;
+            } else if (diff === 0) {
+                feedbackEl.style.color = "var(--secondary-text)";
+                feedbackEl.innerText = `Napięcie bez zmian. To naturalne. Regulacja układu nerwowego to proces, który wymaga regularności.`;
+            } else {
+                feedbackEl.style.color = "#f43f5e";
+                feedbackEl.innerText = `Napięcie nieznacznie wzrosło. Zauważenie tego to pierwszy krok do kontroli. Jesteś bezpieczny/a.`;
+            }
+        }
+
+        // --- Logika Aplikacji ---
         function updateSessionProgress() {
             if (!mainScreen.classList.contains('active')) return;
             const elapsed = Date.now() - sessionStartTime;
@@ -282,7 +368,6 @@
             requestAnimationFrame(updateSessionProgress);
         }
 
-        // --- Generator Cząsteczek ---
         function createParticle() {
             const p = document.createElement('div');
             p.classList.add('particle');
@@ -304,10 +389,14 @@
             setTimeout(() => p.remove(), 2000);
         }
 
-        // --- Główna pętla logiki ---
         function updateLogic() {
-            if (!isPressing && !body.classList.contains('inhaling')) return; // Optymalizacja
+            if (!mainScreen.classList.contains('active')) return; 
             
+            if (phaseStartTime === 0) {
+                animationFrameId = requestAnimationFrame(updateLogic);
+                return;
+            }
+
             const elapsed = Date.now() - phaseStartTime;
             
             if (isPressing) {
@@ -329,11 +418,8 @@
             animationFrameId = requestAnimationFrame(updateLogic);
         }
 
-        // --- Obsługa Zdarzeń ---
         const handleStart = (e) => {
-            // Bezpiecznik: Reaguj tylko na głównym ekranie!
             if (!mainScreen.classList.contains('active')) return;
-            
             if (e && e.cancelable) e.preventDefault();
             if (isPressing) return;
             
@@ -344,8 +430,6 @@
             if (navigator.vibrate) navigator.vibrate(50);
             
             particleInterval = setInterval(createParticle, 100);
-            cancelAnimationFrame(animationFrameId);
-            updateLogic();
         };
 
         const handleStop = (e) => {
@@ -366,12 +450,8 @@
             
             const randomAffirmation = affirmations[Math.floor(Math.random() * affirmations.length)];
             instruction.innerText = `Wydech... ${randomAffirmation}`;
-            
-            cancelAnimationFrame(animationFrameId);
-            updateLogic();
         };
 
-        // Nasłuchiwacze (Mysz, Dotyk)
         window.addEventListener('mousedown', handleStart);
         window.addEventListener('mouseup', handleStop);
         window.addEventListener('mouseleave', handleStop);
@@ -379,7 +459,6 @@
         window.addEventListener('touchend', handleStop);
         window.addEventListener('touchcancel', handleStop);
         
-        // Obsługa Klawiatury (Spacja)
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space' && mainScreen.classList.contains('active')) {
                 e.preventDefault();

@@ -2,13 +2,13 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Oddech - Minimalistyczny Owal</title>
     <style>
         :root {
             --bg-color: #05070a;
             --oval-color: #8b5cf6;
-            --glow-color: rgba(139, 92, 246, 0.5);
+            --glow-color: rgba(139, 92, 246, 0.6);
             --inhale-time: 4s;
             --exhale-time: 8s;
         }
@@ -21,18 +21,21 @@
             justify-content: center;
             height: 100vh;
             background-color: var(--bg-color);
-            color: #475569;
-            font-family: sans-serif;
+            color: #64748b; /* Poprawiony kontrast dla czytelności */
+            font-family: system-ui, -apple-system, sans-serif;
             overflow: hidden;
-            touch-action: none;
+            touch-action: none; /* Blokada natywnego przewijania */
+            -webkit-user-select: none; /* Blokada zaznaczania tekstu (iOS/Safari) */
+            user-select: none; /* Blokada zaznaczania tekstu (Reszta) */
         }
 
         #instruction {
             margin-bottom: 80px;
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             letter-spacing: 2px;
             text-transform: uppercase;
-            transition: color 0.5s;
+            transition: color 0.5s ease;
+            font-weight: 300;
         }
 
         .container {
@@ -47,58 +50,70 @@
             width: 100px;
             height: 130px;
             background: radial-gradient(circle at 35% 35%, var(--oval-color), #4c1d95);
-            border-radius: 50%; /* Idealny owal */
-            transition: transform var(--exhale-time) ease-out, box-shadow var(--exhale-time) ease-out;
-            box-shadow: 0 0 30px var(--glow-color);
+            border-radius: 50%;
+            /* Wydech: powolny, uspokajający powrót do pierwotnego kształtu */
+            transition: transform var(--exhale-time) cubic-bezier(0.25, 1, 0.5, 1), 
+                        box-shadow var(--exhale-time) cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
         }
 
         body.inhaling #balloon {
             transform: scale(2.2);
-            transition: transform var(--inhale-time) linear, box-shadow var(--inhale-time) linear;
-            box-shadow: 0 0 60px var(--glow-color);
+            /* Wdech: organiczne rozszerzanie imitujące płuca */
+            transition: transform var(--inhale-time) cubic-bezier(0.4, 0, 0.2, 1), 
+                        box-shadow var(--inhale-time) cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 80px var(--glow-color);
         }
 
         body.inhaling #instruction {
-            color: #ddd;
+            color: #f8fafc;
         }
 
         .footer {
             margin-top: 80px;
-            font-size: 0.8rem;
-            opacity: 0.4;
+            font-size: 0.85rem;
+            opacity: 0.5;
+            font-weight: 300;
         }
     </style>
 </head>
 <body>
 
-    <div id="instruction">Przytrzymaj (wdech)</div>
+    <div id="instruction" aria-live="polite">Dotknij i przytrzymaj (Wdech)</div>
 
     <div class="container">
         <div id="balloon"></div>
     </div>
 
-    <div class="footer">Wdech ... wydech</div>
+    <div class="footer">Wdech (4s) ... Wydech (8s)</div>
 
     <script>
         const body = document.body;
         const instruction = document.getElementById('instruction');
 
         const start = (e) => {
-            e.preventDefault();
+            // Blokuje domyślne zachowania przeglądarki (np. lupę powiększającą na iOS)
+            if (e.cancelable) e.preventDefault(); 
             body.classList.add('inhaling');
             instruction.innerText = "Wdech...";
         };
 
         const stop = (e) => {
-            e.preventDefault();
+            if (e.cancelable) e.preventDefault();
             body.classList.remove('inhaling');
-            instruction.innerText = "Wydech...";
+            // Sugestia relaksacyjna - dodatkowe wsparcie dla układu przywspółczulnego
+            instruction.innerText = "Wydech... rozluźnij napięcie";
         };
 
+        // Obsługa myszy i zdarzeń ucieczki kursora
         window.addEventListener('mousedown', start);
         window.addEventListener('mouseup', stop);
-        window.addEventListener('touchstart', start);
+        window.addEventListener('mouseleave', stop); 
+        
+        // Obsługa ekranów dotykowych z opcją passive: false dla poprawnego działania preventDefault()
+        window.addEventListener('touchstart', start, { passive: false });
         window.addEventListener('touchend', stop);
+        window.addEventListener('touchcancel', stop); // Gdy system przerwie dotyk (np. powiadomienie)
     </script>
 </body>
 </html>

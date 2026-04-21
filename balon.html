@@ -3,117 +3,399 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Oddech - Minimalistyczny Owal</title>
+    <title>Zygfryd - Trening Oddechowy CBT</title>
     <style>
         :root {
             --bg-color: #05070a;
             --oval-color: #8b5cf6;
             --glow-color: rgba(139, 92, 246, 0.6);
-            --inhale-time: 4s;
-            --exhale-time: 8s;
+            --primary-text: #f8fafc;
+            --secondary-text: #64748b;
+            --accent: #10b981;
         }
 
         body {
             margin: 0;
-            display: flex;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            font-family: system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Zarządzanie ekranami (SPA) */
+        .screen {
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background-color: var(--bg-color);
-            color: #64748b; /* Poprawiony kontrast dla czytelności */
-            font-family: system-ui, -apple-system, sans-serif;
-            overflow: hidden;
-            touch-action: none; /* Blokada natywnego przewijania */
-            -webkit-user-select: none; /* Blokada zaznaczania tekstu (iOS/Safari) */
-            user-select: none; /* Blokada zaznaczania tekstu (Reszta) */
+            width: 100vw;
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+        .screen.active {
+            display: flex;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Typografia i UI ekranów pobocznych */
+        h1 { font-weight: 300; letter-spacing: 1px; text-align: center; margin-bottom: 10px; }
+        p { color: var(--secondary-text); text-align: center; max-width: 400px; line-height: 1.5; }
+        .cbt-note { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid var(--oval-color); }
+        
+        .slider-container { width: 100%; max-width: 300px; margin: 30px 0; }
+        .slider-label { display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--secondary-text); font-size: 0.9rem; }
+        input[type=range] { width: 100%; accent-color: var(--oval-color); }
+
+        button {
+            background-color: var(--oval-color);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            font-weight: 600;
+        }
+        button:hover { transform: scale(1.05); background-color: #7c3aed; }
+
+        /* Główny ekran sesji */
+        #progress-bar-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+        }
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--accent);
+            transition: width 1s linear;
+        }
+
+        #stats-bar {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: var(--secondary-text);
+            z-index: 10;
         }
 
         #instruction {
-            margin-bottom: 80px;
-            font-size: 1.25rem;
+            margin-bottom: 60px;
+            font-size: 1.3rem;
             letter-spacing: 2px;
             text-transform: uppercase;
-            transition: color 0.5s ease;
             font-weight: 300;
+            height: 30px;
+            z-index: 10;
         }
 
         .container {
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
             width: 300px;
             height: 300px;
+            z-index: 10;
         }
 
         #balloon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 100px;
             height: 130px;
             background: radial-gradient(circle at 35% 35%, var(--oval-color), #4c1d95);
             border-radius: 50%;
-            /* Wydech: powolny, uspokajający powrót do pierwotnego kształtu */
-            transition: transform var(--exhale-time) cubic-bezier(0.25, 1, 0.5, 1), 
-                        box-shadow var(--exhale-time) cubic-bezier(0.25, 1, 0.5, 1);
             box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+            /* Transformacja modyfikowana z poziomu JS */
+            transition: transform 8s cubic-bezier(0.25, 1, 0.5, 1), 
+                        box-shadow 8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        #timer {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            transition: opacity 0.3s;
         }
 
         body.inhaling #balloon {
             transform: scale(2.2);
-            /* Wdech: organiczne rozszerzanie imitujące płuca */
-            transition: transform var(--inhale-time) cubic-bezier(0.4, 0, 0.2, 1), 
-                        box-shadow var(--inhale-time) cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 0 80px var(--glow-color);
+            transition: transform 4s cubic-bezier(0.4, 0, 0.2, 1), 
+                        box-shadow 4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        body.inhaling #instruction {
-            color: #f8fafc;
+        .footer { margin-top: 80px; font-size: 0.85rem; color: var(--secondary-text); z-index: 10; }
+
+        /* Cząsteczki (Particles) */
+        #particles {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .particle {
+            position: absolute;
+            background: rgba(139, 92, 246, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: moveIn 2s ease-in forwards;
         }
 
-        .footer {
-            margin-top: 80px;
-            font-size: 0.85rem;
-            opacity: 0.5;
-            font-weight: 300;
+        @keyframes moveIn {
+            0% { opacity: 0; transform: scale(0.5) translate(0, 0); }
+            50% { opacity: 1; }
+            100% { opacity: 0; transform: scale(1.5) translate(var(--tx), var(--ty)); }
         }
     </style>
 </head>
 <body>
 
-    <div id="instruction" aria-live="polite">Dotknij i przytrzymaj (Wdech)</div>
-
-    <div class="container">
-        <div id="balloon"></div>
+    <div id="screen-pre" class="screen active">
+        <h1>Trening CBT</h1>
+        <div class="cbt-note">
+            <strong>Instrukcja (Ważne):</strong><br>
+            Oddychaj przeponą. Przy wdechu Twój brzuch powinien się unosić, a klatka piersiowa pozostawać nieruchoma.
+        </div>
+        <p>Przed rozpoczęciem, wskaż swój obecny poziom napięcia/lęku:</p>
+        <div class="slider-container">
+            <div class="slider-label"><span>Pełny spokój (1)</span><span>Silny lęk (10)</span></div>
+            <input type="range" id="pre-score" min="1" max="10" value="5">
+        </div>
+        <button onclick="startSession()">Rozpocznij Sesję</button>
     </div>
 
-    <div class="footer">Wdech (4s) ... Wydech (8s)</div>
+    <div id="screen-main" class="screen">
+        <div id="progress-bar-container"><div id="progress-bar"></div></div>
+        <div id="stats-bar"><span id="cycle-counter">Pełne cykle: 0</span></div>
+        
+        <div id="particles"></div>
+        <div id="instruction" aria-live="polite">Przytrzymaj (Spacja/Dotyk)</div>
+
+        <div class="container">
+            <div id="balloon"><span id="timer">0</span></div>
+        </div>
+
+        <div class="footer">Wdech (4s) ... Wydech (8s)</div>
+    </div>
+
+    <div id="screen-post" class="screen">
+        <h1>Sesja Zakończona</h1>
+        <p>Świetna robota. Zauważ, co zmieniło się w Twoim ciele.</p>
+        <p>Jak oceniasz swój poziom napięcia teraz?</p>
+        <div class="slider-container">
+            <div class="slider-label"><span>Pełny spokój (1)</span><span>Silny lęk (10)</span></div>
+            <input type="range" id="post-score" min="1" max="10" value="5">
+        </div>
+        <p id="result-text" style="color: var(--accent); font-weight: bold; margin-bottom: 20px;"></p>
+        <button onclick="location.reload()">Zakończ</button>
+    </div>
 
     <script>
+        // --- 5. Service Worker (PWA Offline Mode) ---
+        const swCode = `
+            self.addEventListener('install', (e) => e.waitUntil(self.skipWaiting()));
+            self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+            self.addEventListener('fetch', (e) => {
+                e.respondWith(fetch(e.request).catch(() => new Response('Tryb Offline Aktywny', { headers: { 'Content-Type': 'text/plain' } })));
+            });
+        `;
+        const blob = new Blob([swCode], {type: 'application/javascript'});
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(err => console.log("SW Init Failed", err));
+        }
+
+        // --- Zmienne Stanu ---
         const body = document.body;
         const instruction = document.getElementById('instruction');
-
-        const start = (e) => {
-            // Blokuje domyślne zachowania przeglądarki (np. lupę powiększającą na iOS)
-            if (e.cancelable) e.preventDefault(); 
-            body.classList.add('inhaling');
-            instruction.innerText = "Wdech...";
-        };
-
-        const stop = (e) => {
-            if (e.cancelable) e.preventDefault();
-            body.classList.remove('inhaling');
-            // Sugestia relaksacyjna - dodatkowe wsparcie dla układu przywspółczulnego
-            instruction.innerText = "Wydech... rozluźnij napięcie";
-        };
-
-        // Obsługa myszy i zdarzeń ucieczki kursora
-        window.addEventListener('mousedown', start);
-        window.addEventListener('mouseup', stop);
-        window.addEventListener('mouseleave', stop); 
+        const timerEl = document.getElementById('timer');
+        const cycleCounterEl = document.getElementById('cycle-counter');
+        const progressBar = document.getElementById('progress-bar');
+        const particlesContainer = document.getElementById('particles');
         
-        // Obsługa ekranów dotykowych z opcją passive: false dla poprawnego działania preventDefault()
-        window.addEventListener('touchstart', start, { passive: false });
-        window.addEventListener('touchend', stop);
-        window.addEventListener('touchcancel', stop); // Gdy system przerwie dotyk (np. powiadomienie)
+        let isPressing = false;
+        let cycleCount = 0;
+        let phaseStartTime = 0;
+        let animationFrameId = null;
+        let particleInterval = null;
+        let sessionStartTime = 0;
+        let wakeLock = null;
+        const sessionDurationMs = 120 * 1000; // 2 minuty
+        const affirmations = ["Rozluźnij barki", "Opuść ramiona", "Rozluźnij żuchwę", "Puść napięcie", "Oddychaj spokojnie"];
+
+        // --- 6. Wake Lock API ---
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+            } catch (err) { console.log("WakeLock error", err); }
+        }
+
+        // --- Inicjalizacja Sesji ---
+        function startSession() {
+            document.getElementById('screen-pre').classList.remove('active');
+            document.getElementById('screen-main').classList.add('active');
+            requestWakeLock();
+            sessionStartTime = Date.now();
+            updateSessionProgress();
+        }
+
+        function endSession() {
+            document.getElementById('screen-main').classList.remove('active');
+            document.getElementById('screen-post').classList.add('active');
+            if (wakeLock) wakeLock.release();
+            cancelAnimationFrame(animationFrameId);
+            
+            const preVal = parseInt(document.getElementById('pre-score').value);
+            const postVal = parseInt(document.getElementById('post-score').value);
+            const diff = preVal - postVal;
+            const resText = document.getElementById('result-text');
+            
+            if (diff > 0) resText.innerText = `Twój poziom lęku spadł o ${diff} punkt(y). To dowód, że to działa.`;
+            else resText.innerText = `Praktyka czyni mistrza. Każda minuta to inwestycja w układ nerwowy.`;
+        }
+
+        // --- 3. Pasek postępu sesji ---
+        function updateSessionProgress() {
+            const elapsed = Date.now() - sessionStartTime;
+            const percent = Math.min(100, (elapsed / sessionDurationMs) * 100);
+            progressBar.style.width = `${percent}%`;
+            
+            if (elapsed >= sessionDurationMs && !isPressing) {
+                endSession();
+                return;
+            }
+            requestAnimationFrame(updateSessionProgress);
+        }
+
+        // --- 22. Generator Cząsteczek ---
+        function createParticle() {
+            const p = document.createElement('div');
+            p.classList.add('particle');
+            const size = Math.random() * 6 + 2;
+            p.style.width = `${size}px`;
+            p.style.height = `${size}px`;
+            
+            // Startuje z losowego miejsca na krawędziach i zmierza do środka
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.max(window.innerWidth, window.innerHeight) / 1.5;
+            const startX = window.innerWidth/2 + Math.cos(angle) * distance;
+            const startY = window.innerHeight/2 + Math.sin(angle) * distance;
+            
+            p.style.left = `${startX}px`;
+            p.style.top = `${startY}px`;
+            
+            // Obliczanie wektora do środka ekranu
+            p.style.setProperty('--tx', `${-Math.cos(angle) * distance * 0.8}px`);
+            p.style.setProperty('--ty', `${-Math.sin(angle) * distance * 0.8}px`);
+            
+            particlesContainer.appendChild(p);
+            setTimeout(() => p.remove(), 2000);
+        }
+
+        // --- Główna pętla logiki (1, 12, 19) ---
+        function updateLogic() {
+            const elapsed = Date.now() - phaseStartTime;
+            const seconds = (elapsed / 1000).toFixed(1);
+            
+            if (isPressing) {
+                // Faza Wdechu (cel: 4s)
+                if (elapsed < 4000) {
+                    timerEl.innerText = Math.floor(elapsed / 1000) + 1;
+                    instruction.innerText = "Wdech...";
+                } else {
+                    // 19. Świadoma pauza po wdechu
+                    timerEl.innerText = "4";
+                    instruction.innerText = "Pauza (Wstrzymaj)";
+                }
+            } else {
+                // Faza Wydechu (cel: 8s)
+                if (elapsed < 8000) {
+                    timerEl.innerText = Math.floor(elapsed / 1000) + 1;
+                } else {
+                    // 19. Świadoma pauza po wydechu
+                    timerEl.innerText = "8";
+                    instruction.innerText = "Pauza (Przygotuj się)";
+                }
+            }
+            animationFrameId = requestAnimationFrame(updateLogic);
+        }
+
+        // --- Obsługa Zdarzeń ---
+        const handleStart = (e) => {
+            if (e && e.cancelable) e.preventDefault();
+            if (isPressing || !document.getElementById('screen-main').classList.contains('active')) return;
+            
+            isPressing = true;
+            phaseStartTime = Date.now();
+            body.classList.add('inhaling');
+            
+            if (navigator.vibrate) navigator.vibrate(50); // 2. Haptic
+            
+            particleInterval = setInterval(createParticle, 100);
+            cancelAnimationFrame(animationFrameId);
+            updateLogic();
+        };
+
+        const handleStop = (e) => {
+            if (e && e.cancelable) e.preventDefault();
+            if (!isPressing) return;
+            
+            isPressing = false;
+            phaseStartTime = Date.now();
+            body.classList.remove('inhaling');
+            
+            if (navigator.vibrate) navigator.vibrate([30, 50, 30]); // 2. Haptic inny wzór
+            
+            clearInterval(particleInterval);
+            
+            // 13. Licznik
+            cycleCount++;
+            cycleCounterEl.innerText = `Pełne cykle: ${cycleCount}`;
+            
+            // 12. Afirmacje
+            const randomAffirmation = affirmations[Math.floor(Math.random() * affirmations.length)];
+            instruction.innerText = `Wydech... ${randomAffirmation}`;
+        };
+
+        // Nasłuchiwacze (Mysz, Dotyk)
+        window.addEventListener('mousedown', handleStart);
+        window.addEventListener('mouseup', handleStop);
+        window.addEventListener('mouseleave', handleStop);
+        window.addEventListener('touchstart', handleStart, { passive: false });
+        window.addEventListener('touchend', handleStop);
+        window.addEventListener('touchcancel', handleStop);
+        
+        // 8. Obsługa Klawiatury (Spacja)
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                handleStart();
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') handleStop();
+        });
     </script>
 </body>
 </html>

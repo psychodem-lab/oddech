@@ -48,11 +48,20 @@
             color: #00838f;
             border-bottom: 2px solid #b2ebf2;
             padding-bottom: 10px;
+            margin-top: 0;
         }
         p {
             line-height: 1.6;
             font-size: 1.1em;
             margin-bottom: 15px;
+        }
+        .step-img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
         }
         .controls {
             display: flex;
@@ -91,82 +100,188 @@
 <body>
 
 <div class="container">
-    <h1>Trening relaksacyjny dla dzieci [cite: 2]</h1>
-    <div class="subtitle">Opracowanie: Koeppen, A. S. (1974) [cite: 1] | Tłumaczenie: Łukasz Demeńczuk [cite: 3]</div>
+    <h1>Trening relaksacyjny dla dzieci</h1>
+    <div class="subtitle">Opracowanie: Koeppen, A. S. (1974) | Tłumaczenie: Łukasz Demeńczuk</div>
 
     <div class="step active" id="step-0">
-        <h2>Powitanie [cite: 4]</h2>
-        <p>Dzisiaj będziemy robić specjalne ćwiczenia, nazywa się je technikami relaksacyjnymi. [cite: 5] Te ćwiczenia nauczą cię jak się odprężyć, szczególnie gdy czujesz się spięty, pomogą też pozbyć się nieprzyjemnych odczuć. [cite: 6] Jest to także zgrabne, ponieważ możesz niektóre z tych ćwiczeń wykonać bez zwrócenia na siebie uwagi, na przykład w klasie. [cite: 7]</p>
-        <p>Abyś miał z ćwiczenia jak najprzyjemniejsze uczucia są zasady, których musimy przestrzegać. [cite: 8] Po pierwsze, musisz robić dokładnie to, co ja powiem, nawet jeżeli to może wydawać się dziwne. [cite: 9] Po drugie musisz próbować z całych sił zrobić to, co powiem. Po trzecie, musisz zwracać uwagę na swoje ciało. [cite: 10] Podczas przeprowadzenia ćwiczenia, zwracaj uwagę na to jak twoje mięśnie się czują, gdy są napięte a jak gdy są rozluźnione i zrelaksowane. [cite: 11] I po czwarte, musisz to ćwiczyć. Czym częściej będziesz to ćwiczył tym będziesz bardziej zrelaksowany. Czy masz jakieś pytania? [cite: 12]</p>
-        <p>Czy jesteś gotowy aby zacząć? Dobrze. Najpierw usiądź wygodnie na swoim krześle. [cite: 13] Usiądź w krześle głęboko, połóż obie stopy na podłodze i pozwól swoim rękom opaść. Tak jest w porządku. [cite: 14] Teraz zamknij oczy, nie otwieraj ich, aż Ci nie powiem. [cite: 15] Pamiętaj, abyś podążał za moimi instrukcjami bardzo ostrożnie, postaraj się i skoncentruj uwagę na swoim ciele. Zaczynamy. [cite: 16]</p>
+        <h2>Powitanie</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=700" alt="Relaksacja">
+        <p>Dzisiaj będziemy robić specjalne ćwiczenia, nazywa się je technikami relaksacyjnymi. Te ćwiczenia nauczą cię jak się odprężyć, szczególnie gdy czujesz się spięty, pomogą też pozbyć się nieprzyjemnych odczuć. Jest to także zgrabne, ponieważ możesz niektóre z tych ćwiczeń wykonać bez zwrócenia na siebie uwagi, na przykład w klasie.</p>
     </div>
 
     <div class="step" id="step-1">
-        <h2>Dłonie i Ręce [cite: 17]</h2>
-        <p>Wyobraź sobie, że masz całą cytrynę w lewej ręce. Teraz zaciśnij ją mocno. Spróbuj wycisnąć z niej cały sok. [cite: 18] Poczuj napięcie w twojej dłoni i ręce podczas zaciskania. Teraz wypuść cytrynę. [cite: 19] Zauważ jak się czują twoje mięśnie gdy je relaksujesz. Weź kolejną cytrynę i zaciśnij ją. [cite: 20] Postaraj się zacisnąć ją mocniej niż wcześniej. Właśnie tak. Ściskaj naprawdę mocno. Teraz wypuść cytrynę i odpręż rękę. [cite: 21] Popatrz jak twoja dłoń i ręka się czuje, gdy ją odprężasz. [cite: 22]</p>
-        <p>Jeszcze raz, weź cytrynę do swojej lewej ręki i wyciśnij cały sok. Nie zostawiaj ani jednej kropli. Ściskaj mocno. Dobrze. [cite: 23] Teraz odpręż i pozwól cytrynie opaść Ci z ręki. [cite: 24]</p>
-        <p><em>[Powtórz proces dla prawej dłoni i ręki] [cite: 25]</em></p>
+        <h2>Powitanie - Zasady</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=700" alt="Zasady relaksacji">
+        <p>Abyś miał z ćwiczenia jak najprzyjemniejsze uczucia są zasady, których musimy przestrzegać. Po pierwsze, musisz robić dokładnie to, co ja powiem, even jeżeli to może wydawać się dziwne. Po drugie musisz próbować z całych sił zrobić to, co powiem. Po trzecie, musisz zwracać uwagę na swoje ciało. Podczas przeprowadzenia ćwiczenia, zwracaj uwagę na to jak twoje mięśnie się czują, gdy są napięte a jak gdy są rozluźnione i zrelaksowane. I po czwarte, musisz to ćwiczyć. Czym częściej będziesz to ćwiczył tym będziesz bardziej zrelaksowany. Czy masz jakieś pytania?</p>
     </div>
 
     <div class="step" id="step-2">
-        <h2>Ręce i Ramiona [cite: 26]</h2>
-        <p>Udajmy, że jesteś futrzanym, leniwym kotem. Chcesz się rozciągać. Wyciągnij swoje ręce naprzeciwko siebie. [cite: 27] Podnieś je teraz wysoko ponad twoją głowę. Do tyłu. Poczuj ciągnięcie swoich ramion. Rozciągnij jeszcze wyżej. [cite: 28] Teraz po prostu pozwól rękom powrócić do ciebie. Dobrze kocie, rozciągnij się jeszcze raz. Wyciągnij swoje ręce naprzeciwko siebie. [cite: 29]</p>
-        <p>Podnieś je teraz wysoko ponad Twoją głowę. Pociągnij je do tyłu. Jeszcze bardziej. Pociągnij mocno. Teraz pozwól im szybko opaść. [cite: 30] Dobrze. Zaobserwuj jak ramiona czują się zrelaksowane. Tym razem zrób ogromne rozciągnięcie, tak jakbyś miał dotknąć sufitu. Wyciągnij swoje ręce naprzeciwko siebie. Podnieś je wysoko ponad Twoją głowę. [cite: 31, 33]</p>
-        <p>Pchaj je daleko, daleko do tyłu. Zauważ napięcie i ciągnięcie w swoich rękach i ramionach. Utrzymaj to. Świetnie. [cite: 34] Teraz opuść je szybko i poczuj jak dobrze być zrelaksowanym. To uczucie jest dobre, ciepłe i przyjemne. [cite: 35]</p>
+        <h2>Powitanie - Start</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=700" alt="Wygodna pozycja">
+        <p>Czy jesteś gotowy aby zacząć? Dobrze. Najpierw usiądź wygodnie na swoim krześle. Usiądź w krześle głęboko, połóż obie stopy na podłodze i pozwól swoim rękom opaść. Tak jest w porządku. Teraz zamknij oczy, nie otwieraj ich, aż Ci nie powiem. Pamiętaj, abyś podążał za moimi instrukcjami bardzo ostrożnie, postaraj się i skoncentruj uwagę na swoim ciele. Zaczynamy.</p>
     </div>
 
     <div class="step" id="step-3">
-        <h2>Ramiona i Szyja [cite: 36]</h2>
-        <p>Teraz udajmy, że jesteś żółwiem. Siedzisz na skale w miłym i przyjemnym miejscu, relaksujesz się w ciepłym słońcu. [cite: 37] Czujesz się tutaj dobrze, ciepło i bezpiecznie. Oj oj! Widzisz niebezpieczeństwo. Włóż głowę do swojego domu. [cite: 38] Postaraj się podciągnąć ramiona powyżej swoich uszu i pchnij głową w dół do swoich ramion. Utrzymaj to mocno. [cite: 39] Nie jest łatwo być żółwiem w skorupie. Niebezpieczeństwo minęło. Możesz teraz wyjść do ciepłego słońca i jeszcze raz, możesz się odprężyć i poczuć ciepło słońca. [cite: 40, 41]</p>
-        <p>Uważaj! Większe niebezpieczeństwo. Szybko, włóż swoją głowę do domku i trzymaj ją mocno. Musisz być mocno zamknięty aby siebie chronić. [cite: 42] Dobrze, teraz możesz się odprężyć. Wyciągnij swoją głowę i pozwól ramionom się zrelaksować. [cite: 43] Pomyśl jak o wiele lepiej jest czuć się zrelaksowanym niż napiętym. Jeszcze raz, teraz. Niebezpieczeństwo! Włóż swoją głowę. [cite: 44]</p>
-        <p>Podciągnij ramiona wyżej i mocno trzymaj. Nie pozwól nawet niewielkiej części głowy wyjść poza skorupę. Utrzymaj to. [cite: 45] Poczuj napięcie w swojej szyi i ramionach. Dobrze. Już możesz wyjść. Znowu jest bezpiecznie. [cite: 46] Odpręż się i poczuj się wygodnie w swoim bezpiecznym miejscu. Już nie ma więcej zagrożeń. [cite: 47] Nie ma czym się martwić, ani bać. Czujesz się dobrze. [cite: 48]</p>
+        <h2>Dłonie i Ręce (Cytryna)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1590502593747-42a996133562?w=700" alt="Cytryna">
+        <p>Wyobraź sobie, że masz całą cytrynę w lewej ręce. Teraz zaciśnij ją mocno. Spróbuj wycisnąć z niej cały sok. Poczuj napięcie w twojej dłoni i ręce podczas zaciskania. Teraz wypuść cytrynę. Zauważ jak się czują twoje mięśnie gdy je relaksujesz. Weź kolejną cytrynę i zaciśnij ją. Postaraj się zacisnąć ją mocniej niż wcześniej. Właśnie tak. Ściskaj naprawdę mocno. Teraz wypuść cytrynę i odpręż rękę. Popatrz jak twoja dłoń i ręka się czuje, gdy ją odprężasz.</p>
     </div>
 
     <div class="step" id="step-4">
-        <h2>Szczęka [cite: 49]</h2>
-        <p>Masz wielką gumę balonową w buzi. Jest ciężka do żucia. Ugryź ją. Mocno! Pozwól swoim mięśniom szyi pomóc Ci. [cite: 50] Teraz odpręż ją, pozwól szczęce swobodnie zwisać. Zauważ jakie to przyjemne uczucie pozwolić swojej szczęce opaść. [cite: 51] Dobrze, jeszcze raz poradźmy sobie z tą gumą. Ugryź. Mocno! Spróbuj ją przecisnąć na zewnątrz przez swoje zęby. [cite: 52]</p>
-        <p>Zaraz naprawdę rozedrzesz tą gumę. Teraz, ponownie się odpręż. Po prostu pozwól, szczęce opaść. [cite: 53] To dobre uczucie odpuścić i nie walczyć z tą balonową gumą. Dobra, jeszcze raz. Tym razem na pewno ją rozerwiemy. [cite: 54] Ugryź. Tak mocno jak potrafisz. Jeszcze mocniej. O, naprawdę mocno pracujesz. Dobrze. Teraz odprężenie. Spróbuj odprężyć całe ciało. [cite: 55] Przebiłeś balonową gumę. Pozwól sobie być luźnym, tak jak potrafisz. [cite: 56]</p>
+        <h2>Dłonie i Ręce (Cytryna - cd.)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1590502593747-42a996133562?w=700" alt="Wyciskanie cytryny">
+        <p>Jeszcze raz, weź cytrynę do swojej lewej ręki i wyciśnij cały sok. Nie zostawiaj ani jednej kropli. Ściskaj mocno. Dobrze. Teraz odpręż i pozwól cytrynie opaść Ci z ręki.</p>
     </div>
 
     <div class="step" id="step-5">
-        <h2>Twarz i nos [cite: 57]</h2>
-        <p>Właśnie przyleciała okropna, stara mucha. Wylądowała na twoim nosie. Spróbuj ją strącić bez używania rąk. Właśnie tak, pomarszcz swój nos. [cite: 58] Zrób jak najwięcej zmarszczek na swoim nosie. Zrób to bardzo mocno. Dobrze. Odgoniłeś ją. Teraz możesz odprężyć swój nos. [cite: 59]</p>
-        <p>Ups, znowu wraca. Dokładnie na sam środek twojego nosa. Zmarszcz swój nos jeszcze raz. Wypędź ją. [cite: 60] Mocno zmarszcz nos do góry. Utrzymaj to napięcie tak mocno jak potrafisz. Dobrze, odleciała. Możesz odprężyć swoją twarz. [cite: 61] Zauważ, że gdy chcesz zmarszczyć swój nos to twoje policzki, usta, twarz, oczy chcą ci pomóc i także się napinają. [cite: 62] Więc jeżeli będziesz odprężał swój nos, cała twoja twarz także będzie się relaksować i czuć się dobrze. O o, stara mucha znowu wróciła, ale tym razem jest na twojej twarzy. Rób dużo zmarszczek. Postaraj się złapać ją pomiędzy te zmarszczki na twarzy. Utrzymaj ją. Dobrze, możesz odpuścić. Teraz poszła sobie na dobre. [cite: 63, 64, 66]</p>
-        <p>Możesz się zrelaksować. Pozwól swojej twarzy być gładką, bez żadnych zmarszczek. Twoja twarz czuje się dobrze, gładka i odprężona. [cite: 67]</p>
+        <h2>Dłonie i Ręce (Prawa ręka)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1606778401323-8631d87e0081?w=700" alt="Druga dłoń">
+        <p><em>[Powtórz proces dla prawej dłoni i ręki]</em></p>
     </div>
 
     <div class="step" id="step-6">
-        <h2>Brzuch [cite: 68]</h2>
-        <p>Hej! Oto nadchodzi mały uroczy słonik. Ale on nie patrzy gdzie idzie. [cite: 69] Nie widzi Cię leżącego w trawie i jest o krok od twojego brzucha. Nie ruszaj się. [cite: 70] Nie masz czasu, żeby zejść mu z drogi. Po prostu przygotuj się na niego. [cite: 71] Zrób aby twój brzuch był bardzo twardy. Napnij swoje mięśnie brzucha bardzo mocno. Utrzymaj to. [cite: 72] Wygląda na to, że słoń wybrał inną drogę. Możesz się teraz odprężyć. Pozwól aby twój brzuch był miękki. [cite: 73] Niech będzie odprężony tak jak potrafisz. To o wiele lepsze uczucie. O o, znowu idzie tą drogą. Przygotuj się. [cite: 74]</p>
-        <p>Napnij swój brzuch. Naprawdę mocno. Jeżeli słoń nadepnie na Ciebie gdy brzuch będzie twardy to cię nie zaboli. [cite: 75] Zamień swój brzuch w skałę. Dobra, poszedł sobie. Możesz się teraz odprężyć. Trochę się uspokoić, siedzieć wygodnie i być zrelaksowanym. [cite: 76] Zauważ różnice między napiętym brzuchem, a tym zrelaksowanym. Tak właśnie chcemy się czuć - przyjemnie, luźno i zrelaksowanie. [cite: 77]</p>
-        <p>Nie uwierzysz, ale tym razem on naprawdę idzie w twoją stronę i nie odwraca się. Nadciąga bezpośrednio na Ciebie. [cite: 78] Napnij się. Napnij brzuch mocno. Właśnie wszedł. To jest naprawdę to. Musisz utrzymać napięcie. Nadepnął na Ciebie. Przeszedł przez Ciebie. [cite: 79] Teraz poszedł już sobie na dobre. Możesz całkowicie się zrelaksować. Jesteś bezpieczny. [cite: 80] Wszystko jest w porządku, możesz czuć przyjemność i odprężenie. [cite: 81]</p>
-        <p>Tym razem wyobraź sobie, że chcesz przecisnąć się przez wąski płot, a deski w nim mają drzazgi. [cite: 82] Musisz zrobić się bardzo chudy jeżeli chcesz się przedostać. Wciągnij swój brzuch. Spróbuj przepchać go za kręgosłup. [cite: 83] Spróbuj być tak chudym jak tylko potrafisz. Przecisnąłeś się. Teraz odpręż się. Nie musisz już być chudy. [cite: 84] Po prostu zrelaksuj się i poczuj jak twój brzuch staje się ciepły i luźny. [cite: 85]</p>
-        <p>Dobra, teraz spróbujmy przejść przez ten płot. Wciągnij brzuch. Niech dotknie kręgosłupa. [cite: 86] Niech będzie naprawdę mały i mocny. Stan się tak chudy jak tylko potrafisz. Utrzymaj to napięcie. Jest. Przecisnąłeś się. [cite: 87] Przecisnąłeś się przez ten wąski płot. Teraz możesz się zrelaksować. [cite: 88] Odpręż się i pozwól swojemu brzuchowi wrócić tam gdzie jego miejsce. Teraz czujesz się naprawdę dobrze. Dobra robota. [cite: 89]</p>
+        <h2>Ręce i Ramiona (Kot)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=700" alt="Rozciągający się kot">
+        <p>Udajmy, że jesteś futrzanym, leniwym kotem. Chcesz się rozciągać. Wyciągnij swoje ręce naprzeciwko siebie. Podnieś je teraz wysoko ponad twoją głowę. Do tyłu. Poczuj ciągnięcie swoich ramion. Rozciągnij jeszcze wyżej. Teraz po prostu pozwól rękom powrócić do ciebie. Dobrze kocie, rozciągnij się jeszcze raz. Wyciągnij swoje ręce naprzeciwko siebie.</p>
     </div>
 
     <div class="step" id="step-7">
-        <h2>Nogi i stopy [cite: 90]</h2>
-        <p>Teraz udajmy, że stoisz boso w wielkiej, tłustej kałuży błota. Zgniataj palce u stóp głęboko w błocie. [cite: 91] Spróbuj dać swoje stopy na dno błotnistej kałuży. Prawdopodobnie potrzebujesz pomocy nóg do pchania w dół. [cite: 92] Dociskaj, rozsuń palce u stóp poczuj jak błoto przeciska się pomiędzy twoje palce. Teraz wyjdź z kałuży błota. [cite: 93] Odpręż swoje stopy. Pozwól swoim palcom u nóg być luźnymi i poczuj jakie to przyjemne. Powróćmy do błotnistej kałuży. [cite: 94]</p>
-        <p>Zgniataj palcami u stóp. Niech mięśnie twoich nóg pomogą stopom się wciskać. Wciskaj mocno. Spróbuj wycisnąć tę kałużę błota. Dobra. [cite: 95] Wyjdź z niej. Zrelaksuj swoje stopy, odpręż swoje nogi, rozluźnij swoje palce u stóp. To dobre uczucie być zrelaksowanym. [cite: 96] Nigdzie nie ma napięć. Czujesz ciepło i mrowienie. [cite: 97]</p>
+        <h2>Ręce i Ramiona (Kot - cd.)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=700" alt="Kot opuszczający łapy">
+        <p>Podnieś je teraz wysoko ponad Twoją głowę. Pociągnij je do tyłu. Jeszcze bardziej. Pociągnij mocno. Teraz pozwól im szybko opaść. Dobrze. Zaobserwuj jak ramiona czują się zrelaksowane.</p>
     </div>
 
     <div class="step" id="step-8">
-        <h2>Podsumowanie [cite: 99]</h2>
-        <p>Pozostań tak zrelaksowany jak tylko potrafisz. Pozwól aby twoje całe ciało było wiotkie i poczuj wszystkie mięśnie zrelaksowane. [cite: 100] Za kilka minut poproszę Cię o otwarcie oczu i wtedy będzie koniec naszej sesji. [cite: 101]</p>
-        <p>W ciągu dnia pamiętaj jakie dobre uczucie jest wtedy gdy jesteś zrelaksowany. [cite: 102] Czasami musisz się napiąć, zanim będzie można się rozluźnić. Tak, jak robiliśmy w tych ćwiczeniach. [cite: 103] Ćwicz to codziennie, żeby być coraz bardziej zrelaksowanym. Dobrym czasem na ćwiczenia jest wieczór, po tym jak położysz się do łóżka, światła będą wyłączone i nic nie będzie Ci przeszkadzać. [cite: 104] Pomoże to zasnąć. Jak będziesz w tym dobry, możesz próbować w szkole. [cite: 105] Po prostu przypomnij sobie o słoniu, o gumie do żucia, o błotnistej kałuży. [cite: 106] Możesz robić nasze ćwiczenia i nikt nie będzie o tym wiedział. [cite: 107]</p>
-        <p>Dzisiaj jest dobry dzień, jesteś gotowy do bycia z innymi czując ogromne zrelaksowanie. Miło jest odpocząć po tak ciężkiej pracy. [cite: 108] Bardzo powoli, otwórz oczy i lekko poruszaj swoimi nogami. Bardzo dobrze. Zrobiłeś dobrą robotę. Staniesz się w tym świetny. [cite: 109]</p>
+        <h2>Ręce i Ramiona (Wysokie rozciąganie)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=700" alt="Sięganie sufitu">
+        <p>Tym razem zrób ogromne rozciągnięcie, tak jakbyś miał dotknąć sufitu. Wyciągnij swoje ręce naprzeciwko siebie. Podnieś je wysoko ponad Twoją głowę. Pchaj je daleko, daleko do tyłu. Zauważ napięcie i ciągnięcie w swoich rękach i ramionach. Utrzymaj to. Świetnie. Teraz opuść je szybko i poczuj jak dobrze być zrelaksowanym. To uczucie jest dobre, ciepłe i przyjemne.</p>
+    </div>
+
+    <div class="step" id="step-9">
+        <h2>Ramiona i Szyja (Żółw)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1548883354-7622d03aca27?w=700" alt="Żółw w słońcu">
+        <p>Teraz udajmy, że jesteś żółwiem. Siedzisz na skale w miłym i przyjemnym miejscu, relaksujesz się w ciepłym słońcu. Czujesz się tutaj dobrze, ciepło i bezpiecznie. Oj oj! Widzisz niebezpieczeństwo. Włóż głowę do swojego domu. Postaraj się podciągnąć ramiona powyżej swoich uszu i pchnij głową w dół do swoich ramion. Utrzymaj to mocno. Nie jest łatwo być żółwiem w skorupie. Niebezpieczeństwo minęło. Możesz teraz wyjść do ciepłego słońca i jeszcze raz, możesz się odprężyć i poczuć ciepło słońca.</p>
+    </div>
+
+    <div class="step" id="step-10">
+        <h2>Ramiona i Szyja (Żółw - Kolejne zagrożenie)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1437622368342-7a3d73a34c8f?w=700" alt="Schowany żółw">
+        <p>Uważaj! Większe niebezpieczeństwo. Szybko, włóż swoją głowę do domku i trzymaj ją mocno. Musisz być mocno zamknięty aby siebie chronić. Dobrze, teraz możesz się odprężyć. Wyciągnij swoją głowę i pozwól ramionom się zrelaksować. Pomyśl jak o wiele lepiej jest czuć się zrelaksowanym niż napiętym. Jeszcze raz, teraz. Niebezpieczeństwo! Włóż swoją głowę.</p>
+    </div>
+
+    <div class="step" id="step-11">
+        <h2>Ramiona i Szyja (Żółw - Bezpieczeństwo)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1501426026826-31c667bdf23d?w=700" alt="Bezpieczny żółw">
+        <p>Podciągnij ramiona wyżej i mocno trzymaj. Nie pozwól nawet niewielkiej części głowy wyjść poza skorupę. Utrzymaj to. Poczuj napięcie w swojej szyi i ramionach. Dobrze. Już możesz wyjść. Znowu jest bezpiecznie. Odpręż się i poczuj się wygodnie w swoim bezpiecznym miejscu. Już nie ma więcej zagrożeń. Nie ma czym się martwić, ani bać. Czujesz się dobrze.</p>
+    </div>
+
+    <div class="step" id="step-12">
+        <h2>Szczęka (Guma balonowa)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=700" alt="Guma balonowa">
+        <p>Masz wielką gumę balonową w buzi. Jest ciężka do żucia. Ugryź ją. Mocno! Pozwól swoim mięśniom szyi pomóc Ci. Teraz odpręż ją, pozwól szczęce swobodnie zwisać. Zauważ jakie to przyjemne uczucie pozwolić swojej szczęce opaść.</p>
+    </div>
+
+    <div class="step" id="step-13">
+        <h2>Szczęka (Guma - Drugie podejście)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=700" alt="Żucie gumy">
+        <p>Dobrze, jeszcze raz poradźmy sobie z tą gumą. Ugryź. Mocno! Spróbuj ją przecisnąć na zewnątrz przez swoje zęby. Zaraz naprawdę rozedrzesz tą gumę. Teraz, ponownie się odpręż. Po prostu pozwól, szczęce opaść.</p>
+    </div>
+
+    <div class="step" id="step-14">
+        <h2>Szczęka (Guma rozbita)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=700" alt="Rozluźniona szczęka">
+        <p>To dobre uczucie odpuścić i nie walczyć z tą balonową gumą. Dobra, jeszcze raz. Tym razem na pewno ją rozerwiemy. Ugryź. Tak mocno jak potrafisz. Jeszcze mocniej. O, naprawdę mocno pracujesz. Dobrze. Teraz odprężenie. Spróbuj odprężyć całe ciało. Przebiłeś balonową gumę. Pozwól sobie być luźnym, tak jak potrafisz.</p>
+    </div>
+
+    <div class="step" id="step-15">
+        <h2>Twarz i nos (Mucha)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1601412436009-d964bd02edbc?w=700" alt="Mucha na nosie">
+        <p>Właśnie przyleciała okropna, stara mucha. Wylądowała na twoim nosie. Spróbuj ją strącić bez używania rąk. Właśnie tak, pomarszcz swój nos. Zrób jak najwięcej zmarszczek na swoim nosie. Zrób to bardzo mocno. Dobrze. Odgoniłeś ją. Teraz możesz odprężyć swój nos.</p>
+    </div>
+
+    <div class="step" id="step-16">
+        <h2>Twarz i nos (Powrót muchy)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=700" alt="Marszczenie twarzy">
+        <p>Ups, znowu wraca. Dokładnie na sam środek twojego nosa. Zmarszcz swój nos jeszcze raz. Wypędź ją. Mocno zmarszcz nos do góry. Utrzymaj to napięcie tak mocno jak potrafisz. Dobrze, odleciała. Możesz odprężyć swoją twarz. Zauważ, że gdy chcesz zmarszczyć swój nos to twoje policzki, usta, twarz, oczy chcą ci pomóc i także się napinają. Więc jeżeli będziesz odprężał swój nos, cała twoja twarz także będzie się relaksować i czuć się dobrze. O o, stara mucha znowu wróciła, ale tym razem jest na twojej twarzy. Rób dużo zmarszczek.</p>
+    </div>
+
+    <div class="step" id="step-17">
+        <h2>Twarz i nos (Mucha zniknęła)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=700" alt="Gładka twarz">
+        <p>Postaraj się złapać ją pomiędzy te zmarszczki na twarzy. Utrzymaj ją. Dobrze, możesz odpuścić. Teraz poszła sobie na dobre. Możesz się zrelaksować. Pozwól swojej twarzy być gładką, bez żadnych zmarszczek. Twoja twarz czuje się dobrze, gładka i odprężona.</p>
+    </div>
+
+    <div class="step" id="step-18">
+        <h2>Brzuch (Słoń)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=700" alt="Nadchodzący słoń">
+        <p>Hej! Oto nadchodzi mały uroczy słonik. Ale on nie patrzy gdzie idzie. Nie widzi Cię leżącego w trawie i jest o krok od twojego brzucha. Nie ruszaj się. Nie masz czasu, żeby zejść mu z drogi. Po prostu przygotuj się na niego. Zrób aby twój brzuch był bardzo twardy. Napnij swoje mięśnie brzucha bardzo mocno. Utrzymaj to. Wygląda na to, że słoń wybrał inną drogę. Możesz się teraz odprężyć. Pozwól aby twój brzuch był miękki. Niech będzie odprężony tak jak potrafisz. To o wiele lepsze uczucie. O o, znowu idzie tą drogą. Przygotuj się.</p>
+    </div>
+
+    <div class="step" id="step-19">
+        <h2>Brzuch (Słoń - Twardy brzuch)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=700" alt="Brzuch jak skała">
+        <p>Napnij swój brzuch. Naprawdę mocno. Jeżeli słoń nadepnie na Ciebie gdy brzuch będzie twardy to cię nie zaboli. Zamień swój brzuch w skałę. Dobra, poszedł sobie. Możesz się teraz odprężyć. Trochę się uspokoić, siedzieć wygodnie i być zrelaksowanym. Zauważ różnice między napiętym brzuchem, a tym zrelaksowanym. Tak właśnie chcemy się czuć - przyjemnie, luźno i zrelaksowanie.</p>
+    </div>
+
+    <div class="step" id="step-20">
+        <h2>Brzuch (Słoń odszedł)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=700" alt="Bezpieczny brzuch">
+        <p>Nie uwierzysz, ale tym razem on naprawdę idzie w twoją stronę i nie odwraca się. Nadciąga bezpośrednio na Ciebie. Napnij się. Napnij brzuch mocno. Właśnie wszedł. To jest naprawdę to. Musisz utrzymać napięcie. Nadepnął na Ciebie. Przeszedł przez Ciebie. Teraz poszedł już sobie na dobre. Możesz całkowicie się zrelaksować. Jesteś bezpieczny. Wszystko jest w porządku, możesz czuć przyjemność i odprężenie.</p>
+    </div>
+
+    <div class="step" id="step-21">
+        <h2>Brzuch (Wąski płot)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1504198453319-5ce911bafcde?w=700" alt="Drewniany płot">
+        <p>Tym razem wyobraź sobie, że chcesz przecisnąć się przez wąski płot, a deski w nim mają drzazgi. Musisz zrobić się bardzo chudy jeżeli chcesz się przedostać. Wciągnij swój brzuch. Spróbuj przepchać go za kręgosłup. Spróbuj być tak chudym jak tylko potrafisz. Przecisnąłeś się. Teraz odpręż się. Nie musisz już być chudy. Po prostu zrelaksuj się i poczuj jak twój brzuch staje się ciepły i luźny.</p>
+    </div>
+
+    <div class="step" id="step-22">
+        <h2>Brzuch (Płot pokonany)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1504198453319-5ce911bafcde?w=700" alt="Rozluźnienie po płocie">
+        <p>Dobra, teraz spróbujmy przejść przez ten płot. Wciągnij brzuch. Niech dotknie kręgosłupa. Niech będzie naprawdę mały i mocny. Stan się tak chudy jak tylko potrafisz. Utrzymaj to napięcie. Jest. Przecisnąłeś się. Przecisnąłeś się przez ten wąski płot. Teraz możesz się zrelaksować. Odpręż się i pozwól swojemu brzuchowi wrócić tam gdzie jego miejsce. Teraz czujesz się naprawdę dobrze. Dobra robota.</p>
+    </div>
+
+    <div class="step" id="step-23">
+        <h2>Nogi i stopy (Kałuża błota)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1533557904090-e5bf4324f9bb?w=700" alt="Błotnista kałuża">
+        <p>Teraz udajmy, że stoisz boso w wielkiej, tłustej kałuży błota. Zgniataj palce u stóp głęboko w błocie. Spróbuj dać swoje stopy na dno błotnistej kałuży. Prawdopodobnie potrzebujesz pomocy nóg do pchania w dół. Dociskaj, rozsuń palce u stóp poczuj jak błoto przeciska się pomiędzy twoje palce. Teraz wyjdź z kałuży błota. Odpręż swoje stopy. Pozwól swoim palcom u nóg być luźnymi i poczuj jakie to przyjemne. Powróćmy do błotnistej kałuży.</p>
+    </div>
+
+    <div class="step" id="step-24">
+        <h2>Nogi i stopy (Błoto - cd.)</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1533557904090-e5bf4324f9bb?w=700" alt="Wyciskanie błota stopami">
+        <p>Zgniataj palcami u stóp. Niech mięśnie twoich nóg pomogą stopom się wciskać. Wciskaj mocno. Spróbuj wycisnąć tę kałużę błota. Dobra. Wyjdź z niej. Zrelaksuj swoje stopy, odpręż swoje nogi, rozluźnij swoje palce u stóp. To dobre uczucie być zrelaksowanym. Nigdzie nie ma napięć. Czujesz ciepło i mrowienie.</p>
+    </div>
+
+    <div class="step" id="step-25">
+        <h2>Podsumowanie</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=700" alt="Koniec sesji">
+        <p>Pozostań tak zrelaksowany jak tylko potrafisz. Pozwól aby twoje całe ciało było wiotkie i poczuj wszystkie mięśnie zrelaksowane. Za kilka minut poproszę Cię o otwarcie oczu i wtedy będzie koniec naszej sesji.</p>
+    </div>
+
+    <div class="step" id="step-26">
+        <h2>Podsumowanie - Praktyka</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=700" alt="Odpoczynek wieczorny">
+        <p>W ciągu dnia pamiętaj jakie dobre uczucie jest wtedy gdy jesteś zrelaksowany. Czasami musisz się napiąć, zanim będzie można się rozluźnić. Tak, jak robiliśmy w tych ćwiczeniach. Ćwicz to codziennie, żeby być coraz bardziej zrelaksowanym. Dobrym czasem na ćwiczenia jest wieczór, po tym jak położysz się do łóżka, światła będą wyłączone i nic nie będzie Ci przeszkadzać. Pomoże to zasnąć. Jak będziesz w tym dobry, możesz próbować w szkole. Po prostu przypomnij sobie o słoniu, o gumie do żucia, o błotnistej kałuży. Możesz robić nasze ćwiczenia i nikt nie będzie o tym wiedział.</p>
+    </div>
+
+    <div class="step" id="step-27">
+        <h2>Podsumowanie - Koniec</h2>
+        <img class="step-img" src="https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=700" alt="Otwarcie oczu">
+        <p>Dzisiaj jest dobry dzień, jesteś gotowy do bycia z innymi czując ogromne zrelaksowanie. Miło jest odpocząć po tak ciężkiej pracy. Bardzo powoli, otwórz oczy i lekko poruszaj swoimi nogami. Bardzo dobrze. Zrobiłeś dobrą robotę. Staniesz się w tym świetny.</p>
     </div>
 
     <div class="controls">
         <button id="btn-prev" onclick="changeStep(-1)" disabled>Wstecz</button>
         <button id="btn-next" onclick="changeStep(1)">Dalej</button>
     </div>
-    <div class="progress" id="progress-text">Krok 1 z 9</div>
+    <div class="progress" id="progress-text">Krok 1 z 28</div>
 </div>
 
 <script>
     let currentStep = 0;
-    const totalSteps = 9;
+    const steps = document.querySelectorAll('.step');
+    const totalSteps = steps.length;
 
     function changeStep(direction) {
         document.getElementById(`step-${currentStep}`).classList.remove('active');
@@ -191,7 +306,7 @@
         progressText.innerText = `Krok ${currentStep + 1} z ${totalSteps}`;
     }
 
-    // Inicjalizacja kontrolerów przy starcie
+    // Inicjalizacja przy uruchomieniu strony
     updateControls();
 </script>
 

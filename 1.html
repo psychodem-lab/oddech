@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wybór Wzorca Oddechowego</title>
+    <link rel="shortcut icon" type="image/png" href="cbt.png" />
     <style>
+        /* Jasny motyw (domyślny) */
         :root {
             --primary-text: #3a4d39;
             --bg-color: #ffffff;
@@ -13,8 +15,35 @@
             --btn-border: #a4b3a4;
             --btn-primary: #596d5a;
             --circle-bg: #f4f5f1;
-            --circle-shadow: rgba(89, 109, 90, 0.2);
             --text-secondary: #798a79;
+            --shadow-rgb: 89, 109, 90;
+            --header-border: #eaeaea;
+            --h1-color: #2c392c;
+            --btn-text: #607060;
+            --phase-color: #526352;
+            --instruction-color: #4a5a4a;
+            --btn-primary-hover: #495a49;
+            --btn-reset-hover: #e2e4de;
+        }
+
+        /* Ciemny motyw */
+        [data-theme="dark"] {
+            --primary-text: #e8ece8;
+            --bg-color: #121412;
+            --btn-inactive: #1e241e;
+            --btn-active: #2a332a;
+            --btn-border: #4a5a4a;
+            --btn-primary: #4a5a4a;
+            --circle-bg: #1a201a;
+            --text-secondary: #8b998b;
+            --shadow-rgb: 134, 163, 136;
+            --header-border: #2a332a;
+            --h1-color: #f0f4f0;
+            --btn-text: #a0b0a0;
+            --phase-color: #c0ccc0;
+            --instruction-color: #d0dcd0;
+            --btn-primary-hover: #5a6d5a;
+            --btn-reset-hover: #2a332a;
         }
 
         body {
@@ -25,6 +54,7 @@
             justify-content: center;
             margin: 0;
             padding: 30px 20px;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .app-container {
@@ -34,24 +64,51 @@
 
         header {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            border-bottom: 1px solid #eaeaea;
+            flex-direction: column;
+            gap: 20px;
+            border-bottom: 1px solid var(--header-border);
             padding-bottom: 20px;
             margin-bottom: 50px;
+            transition: border-color 0.3s;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
         }
 
         .header-text h1 {
             font-size: 1.5rem;
             margin: 0 0 8px 0;
-            color: #2c392c;
+            color: var(--h1-color);
             font-weight: 700;
+            transition: color 0.3s;
         }
 
         .header-text p {
             font-size: 0.95rem;
             color: var(--text-secondary);
             margin: 0;
+            transition: color 0.3s;
+        }
+
+        .btn-theme {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: color 0.2s, background-color 0.2s;
+        }
+
+        .btn-theme:hover {
+            color: var(--primary-text);
+            background-color: var(--btn-inactive);
         }
 
         .pattern-selector {
@@ -67,7 +124,7 @@
             cursor: pointer;
             font-size: 0.85rem;
             font-weight: 600;
-            color: #607060;
+            color: var(--btn-text);
             transition: all 0.2s ease-in-out;
             line-height: 1.4;
             text-align: center;
@@ -93,21 +150,22 @@
             height: 320px;
             border-radius: 50%;
             background: var(--circle-bg);
-            box-shadow: 0 0 80px 20px var(--circle-shadow);
+            box-shadow: 0 0 80px 20px rgba(var(--shadow-rgb), 0.2);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: transform 1s ease-in-out, box-shadow 1s ease-in-out;
+            transition: transform 1s ease-in-out, box-shadow 1s ease-in-out, background-color 0.3s;
         }
 
         .phase-text {
             font-size: 1rem;
             font-weight: 700;
             letter-spacing: 2px;
-            color: #526352;
+            color: var(--phase-color);
             margin-bottom: -15px;
             text-transform: uppercase;
+            transition: color 0.3s;
         }
 
         .timer-text {
@@ -116,6 +174,7 @@
             color: var(--primary-text);
             line-height: 1.2;
             margin: 0;
+            transition: color 0.3s;
         }
 
         .unit-text {
@@ -123,6 +182,7 @@
             font-weight: 600;
             color: var(--text-secondary);
             margin-top: -10px;
+            transition: color 0.3s;
         }
 
         .instructions {
@@ -133,14 +193,16 @@
         #instruction-text {
             font-size: 1.15rem;
             font-weight: 600;
-            color: #4a5a4a;
+            color: var(--instruction-color);
             margin-bottom: 8px;
+            transition: color 0.3s;
         }
 
         .cycles {
             font-size: 0.95rem;
             color: var(--text-secondary);
             margin: 0;
+            transition: color 0.3s;
         }
 
         .controls {
@@ -166,7 +228,7 @@
         }
 
         .btn-start:hover {
-            background-color: #495a49;
+            background-color: var(--btn-primary-hover);
         }
         
         .btn-start:active {
@@ -184,11 +246,11 @@
             justify-content: center;
             align-items: center;
             color: var(--primary-text);
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, color 0.3s;
         }
 
         .btn-reset:hover {
-            background-color: #e2e4de;
+            background-color: var(--btn-reset-hover);
         }
 
         svg {
@@ -196,10 +258,6 @@
         }
 
         @media (max-width: 600px) {
-            header {
-                flex-direction: column;
-                gap: 20px;
-            }
             .circle-container {
                 width: 260px;
                 height: 260px;
@@ -211,9 +269,17 @@
 <body>
     <div class="app-container">
         <header>
-            <div class="header-text">
-                <h1>Wybór Wzorca Oddechowego</h1>
-                <p>Dostosuj rytm do swoich aktualnych potrzeb</p>
+            <div class="header-top">
+                <div class="header-text">
+                    <h1>Wybór Wzorca Oddechowego</h1>
+                    <p>Dostosuj rytm do swoich aktualnych potrzeb</p>
+                </div>
+                <button class="btn-theme" id="theme-btn" onclick="toggleTheme()" aria-label="Zmień motyw">
+                    <svg id="theme-icon" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Ikona jest podmieniana przez JS -->
+                        <path id="theme-path" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
             </div>
             <div class="pattern-selector">
                 <button class="pattern-btn active" id="btn-box" onclick="setPattern('box')">Oddech Pudełkowy<br>(4-4-4-4)</button>
@@ -253,6 +319,38 @@
     </div>
 
     <script>
+        // Logika motywu
+        const themePath = document.getElementById('theme-path');
+        const moonPath = "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z";
+        const sunPath = "M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z";
+
+        function setTheme(isDark) {
+            if (isDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themePath.setAttribute('d', sunPath);
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                themePath.setAttribute('d', moonPath);
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            setTheme(!isDark);
+        }
+
+        // Inicjalizacja motywu
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            setTheme(true);
+        } else {
+            setTheme(false);
+        }
+
+        // Logika aplikacji oddechowej
         const patterns = {
             box: [
                 { phase: 'WDECH', time: 4, instruction: 'Bierz powolny, głęboki wdech przez nos...', scale: 1.25, shadow: 0.35 },
@@ -269,7 +367,7 @@
 
         let currentPatternId = 'box';
         let currentPhaseIndex = 0;
-        let timeElapsed = 1; // Zmienna liczy czas od 1 w górę
+        let timeElapsed = 1;
         let isRunning = false;
         let timerInterval = null;
         let cycles = 0;
@@ -301,7 +399,8 @@
                     el.circle.style.transition = 'none';
                 }
                 el.circle.style.transform = `scale(${phase.scale})`;
-                el.circle.style.boxShadow = `0 0 80px 20px rgba(89, 109, 90, ${phase.shadow})`;
+                // Zmieniono na CSS Variable, aby reagowało na zmianę motywu na żywo
+                el.circle.style.boxShadow = `0 0 80px 20px rgba(var(--shadow-rgb), ${phase.shadow})`;
             }
         }
 
@@ -324,7 +423,6 @@
                 el.playIcon.style.display = 'block';
                 el.pauseIcon.style.display = 'none';
                 
-                // Zatrzymaj animację w miejscu
                 const style = window.getComputedStyle(el.circle);
                 const transform = style.transform;
                 el.circle.style.transition = 'none';
@@ -337,7 +435,7 @@
                 updateUI(true);
 
                 timerInterval = setInterval(() => {
-                    timeElapsed++; // Liczenie w górę
+                    timeElapsed++; 
                     
                     const currentPhaseTargetTime = patterns[currentPatternId][currentPhaseIndex].time;
                     
@@ -349,14 +447,14 @@
                             cycles++;
                         }
                         
-                        timeElapsed = 1; // Reset do 1 na początku nowej fazy
+                        timeElapsed = 1; 
                         
                         const nextPhase = patterns[currentPatternId][currentPhaseIndex];
                         if (nextPhase.phase === 'WDECH') {
                             el.circle.style.transition = 'none';
                             el.circle.style.transform = 'scale(1.0)';
-                            el.circle.style.boxShadow = `0 0 80px 20px rgba(89, 109, 90, 0.2)`;
-                            void el.circle.offsetWidth; // Reflow przeglądarki
+                            el.circle.style.boxShadow = `0 0 80px 20px rgba(var(--shadow-rgb), 0.2)`;
+                            void el.circle.offsetWidth; 
                         }
                         updateUI(true);
                     } else {
@@ -375,7 +473,7 @@
             
             el.circle.style.transition = 'transform 0.5s ease, box-shadow 0.5s ease';
             el.circle.style.transform = 'scale(1.0)';
-            el.circle.style.boxShadow = `0 0 80px 20px rgba(89, 109, 90, 0.2)`;
+            el.circle.style.boxShadow = `0 0 80px 20px rgba(var(--shadow-rgb), 0.2)`;
             
             updateUI(false);
         }

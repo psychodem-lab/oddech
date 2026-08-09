@@ -224,7 +224,7 @@
         <div class="breathing-area">
             <div class="circle-container" id="circle">
                 <div class="phase-text" id="phase-text">WDECH</div>
-                <div class="timer-text" id="timer-text">4</div>
+                <div class="timer-text" id="timer-text">1</div>
                 <div class="unit-text">sekund</div>
             </div>
         </div>
@@ -269,7 +269,7 @@
 
         let currentPatternId = 'box';
         let currentPhaseIndex = 0;
-        let timeLeft = patterns[currentPatternId][0].time;
+        let timeElapsed = 1; // Zmienna liczy czas od 1 w górę
         let isRunning = false;
         let timerInterval = null;
         let cycles = 0;
@@ -290,7 +290,7 @@
         function updateUI(initAnimation = false) {
             const phase = patterns[currentPatternId][currentPhaseIndex];
             el.phaseText.textContent = phase.phase;
-            el.timerText.textContent = timeLeft;
+            el.timerText.textContent = timeElapsed;
             el.instructionText.textContent = phase.instruction;
             el.cycleCount.textContent = cycles;
             
@@ -324,6 +324,7 @@
                 el.playIcon.style.display = 'block';
                 el.pauseIcon.style.display = 'none';
                 
+                // Zatrzymaj animację w miejscu
                 const style = window.getComputedStyle(el.circle);
                 const transform = style.transform;
                 el.circle.style.transition = 'none';
@@ -336,9 +337,11 @@
                 updateUI(true);
 
                 timerInterval = setInterval(() => {
-                    timeLeft--;
+                    timeElapsed++; // Liczenie w górę
                     
-                    if (timeLeft <= 0) {
+                    const currentPhaseTargetTime = patterns[currentPatternId][currentPhaseIndex].time;
+                    
+                    if (timeElapsed > currentPhaseTargetTime) {
                         currentPhaseIndex++;
                         
                         if (currentPhaseIndex >= patterns[currentPatternId].length) {
@@ -346,14 +349,14 @@
                             cycles++;
                         }
                         
-                        timeLeft = patterns[currentPatternId][currentPhaseIndex].time;
+                        timeElapsed = 1; // Reset do 1 na początku nowej fazy
                         
                         const nextPhase = patterns[currentPatternId][currentPhaseIndex];
                         if (nextPhase.phase === 'WDECH') {
                             el.circle.style.transition = 'none';
                             el.circle.style.transform = 'scale(1.0)';
                             el.circle.style.boxShadow = `0 0 80px 20px rgba(89, 109, 90, 0.2)`;
-                            void el.circle.offsetWidth; 
+                            void el.circle.offsetWidth; // Reflow przeglądarki
                         }
                         updateUI(true);
                     } else {
@@ -367,7 +370,7 @@
         function resetTimer() {
             if (isRunning) toggleTimer();
             currentPhaseIndex = 0;
-            timeLeft = patterns[currentPatternId][0].time;
+            timeElapsed = 1;
             cycles = 0;
             
             el.circle.style.transition = 'transform 0.5s ease, box-shadow 0.5s ease';

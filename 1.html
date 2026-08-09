@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wybór Wzorca Oddechowego</title>
-    <link rel="shortcut icon" type="image/png" href="cbt.png" />
     <style>
         /* Jasny motyw (domyślny) */
         :root {
@@ -24,6 +23,7 @@
             --instruction-color: #4a5a4a;
             --btn-primary-hover: #495a49;
             --btn-reset-hover: #e2e4de;
+            --input-bg: #ffffff;
         }
 
         /* Ciemny motyw */
@@ -44,6 +44,7 @@
             --instruction-color: #d0dcd0;
             --btn-primary-hover: #5a6d5a;
             --btn-reset-hover: #2a332a;
+            --input-bg: #1e241e;
         }
 
         body {
@@ -68,7 +69,7 @@
             gap: 20px;
             border-bottom: 1px solid var(--header-border);
             padding-bottom: 20px;
-            margin-bottom: 50px;
+            margin-bottom: 30px;
             transition: border-color 0.3s;
         }
 
@@ -113,10 +114,12 @@
 
         .pattern-selector {
             display: flex;
-            gap: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .pattern-btn {
+            flex: 1 1 auto;
             background-color: var(--btn-inactive);
             border: 1px solid transparent;
             padding: 12px 18px;
@@ -136,12 +139,55 @@
             color: var(--primary-text);
         }
 
+        .session-config {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 8px;
+        }
+
+        .session-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .session-input-wrapper input {
+            background-color: var(--input-bg);
+            color: var(--primary-text);
+            border: 1px solid var(--btn-border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            width: 60px;
+            text-align: center;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .session-input-wrapper input:focus {
+            border-color: var(--primary-text);
+        }
+
+        .session-timer-display {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-text);
+            font-variant-numeric: tabular-nums;
+        }
+
         .breathing-area {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 380px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .circle-container {
@@ -175,6 +221,7 @@
             line-height: 1.2;
             margin: 0;
             transition: color 0.3s;
+            font-variant-numeric: tabular-nums;
         }
 
         .unit-text {
@@ -196,6 +243,7 @@
             color: var(--instruction-color);
             margin-bottom: 8px;
             transition: color 0.3s;
+            min-height: 1.5em;
         }
 
         .cycles {
@@ -235,6 +283,11 @@
             transform: scale(0.98);
         }
 
+        .btn-start:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .btn-reset {
             background-color: var(--btn-inactive);
             border: none;
@@ -263,6 +316,7 @@
                 height: 260px;
             }
             .timer-text { font-size: 5rem; }
+            .pattern-selector { flex-direction: column; }
         }
     </style>
 </head>
@@ -276,7 +330,6 @@
                 </div>
                 <button class="btn-theme" id="theme-btn" onclick="toggleTheme()" aria-label="Zmień motyw">
                     <svg id="theme-icon" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Ikona jest podmieniana przez JS -->
                         <path id="theme-path" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </button>
@@ -284,8 +337,17 @@
             <div class="pattern-selector">
                 <button class="pattern-btn active" id="btn-box" onclick="setPattern('box')">Oddech Pudełkowy<br>(4-4-4-4)</button>
                 <button class="pattern-btn" id="btn-478" onclick="setPattern('p478')">Oddech 4-7-8<br>(Głęboki Relaks)</button>
+                <button class="pattern-btn" id="btn-natural" onclick="setPattern('natural')">Oddech Naturalny<br>(4-2-6-2)</button>
             </div>
         </header>
+
+        <div class="session-config">
+            <div class="session-timer-display" id="session-time-display">05:00</div>
+            <div class="session-input-wrapper">
+                <label for="session-duration">Czas treningu (minuty):</label>
+                <input type="number" id="session-duration" value="5" min="1" max="120" onchange="updateSessionTarget()">
+            </div>
+        </div>
 
         <div class="breathing-area">
             <div class="circle-container" id="circle">
@@ -319,7 +381,7 @@
     </div>
 
     <script>
-        // Logika motywu
+        // --- LOGIKA MOTYWU ---
         const themePath = document.getElementById('theme-path');
         const moonPath = "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z";
         const sunPath = "M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z";
@@ -341,7 +403,6 @@
             setTheme(!isDark);
         }
 
-        // Inicjalizacja motywu
         const savedTheme = localStorage.getItem('theme');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
@@ -350,7 +411,7 @@
             setTheme(false);
         }
 
-        // Logika aplikacji oddechowej
+        // --- LOGIKA APLIKACJI ODDECHOWEJ ---
         const patterns = {
             box: [
                 { phase: 'WDECH', time: 4, instruction: 'Bierz powolny, głęboki wdech przez nos...', scale: 1.25, shadow: 0.35 },
@@ -362,6 +423,12 @@
                 { phase: 'WDECH', time: 4, instruction: 'Bierz powolny, głęboki wdech przez nos...', scale: 1.25, shadow: 0.35 },
                 { phase: 'ZATRZYMANIE', time: 7, instruction: 'Zatrzymaj powietrze w płucach...', scale: 1.25, shadow: 0.35 },
                 { phase: 'WYDECH', time: 8, instruction: 'Wypuść powietrze powoli przez usta...', scale: 1.0, shadow: 0.2 }
+            ],
+            natural: [
+                { phase: 'WDECH', time: 4, instruction: 'Bierz powolny, głęboki wdech przez nos...', scale: 1.25, shadow: 0.35 },
+                { phase: 'ZATRZYMANIE', time: 2, instruction: 'Zatrzymaj powietrze w płucach...', scale: 1.25, shadow: 0.35 },
+                { phase: 'WYDECH', time: 6, instruction: 'Wypuść powietrze powoli przez usta...', scale: 1.0, shadow: 0.2 },
+                { phase: 'ZATRZYMANIE', time: 2, instruction: 'Poczekaj na kolejny wdech...', scale: 1.0, shadow: 0.2 }
             ]
         };
 
@@ -371,6 +438,8 @@
         let isRunning = false;
         let timerInterval = null;
         let cycles = 0;
+        let sessionTimeRemaining = 5 * 60; // domyślnie 5 minut w sekundach
+        let trainingFinished = false;
 
         const el = {
             circle: document.getElementById('circle'),
@@ -378,14 +447,45 @@
             timerText: document.getElementById('timer-text'),
             instructionText: document.getElementById('instruction-text'),
             cycleCount: document.getElementById('cycle-count'),
+            startBtn: document.getElementById('start-btn'),
             startBtnText: document.getElementById('start-btn-text'),
             playIcon: document.getElementById('play-icon'),
             pauseIcon: document.getElementById('pause-icon'),
             btnBox: document.getElementById('btn-box'),
-            btn478: document.getElementById('btn-478')
+            btn478: document.getElementById('btn-478'),
+            btnNatural: document.getElementById('btn-natural'),
+            sessionDurationInput: document.getElementById('session-duration'),
+            sessionTimeDisplay: document.getElementById('session-time-display')
         };
 
+        // Formatowanie czasu mm:ss
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // Aktualizacja po wpisaniu nowej wartości czasu przez użytkownika
+        function updateSessionTarget() {
+            if (isRunning) return; // Jeśli działa, ignorujemy zmianę do momentu resetu
+            let mins = parseInt(el.sessionDurationInput.value);
+            if (isNaN(mins) || mins < 1) {
+                mins = 1;
+                el.sessionDurationInput.value = 1;
+            }
+            sessionTimeRemaining = mins * 60;
+            el.sessionTimeDisplay.textContent = formatTime(sessionTimeRemaining);
+            trainingFinished = false;
+            el.startBtn.disabled = false;
+        }
+
+        function updateSessionDisplay() {
+            el.sessionTimeDisplay.textContent = formatTime(sessionTimeRemaining);
+        }
+
         function updateUI(initAnimation = false) {
+            if (trainingFinished) return;
+
             const phase = patterns[currentPatternId][currentPhaseIndex];
             el.phaseText.textContent = phase.phase;
             el.timerText.textContent = timeElapsed;
@@ -399,7 +499,6 @@
                     el.circle.style.transition = 'none';
                 }
                 el.circle.style.transform = `scale(${phase.scale})`;
-                // Zmieniono na CSS Variable, aby reagowało na zmianę motywu na żywo
                 el.circle.style.boxShadow = `0 0 80px 20px rgba(var(--shadow-rgb), ${phase.shadow})`;
             }
         }
@@ -410,18 +509,46 @@
             
             el.btnBox.classList.remove('active');
             el.btn478.classList.remove('active');
+            el.btnNatural.classList.remove('active');
+            
             if(patternId === 'box') el.btnBox.classList.add('active');
             if(patternId === 'p478') el.btn478.classList.add('active');
+            if(patternId === 'natural') el.btnNatural.classList.add('active');
 
             resetTimer();
         }
 
+        function endTraining() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            trainingFinished = true;
+            
+            el.startBtnText.textContent = 'Trening zakończony';
+            el.playIcon.style.display = 'block';
+            el.pauseIcon.style.display = 'none';
+            el.startBtn.disabled = true;
+
+            el.instructionText.textContent = 'Gratulacje, ukończyłeś swoją sesję!';
+            el.phaseText.textContent = 'KONIEC';
+            el.timerText.textContent = '0';
+            
+            el.circle.style.transition = 'transform 1s ease, box-shadow 1s ease';
+            el.circle.style.transform = 'scale(1.0)';
+            el.circle.style.boxShadow = `0 0 80px 20px rgba(var(--shadow-rgb), 0.1)`;
+        }
+
         function toggleTimer() {
+            if (trainingFinished) {
+                resetTimer(); // W razie kliknięcia po zakończeniu wymuś reset
+                return;
+            }
+
             if (isRunning) {
                 clearInterval(timerInterval);
                 el.startBtnText.textContent = 'Rozpocznij Oddech';
                 el.playIcon.style.display = 'block';
                 el.pauseIcon.style.display = 'none';
+                el.sessionDurationInput.disabled = false;
                 
                 const style = window.getComputedStyle(el.circle);
                 const transform = style.transform;
@@ -431,12 +558,22 @@
                 el.startBtnText.textContent = 'Zatrzymaj Oddech';
                 el.playIcon.style.display = 'none';
                 el.pauseIcon.style.display = 'block';
+                el.sessionDurationInput.disabled = true;
                 
                 updateUI(true);
 
                 timerInterval = setInterval(() => {
-                    timeElapsed++; 
+                    // Obsługa timera całej sesji
+                    sessionTimeRemaining--;
+                    updateSessionDisplay();
                     
+                    if (sessionTimeRemaining <= 0) {
+                        endTraining();
+                        return;
+                    }
+
+                    // Obsługa faz oddechu
+                    timeElapsed++; 
                     const currentPhaseTargetTime = patterns[currentPatternId][currentPhaseIndex].time;
                     
                     if (timeElapsed > currentPhaseTargetTime) {
@@ -466,10 +603,23 @@
         }
 
         function resetTimer() {
-            if (isRunning) toggleTimer();
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+            }
+            
             currentPhaseIndex = 0;
             timeElapsed = 1;
             cycles = 0;
+            trainingFinished = false;
+            
+            el.startBtn.disabled = false;
+            el.sessionDurationInput.disabled = false;
+            el.startBtnText.textContent = 'Rozpocznij Oddech';
+            el.playIcon.style.display = 'block';
+            el.pauseIcon.style.display = 'none';
+            
+            updateSessionTarget();
             
             el.circle.style.transition = 'transform 0.5s ease, box-shadow 0.5s ease';
             el.circle.style.transform = 'scale(1.0)';
@@ -478,6 +628,8 @@
             updateUI(false);
         }
 
+        // Inicjalizacja przy pierwszym załadowaniu
+        updateSessionTarget();
         resetTimer();
     </script>
 </body>

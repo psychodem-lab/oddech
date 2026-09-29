@@ -2,7 +2,8 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8D%83%3C/text%3E%3C/svg%3E">
     <title>Wybór Wzorca Oddechowego</title>
     <style>
         /* Jasny motyw (domyślny) */
@@ -310,13 +311,97 @@
             fill: currentColor;
         }
 
-        @media (max-width: 600px) {
-            .circle-container {
-                width: 260px;
-                height: 260px;
+        html { -webkit-tap-highlight-color: transparent; }
+        button { touch-action: manipulation; }
+
+        /* Telefony i niskie ekrany: całość na jednym ekranie, bez przewijania */
+        @media (max-width: 600px), (max-height: 700px) {
+            html, body { height: 100%; }
+
+            body {
+                height: 100dvh;
+                box-sizing: border-box;
+                padding: max(10px, env(safe-area-inset-top)) 14px max(10px, env(safe-area-inset-bottom));
+                overflow: hidden;
             }
-            .timer-text { font-size: 5rem; }
-            .pattern-selector { flex-direction: column; }
+
+            .app-container {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                min-height: 0;
+            }
+
+            header {
+                gap: 8px;
+                padding-bottom: 10px;
+                margin-bottom: 8px;
+            }
+
+            .header-top { align-items: center; }
+            .header-text h1 { font-size: 1.1rem; margin: 0; }
+            .header-text p { display: none; }
+            .btn-theme { padding: 6px; }
+            .btn-theme svg { width: 22px; height: 22px; }
+
+            .pattern-selector {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+            }
+
+            .pattern-btn {
+                padding: 7px 4px;
+                font-size: 0.7rem;
+                line-height: 1.25;
+                border-radius: 10px;
+            }
+
+            .session-config {
+                flex-direction: row;
+                justify-content: space-between;
+                margin-bottom: 4px;
+                gap: 10px;
+            }
+
+            .session-timer-display { font-size: 1.4rem; }
+            .session-input-wrapper { font-size: 0.8rem; gap: 6px; }
+            .session-input-wrapper input { width: 50px; padding: 4px 6px; }
+
+            /* Koło zajmuje całą wolną przestrzeń i skaluje się razem z ekranem */
+            .breathing-area {
+                flex: 1 1 0;
+                min-height: 0;
+                height: auto;
+                margin-bottom: 0;
+                container-type: size;
+            }
+
+            .circle-container {
+                --d: min(62vw, 30dvh);
+                --d: calc(min(100cqw, 100cqh) / 1.3);
+                width: var(--d);
+                height: var(--d);
+                font-size: max(11px, calc(var(--d) / 20));
+            }
+
+            .phase-text { font-size: 0.95em; letter-spacing: 1.5px; margin-bottom: -0.6em; }
+            .timer-text { font-size: 5em; }
+            .unit-text { font-size: 0.95em; margin-top: -0.4em; }
+
+            .instructions { margin-bottom: 10px; }
+            #instruction-text {
+                font-size: 0.95rem;
+                margin: 0 0 4px;
+                min-height: 2.6em;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .cycles { font-size: 0.8rem; }
+
+            .btn-start { padding: 12px 22px; font-size: 0.95rem; gap: 10px; }
+            .btn-reset { width: 46px; height: 46px; }
         }
     </style>
 </head>
@@ -335,9 +420,9 @@
                 </button>
             </div>
             <div class="pattern-selector">
-                <button class="pattern-btn active" id="btn-box" onclick="setPattern('box')">Oddech Pudełkowy<br>(4-4-4-4)</button>
-                <button class="pattern-btn" id="btn-478" onclick="setPattern('p478')">Oddech 4-7-8<br>(Głęboki Relaks)</button>
-                <button class="pattern-btn" id="btn-natural" onclick="setPattern('natural')">Oddech Naturalny<br>(4-2-6-2)</button>
+                <button class="pattern-btn active" id="btn-box" onclick="setPattern('box')">Pudełkowy<br>(4-4-4-4)</button>
+                <button class="pattern-btn" id="btn-478" onclick="setPattern('p478')">Relaks<br>(4-7-8)</button>
+                <button class="pattern-btn" id="btn-natural" onclick="setPattern('natural')">Naturalny<br>(4-2-6-2)</button>
             </div>
         </header>
 
